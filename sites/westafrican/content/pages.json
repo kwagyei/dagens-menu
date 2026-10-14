@@ -1,0 +1,19 @@
+{
+  "home": {
+    "tagline": {
+      "sv": "Vastafrikanskt kok i Stockholm",
+      "en": "West African kitchen in Stockholm"
+    },
+    "highlights": ["mains-0"]
+  },
+  "about": {
+    "story": {
+      "sv": "Chez Abena firar det vastafrikanska koket med recept fran Ghana, Nigeria och Senegal.",
+      "en": "Chez Abena celebrates West African cuisine with recipes from Ghana, Nigeria and Senegal."
+    },
+    "chef": {
+      "sv": "Var kock har med sig traditioner fran tre lander.",
+      "en": "Our chef brings traditions from three countries."
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "weekly": {
+    "monday": { "open": "11:00", "close": "22:00" },
+    "tuesday": { "open": "11:00", "close": "22:00" },
+    "wednesday": { "open": "11:00", "close": "22:00" },
+    "thursday": { "open": "11:00", "close": "23:00" },
+    "friday": { "open": "11:00", "close": "23:00" },
+    "saturday": { "open": "12:00", "close": "23:00" },
+    "sunday": null
+  },
+  "exceptions": []
+}

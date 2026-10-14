@@ -1,0 +1,18 @@
+{
+  "categories": [
+    {
+      "id": "mains",
+      "name": { "sv": "Varmratter", "en": "Mains" },
+      "items": [
+        {
+          "name": { "sv": "Jollof ris", "en": "Jollof rice" },
+          "description": { "sv": "Kryddigt ris med tomatsas och kyckling", "en": "Spiced rice with tomato sauce and chicken" },
+          "price": 17500,
+          "tags": ["spicy"],
+          "allergens": [],
+          "available": true
+        }
+      ]
+    }
+  ]
+}

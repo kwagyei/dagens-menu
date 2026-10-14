@@ -1,0 +1,22 @@
+---
+import Base from "../layouts/Base.astro";
+import { getSettings, getPages, localized } from "../content/load";
+import { getLocale } from "../i18n";
+
+const locale = getLocale(Astro.url);
+const settings = getSettings();
+const pages = getPages();
+const tagline = localized(pages.home.tagline, locale);
+const siteName = localized(settings.name, locale);
+---
+
+<Base title={siteName} description={tagline}>
+  <section class="py-12 text-center">
+    <h1 class="text-4xl font-bold" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
+      {siteName}
+    </h1>
+    <p class="mt-4 text-lg" style={`color: var(--color-text-muted);`}>
+      {tagline}
+    </p>
+  </section>
+</Base>

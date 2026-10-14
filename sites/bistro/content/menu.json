@@ -1,0 +1,32 @@
+{
+  "categories": [
+    {
+      "id": "lunch",
+      "name": { "sv": "Lunch", "en": "Lunch" },
+      "items": [
+        {
+          "name": { "sv": "Dagens soppa", "en": "Soup of the day" },
+          "description": { "sv": "Serveras med nybakat brod", "en": "Served with freshly baked bread" },
+          "price": 14500,
+          "tags": ["vegetarian"],
+          "allergens": ["gluten", "milk"],
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "mains",
+      "name": { "sv": "Varmratter", "en": "Mains" },
+      "items": [
+        {
+          "name": { "sv": "Pannbiff med lok", "en": "Pan-fried beef patty with onions" },
+          "description": { "sv": "Med graddsas och lingon", "en": "With cream sauce and lingonberries" },
+          "price": 18900,
+          "tags": [],
+          "allergens": ["gluten", "milk", "eggs"],
+          "available": true
+        }
+      ]
+    }
+  ]
+}

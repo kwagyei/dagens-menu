@@ -1,0 +1,16 @@
+{
+  "colors": {
+    "primary": "#b5451b",
+    "secondary": "#e8a834",
+    "background": "#fdf6ee",
+    "surface": "#ffffff",
+    "text": "#1a1a1a",
+    "textMuted": "#6b7280"
+  },
+  "fonts": {
+    "heading": "Georgia, 'Times New Roman', serif",
+    "body": "system-ui, -apple-system, sans-serif"
+  },
+  "cornerRadius": "0.75rem",
+  "heroStyle": "image-overlay"
+}
