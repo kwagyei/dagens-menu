@@ -14,11 +14,16 @@
     "build:bistro": "SITE=bistro astro build",
     "build:westafrican": "SITE=westafrican astro build",
     "preview": "astro preview",
+    "deploy:bistro": "SITE=bistro astro build && npx wrangler pages deploy dist --project-name dagens-menu-bistro",
+    "deploy:westafrican": "SITE=westafrican astro build && npx wrangler pages deploy dist --project-name dagens-menu-westafrican",
     "astro": "astro"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.8",
     "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.0"
   }
 }
