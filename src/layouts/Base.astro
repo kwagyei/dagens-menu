@@ -3,23 +3,53 @@ import "../styles/global.css";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import ConsentBanner from "../components/ConsentBanner.astro";
-import { getSettings, getTheme, localized } from "../content/load";
+import { getSettings, getHours, getTheme, localized } from "../content/load";
 import { getLocale } from "../i18n";
 
 interface Props {
   title?: string;
   description?: string;
+  jsonLd?: Record<string, unknown>;
 }
 
 const settings = getSettings();
+const hours = getHours();
 const theme = getTheme();
 const locale = getLocale(Astro.url);
 const siteName = localized(settings.name, locale);
-const { title = siteName, description = localized(settings.tagline, locale) } =
+const { title = siteName, description = localized(settings.tagline, locale), jsonLd } =
   Astro.props;
 const pageTitle = title === siteName ? siteName : `${title} | ${siteName}`;
 const altLocale = locale === "sv" ? "en" : "sv";
 const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
+
+const dayMap: Record<string, string> = {
+  monday: "Mo", tuesday: "Tu", wednesday: "We",
+  thursday: "Th", friday: "Fr", saturday: "Sa", sunday: "Su",
+};
+
+const openingHours: string[] = [];
+for (const [day, h] of Object.entries(hours.weekly)) {
+  if (h) openingHours.push(`${dayMap[day]} ${h.open}-${h.close}`);
+}
+
+const restaurantJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  name: siteName,
+  description,
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: settings.address,
+    addressCountry: "SE",
+  },
+  telephone: settings.phone,
+  email: settings.email,
+  openingHours,
+  servesCuisine: localized(settings.cuisine, locale),
+};
+
+const effectiveJsonLd = jsonLd || restaurantJsonLd;
 ---
 
 <!doctype html>
@@ -31,6 +61,18 @@ const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathnam
     <meta name="description" content={description} />
     <link rel="alternate" hreflang={altLocale} href={altPath} />
     <link rel="alternate" hreflang={locale} href={Astro.url.pathname} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content={locale === "sv" ? "sv_SE" : "en_GB"} />
+    <meta property="og:locale:alternate" content={locale === "sv" ? "en_GB" : "sv_SE"} />
+    <meta property="og:site_name" content={siteName} />
+
+    <!-- JSON-LD -->
+    <script type="application/ld+json" set:html={JSON.stringify(effectiveJsonLd)} />
+
     <style
       define:vars={{
         "color-primary": theme.colors.primary,
@@ -50,9 +92,13 @@ const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathnam
     class="min-h-screen flex flex-col"
     style={`background-color: var(--color-bg); color: var(--color-text); font-family: var(--font-body);`}
   >
+    <a href="#main-content" class="skip-link">
+      {locale === "sv" ? "Hoppa till innehall" : "Skip to content"}
+    </a>
+
     <Header />
 
-    <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+    <main id="main-content" class="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
       <slot />
     </main>
 
@@ -60,3 +106,25 @@ const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathnam
     <ConsentBanner />
   </body>
 </html>
+
+<style is:global>
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    z-index: 100;
+    padding: 0.5rem 1rem;
+    background: var(--color-primary);
+    color: var(--color-surface);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    text-decoration: none;
+  }
+  .skip-link:focus {
+    top: 0.5rem;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+</style>

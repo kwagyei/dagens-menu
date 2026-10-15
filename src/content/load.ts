@@ -17,6 +17,7 @@ export interface LocalizedString {
 export interface SiteSettings {
   name: LocalizedString;
   tagline: LocalizedString;
+  cuisine: LocalizedString;
   address: string;
   phone: string;
   email: string;

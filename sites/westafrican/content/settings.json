@@ -7,6 +7,10 @@
     "sv": "Vastafrikanskt kok i Goteborg",
     "en": "West African kitchen in Gothenburg"
   },
+  "cuisine": {
+    "sv": "Vastafrikansk",
+    "en": "West African"
+  },
   "address": "Sodra vagen 45, 412 54 Goteborg",
   "phone": "+46 31 987 65 43",
   "email": "info@chezabena.se",

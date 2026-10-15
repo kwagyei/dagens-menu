@@ -32,6 +32,12 @@ collections:
             fields:
               - { label: Svenska, name: sv, widget: string }
               - { label: English, name: en, widget: string }
+          - label: Cuisine
+            name: cuisine
+            widget: object
+            fields:
+              - { label: Svenska, name: sv, widget: string }
+              - { label: English, name: en, widget: string }
           - { label: Address, name: address, widget: string }
           - { label: Phone, name: phone, widget: string }
           - { label: Email, name: email, widget: string }
