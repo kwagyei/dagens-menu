@@ -7,6 +7,10 @@
     "sv": "Skandinavisk mat med karlek",
     "en": "Scandinavian food with love"
   },
+  "cuisine": {
+    "sv": "Skandinavisk",
+    "en": "Scandinavian"
+  },
   "address": "Storgatan 12, 111 51 Stockholm",
   "phone": "+46 8 123 45 67",
   "email": "hej@bistronorden.se",

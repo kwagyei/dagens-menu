@@ -1,12 +1,38 @@
 ---
 import Base from "../layouts/Base.astro";
 import MenuList from "../components/MenuList.astro";
+import { getMenu, getSettings, localized, formatPrice } from "../content/load";
 import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
+const menu = getMenu();
+const settings = getSettings();
+const siteName = localized(settings.name, locale);
+
+const menuJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Menu",
+  name: `${siteName} ${t(locale, "nav.menu")}`,
+  hasMenuSection: menu.categories.map((cat) => ({
+    "@type": "MenuSection",
+    name: localized(cat.name, locale),
+    hasMenuItem: cat.items
+      .filter((item) => item.available)
+      .map((item) => ({
+        "@type": "MenuItem",
+        name: localized(item.name, locale),
+        description: localized(item.description, locale),
+        offers: {
+          "@type": "Offer",
+          price: (item.price / 100).toFixed(2),
+          priceCurrency: "SEK",
+        },
+      })),
+  })),
+};
 ---
 
-<Base title={t(locale, "nav.menu")}>
+<Base title={t(locale, "nav.menu")} jsonLd={menuJsonLd}>
   <h1 class="text-3xl font-bold mb-8" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
     {t(locale, "nav.menu")}
   </h1>
