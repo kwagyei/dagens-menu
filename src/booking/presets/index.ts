@@ -3,39 +3,53 @@ export interface BookingPreset {
   mode: "embed" | "link";
   embedPattern?: string;
   urlPattern?: string;
+  requiresConsent: boolean;
   docs: string;
 }
 
 const presets: Record<string, BookingPreset> = {
-  bookatable: {
-    name: "Book a Table",
+  waiteraid: {
+    name: "WaiterAid / BokaBord",
     mode: "embed",
-    embedPattern: `<iframe src="https://bookatable.com/widget/RESTAURANT_ID" style="width:100%;height:500px;border:none;"></iframe>`,
-    docs: "https://bookatable.com",
+    embedPattern: `<script src="https://app.waiteraid.com/widget/RESTAURANT_ID.js"></script>`,
+    requiresConsent: true,
+    docs: "https://waiteraid.com",
   },
   thefork: {
-    name: "TheFork (f.k.a. TripAdvisor)",
+    name: "TheFork",
     mode: "embed",
-    embedPattern: `<iframe src="https://module.thefork.com/RESTAURANT_ID" style="width:100%;height:500px;border:none;"></iframe>`,
+    embedPattern: `<iframe src="https://widget.thefork.com/RESTAURANT_UUID" style="width:100%;min-height:800px;border:none;" allow="payment *"></iframe>`,
+    requiresConsent: true,
     docs: "https://www.thefork.com",
   },
   formitable: {
     name: "Formitable",
     mode: "embed",
-    embedPattern: `<iframe src="https://www.formitable.com/widget/RESTAURANT_ID" style="width:100%;height:600px;border:none;"></iframe>`,
+    embedPattern: `<script src="https://www.formitable.com/sdk/v1.js"></script><div data-formitable-widget="RESTAURANT_ID"></div>`,
+    requiresConsent: true,
     docs: "https://formitable.com",
   },
-  bordet: {
-    name: "Bordet.se",
-    mode: "link",
-    urlPattern: "https://bordet.se/RESTAURANT_ID",
-    docs: "https://bordet.se",
+  easytable: {
+    name: "easyTable",
+    mode: "embed",
+    embedPattern: `<script src="https://book.easytable.com/widget/RESTAURANT_ID.js"></script>`,
+    urlPattern: "https://book.easytable.com/book/?id=RESTAURANT_ID",
+    requiresConsent: true,
+    docs: "https://easytablebooking.com",
   },
-  dineroonline: {
-    name: "DineroOnline",
+  quandoo: {
+    name: "Quandoo",
+    mode: "embed",
+    embedPattern: `<script src="https://booking-widget.quandoo.com/index.js" data-merchant-id="RESTAURANT_ID" data-theme="light"></script>`,
+    requiresConsent: true,
+    docs: "https://www.quandoo.com",
+  },
+  bokabord: {
+    name: "BokaBord.se",
     mode: "link",
-    urlPattern: "https://www.dineroonline.se/RESTAURANT_ID",
-    docs: "https://www.dineroonline.se",
+    urlPattern: "https://bokabord.se/RESTAURANT_SLUG",
+    requiresConsent: false,
+    docs: "https://bokabord.se",
   },
 };
 
