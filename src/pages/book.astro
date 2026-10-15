@@ -1,11 +1,9 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getSettings, localized } from "../content/load";
+import BookingWidget from "../components/BookingWidget.astro";
 import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const settings = getSettings();
-const provider = settings.booking.provider;
 ---
 
 <Base title={t(locale, "book.heading")}>
@@ -16,64 +14,5 @@ const provider = settings.booking.provider;
     {t(locale, "book.intro")}
   </p>
 
-  {provider === "none" && (
-    <div class="p-6" style={`background-color: var(--color-surface); border-radius: var(--radius);`}>
-      <h2 class="text-xl font-bold mb-4" style={`font-family: var(--font-heading);`}>
-        {t(locale, "booking.fallback.title")}
-      </h2>
-      <div class="space-y-3">
-        <p>
-          <span class="font-medium">{t(locale, "booking.fallback.phone")}:</span>{" "}
-          <a href={`tel:${settings.phone}`} class="underline" style="color: var(--color-primary);">
-            {settings.phone}
-          </a>
-        </p>
-        <p>
-          <span class="font-medium">{t(locale, "booking.fallback.email")}:</span>{" "}
-          <a href={`mailto:${settings.email}`} class="underline" style="color: var(--color-primary);">
-            {settings.email}
-          </a>
-        </p>
-      </div>
-    </div>
-  )}
-
-  {provider === "link" && settings.booking.bookingUrl && (
-    <a
-      href={settings.booking.bookingUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="inline-block px-6 py-3 font-bold"
-      style={`background-color: var(--color-primary); color: var(--color-surface); border-radius: var(--radius);`}
-    >
-      {t(locale, "booking.load")} &rarr;
-    </a>
-  )}
-
-  {provider === "embed" && settings.booking.embedCode && (
-    <div id="booking-embed" class="p-6" style={`background-color: var(--color-surface); border-radius: var(--radius);`}>
-      <p class="mb-4" style="color: var(--color-text-muted);">
-        {t(locale, "consent.message")}
-      </p>
-      <button
-        id="load-booking"
-        class="px-6 py-3 font-bold"
-        style={`background-color: var(--color-primary); color: var(--color-surface); border-radius: var(--radius);`}
-      >
-        {t(locale, "booking.load")}
-      </button>
-    </div>
-  )}
+  <BookingWidget />
 </Base>
-
-{provider === "embed" && settings.booking.embedCode && (
-  <script define:vars={{ embedCode: settings.booking.embedCode }}>
-    const btn = document.getElementById("load-booking");
-    const container = document.getElementById("booking-embed");
-    if (btn && container) {
-      btn.addEventListener("click", () => {
-        container.innerHTML = embedCode;
-      });
-    }
-  </script>
-)}

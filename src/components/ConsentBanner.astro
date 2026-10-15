@@ -1,0 +1,85 @@
+---
+import { getLocale, t } from "../i18n";
+
+const locale = getLocale(Astro.url);
+---
+
+<div
+  id="consent-banner"
+  class="fixed bottom-0 left-0 right-0 z-50 hidden"
+  role="dialog"
+  aria-label={t(locale, "consent.title")}
+>
+  <div
+    class="mx-auto max-w-2xl m-4 p-6 shadow-lg"
+    style={`background-color: var(--color-surface); border: 1px solid var(--color-text-muted); border-radius: var(--radius);`}
+  >
+    <h2 class="font-bold mb-2" style="font-family: var(--font-heading);">
+      {t(locale, "consent.title")}
+    </h2>
+    <p class="text-sm mb-4" style="color: var(--color-text-muted);">
+      {t(locale, "consent.message")}
+    </p>
+    <div class="flex gap-3">
+      <button
+        id="consent-accept"
+        class="flex-1 px-4 py-2 text-sm font-bold"
+        style={`background-color: var(--color-primary); color: var(--color-surface); border-radius: var(--radius);`}
+      >
+        {t(locale, "consent.accept")}
+      </button>
+      <button
+        id="consent-decline"
+        class="flex-1 px-4 py-2 text-sm font-bold"
+        style={`border: 2px solid var(--color-primary); color: var(--color-primary); background: transparent; border-radius: var(--radius);`}
+      >
+        {t(locale, "consent.decline")}
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const COOKIE_NAME = "consent";
+  const COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 6 months
+
+  function getConsent(): string | null {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`));
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  function setConsent(value: "accepted" | "declined") {
+    document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+    window.dispatchEvent(new CustomEvent("consent-changed", { detail: { consent: value } }));
+  }
+
+  const banner = document.getElementById("consent-banner");
+  const acceptBtn = document.getElementById("consent-accept");
+  const declineBtn = document.getElementById("consent-decline");
+
+  const current = getConsent();
+  if (!current && banner) {
+    banner.classList.remove("hidden");
+  }
+
+  if (current) {
+    window.dispatchEvent(new CustomEvent("consent-changed", { detail: { consent: current } }));
+  }
+
+  acceptBtn?.addEventListener("click", () => {
+    setConsent("accepted");
+    banner?.classList.add("hidden");
+  });
+
+  declineBtn?.addEventListener("click", () => {
+    setConsent("declined");
+    banner?.classList.add("hidden");
+  });
+
+  // Allow reopening from footer link
+  window.addEventListener("open-consent-banner", () => {
+    if (banner) {
+      banner.classList.remove("hidden");
+    }
+  });
+</script>
