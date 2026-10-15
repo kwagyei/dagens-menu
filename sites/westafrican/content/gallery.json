@@ -1,16 +1,44 @@
 {
   "images": [
     {
-      "src": "/images/gallery/dining-room.jpg",
-      "alt": { "sv": "Matsalen med färgglada textilier och träinredning", "en": "Dining room with colourful textiles and wooden decor" }
+      "src": "/images/westafrican/gallery-dish-spread.jpg",
+      "alt": { "sv": "Uppdukning med västafrikanska rätter", "en": "Spread of West African dishes" }
     },
     {
-      "src": "/images/gallery/jollof.jpg",
-      "alt": { "sv": "Jollof ris med grillad kyckling", "en": "Jollof rice with grilled chicken" }
+      "src": "/images/westafrican/gallery-clay-pot-stews.jpg",
+      "alt": { "sv": "Grytor med grönsaker och kryddor i lerkärl", "en": "Stews with vegetables and spices in clay pots" }
     },
     {
-      "src": "/images/gallery/spices.jpg",
-      "alt": { "sv": "Kryddor och färska råvaror på marknaden", "en": "Spices and fresh ingredients at the market" }
+      "src": "/images/westafrican/gallery-shrimp-stew.jpg",
+      "alt": { "sv": "Räkgryta med lime i lerkruka", "en": "Shrimp stew with lime in clay pot" }
+    },
+    {
+      "src": "/images/westafrican/gallery-fried-plantain.jpg",
+      "alt": { "sv": "Stekt plantain på vit tallrik", "en": "Fried plantain slices on white plate" }
+    },
+    {
+      "src": "/images/westafrican/gallery-suya-kelewele.jpg",
+      "alt": { "sv": "Suya och kelewele på träbricka", "en": "Suya skewers and kelewele on wooden board" }
+    },
+    {
+      "src": "/images/westafrican/gallery-grilling-skewers.jpg",
+      "alt": { "sv": "Köttspett som grillas över kol", "en": "Meat skewers grilling over charcoal" }
+    },
+    {
+      "src": "/images/westafrican/gallery-fish-stew.jpg",
+      "alt": { "sv": "Fiskgryta med grönsaker", "en": "Fish stew with greens" }
+    },
+    {
+      "src": "/images/westafrican/gallery-kelewele-peanuts.jpg",
+      "alt": { "sv": "Kelewele med jordnötter i skål", "en": "Kelewele with peanuts in bowl" }
+    },
+    {
+      "src": "/images/westafrican/gallery-jollof-plantain.jpg",
+      "alt": { "sv": "Jollof ris med stekt plantain", "en": "Jollof rice with fried plantain" }
+    },
+    {
+      "src": "/images/westafrican/gallery-kelewele-plate.jpg",
+      "alt": { "sv": "Kelewele på svart tallrik med banan", "en": "Kelewele on black plate with banana" }
     }
   ]
 }

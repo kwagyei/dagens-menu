@@ -2,46 +2,102 @@
 import Base from "../layouts/Base.astro";
 import HoursTable from "../components/HoursTable.astro";
 import MapEmbed from "../components/MapEmbed.astro";
-import { getSettings, getHours } from "../content/load";
-import { getLocale, t } from "../i18n";
+import { getSettings, getHours, localized } from "../content/load";
+import { getLocale, t, localePath } from "../i18n";
 
 const locale = getLocale(Astro.url);
 const settings = getSettings();
 const hours = getHours();
+const siteName = localized(settings.name, locale);
 ---
 
 <Base title={t(locale, "nav.contact")}>
-  <h1 class="text-3xl font-bold mb-8" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-    {t(locale, "nav.contact")}
-  </h1>
+  <!-- Contact hero — dark with ghost watermark -->
+  <section class="section-dark relative overflow-hidden">
+    <div class="ghost-text top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="font-size: clamp(3rem, 12vw, 10rem);">
+      {t(locale, "footer.visit" as any)}
+    </div>
+    <div class="section-container py-16 md:py-24 relative" style="z-index: 1;">
+      <p class="font-display text-base tracking-widest mb-4" style="color: var(--color-hero-muted);">
+        {siteName}
+      </p>
+      <h1 class="font-display text-5xl md:text-6xl lg:text-7xl mb-4" style="color: var(--color-hero-text);">
+        {t(locale, "nav.contact")}
+      </h1>
+      <div class="flex items-center gap-3" style="max-width: 10rem;">
+        <div style="flex:1; height: 2px; background-color: var(--color-secondary); opacity: 0.6;"></div>
+        <div style="width: 6px; height: 6px; transform: rotate(45deg); background-color: var(--color-secondary); opacity: 0.6;"></div>
+      </div>
+    </div>
+  </section>
 
-  <div class="grid gap-8 md:grid-cols-2">
-    <div class="space-y-6">
-      <div>
-        <h2 class="font-bold mb-1">{t(locale, "contact.address")}</h2>
-        <p>{settings.address}</p>
-      </div>
-      <div>
-        <h2 class="font-bold mb-1">{t(locale, "contact.phone")}</h2>
-        <a href={`tel:${settings.phone}`} class="underline" style="color: var(--color-primary);">
-          {settings.phone}
-        </a>
-      </div>
-      <div>
-        <h2 class="font-bold mb-1">{t(locale, "contact.email")}</h2>
-        <a href={`mailto:${settings.email}`} class="underline" style="color: var(--color-primary);">
-          {settings.email}
-        </a>
-      </div>
+  <!-- Contact info — large, tappable -->
+  <section style="background-color: var(--color-bg);">
+    <div class="section-container py-16 md:py-24">
+      <div class="grid gap-10 md:gap-16 md:grid-cols-2">
+        <!-- Left: contact details as big blocks -->
+        <div class="space-y-10">
+          <div>
+            <h2 class="font-display text-sm tracking-widest mb-3" style="color: var(--color-text-muted);">
+              {t(locale, "contact.address")}
+            </h2>
+            <p class="font-heading text-xl md:text-2xl font-medium leading-snug" style="color: var(--color-text);">
+              {settings.address}
+            </p>
+          </div>
 
+          <div>
+            <h2 class="font-display text-sm tracking-widest mb-3" style="color: var(--color-text-muted);">
+              {t(locale, "contact.phone")}
+            </h2>
+            <a
+              href={`tel:${settings.phone}`}
+              class="font-display text-3xl md:text-4xl block"
+              style="color: var(--color-primary); text-decoration: none; transition: color 0.15s ease;"
+            >
+              {settings.phone}
+            </a>
+          </div>
+
+          <div>
+            <h2 class="font-display text-sm tracking-widest mb-3" style="color: var(--color-text-muted);">
+              {t(locale, "contact.email")}
+            </h2>
+            <a
+              href={`mailto:${settings.email}`}
+              class="font-heading text-lg md:text-xl font-medium"
+              style="color: var(--color-primary); text-decoration: underline; text-underline-offset: 4px;"
+            >
+              {settings.email}
+            </a>
+          </div>
+
+          <div class="pt-4">
+            <a href={localePath(locale, "/book/")} class="btn btn-primary">
+              {t(locale, "home.book")}
+              <span aria-hidden="true">&rarr;</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Right: opening hours in a lifted card -->
+        <div class="card-lifted p-6 md:p-8 h-fit">
+          <h2 class="font-display text-xl md:text-2xl mb-6" style="color: var(--color-primary);">
+            {t(locale, "contact.hours")}
+          </h2>
+          <HoursTable hours={hours} />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Map — dark section -->
+  <section class="section-dark">
+    <div class="section-container py-12 md:py-16">
+      <h2 class="font-display text-2xl md:text-3xl mb-6" style="color: var(--color-hero-text);">
+        {t(locale, "footer.visit" as any)}
+      </h2>
       <MapEmbed />
     </div>
-
-    <div class="p-6" style={`background-color: var(--color-surface); border-radius: var(--radius);`}>
-      <h2 class="text-xl font-bold mb-4" style="font-family: var(--font-heading);">
-        {t(locale, "contact.hours")}
-      </h2>
-      <HoursTable hours={hours} />
-    </div>
-  </div>
+  </section>
 </Base>

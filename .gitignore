@@ -21,6 +21,12 @@ pnpm-debug.log*
 # macOS-specific files
 .DS_Store
 
+# Claude Code local settings
+.claude/settings.local.json
+
+# Design inspiration (personal reference, not project assets)
+inspiration/
+
 # jetbrains setting folder
 .idea/
 

@@ -2,7 +2,7 @@ backend:
   name: github
   repo: kwagyei/dagens-menu
   branch: main
-  base_url: https://decap-oauth.dagens-menu.workers.dev
+  base_url: https://decap-oauth.kwabenasasuboakye.workers.dev
 
 media_folder: "sites/bistro/images"
 public_folder: "/images"
@@ -23,6 +23,12 @@ collections:
               - { label: English, name: en, widget: string }
           - label: Tagline
             name: tagline
+            widget: object
+            fields:
+              - { label: Svenska, name: sv, widget: string }
+              - { label: English, name: en, widget: string }
+          - label: Cuisine
+            name: cuisine
             widget: object
             fields:
               - { label: Svenska, name: sv, widget: string }

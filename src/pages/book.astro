@@ -1,18 +1,46 @@
 ---
 import Base from "../layouts/Base.astro";
 import BookingWidget from "../components/BookingWidget.astro";
+import { getSettings, localized } from "../content/load";
 import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
+const settings = getSettings();
 ---
 
 <Base title={t(locale, "book.heading")}>
-  <h1 class="text-3xl font-bold mb-4" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-    {t(locale, "book.heading")}
-  </h1>
-  <p class="mb-8" style="color: var(--color-text-muted);">
-    {t(locale, "book.intro")}
-  </p>
 
-  <BookingWidget />
+  <!-- Booking hero — full dark section with large display type -->
+  <section class="section-dark relative overflow-hidden">
+    <div class="ghost-text top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="font-size: clamp(3rem, 12vw, 10rem);">
+      {t(locale, "cta.booknow" as any)}
+    </div>
+    <div class="section-container py-16 md:py-24 lg:py-28 relative" style="z-index: 1;">
+      <div class="max-w-2xl">
+        <p class="font-display text-base tracking-widest mb-4" style="color: var(--color-hero-muted);">
+          {localized(settings.name, locale)}
+        </p>
+        <h1 class="font-display text-5xl md:text-6xl lg:text-7xl mb-4" style="color: var(--color-hero-text);">
+          {t(locale, "book.heading")}
+        </h1>
+        <div class="flex items-center gap-3 mb-6" style="max-width: 10rem;">
+          <div style="flex:1; height: 2px; background-color: var(--color-secondary); opacity: 0.6;"></div>
+          <div style="width: 6px; height: 6px; transform: rotate(45deg); background-color: var(--color-secondary); opacity: 0.6;"></div>
+        </div>
+        <p class="text-base md:text-lg font-heading" style="color: var(--color-hero-muted);">
+          {t(locale, "book.intro")}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Booking widget — light section -->
+  <section style="background-color: var(--color-bg);">
+    <div class="section-container py-14 md:py-20">
+      <div class="max-w-2xl">
+        <BookingWidget />
+      </div>
+    </div>
+  </section>
+
 </Base>

@@ -77,11 +77,18 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
       define:vars={{
         "color-primary": theme.colors.primary,
         "color-secondary": theme.colors.secondary,
+        "color-accent": theme.colors.accent,
         "color-bg": theme.colors.background,
         "color-surface": theme.colors.surface,
+        "color-surface-alt": theme.colors.surfaceAlt,
         "color-text": theme.colors.text,
         "color-text-muted": theme.colors.textMuted,
+        "color-border": theme.colors.border,
+        "color-hero-bg": theme.colors.heroBg,
+        "color-hero-text": theme.colors.heroText,
+        "color-hero-muted": theme.colors.heroMuted,
         "font-heading": theme.fonts.heading,
+        "font-display": theme.fonts.display,
         "font-body": theme.fonts.body,
         "radius": theme.cornerRadius,
       }}
@@ -98,7 +105,7 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
 
     <Header />
 
-    <main id="main-content" class="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+    <main id="main-content" class="flex-1">
       <slot />
     </main>
 
@@ -106,25 +113,3 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
     <ConsentBanner />
   </body>
 </html>
-
-<style is:global>
-  .skip-link {
-    position: absolute;
-    top: -100%;
-    left: 1rem;
-    z-index: 100;
-    padding: 0.5rem 1rem;
-    background: var(--color-primary);
-    color: var(--color-surface);
-    border-radius: var(--radius);
-    font-size: 0.875rem;
-    text-decoration: none;
-  }
-  .skip-link:focus {
-    top: 0.5rem;
-  }
-  :focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-</style>

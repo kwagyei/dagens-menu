@@ -1,16 +1,23 @@
 {
   "colors": {
     "primary": "#2d4a3e",
-    "secondary": "#c8a96e",
-    "background": "#faf8f5",
-    "surface": "#ffffff",
-    "text": "#1a1a1a",
-    "textMuted": "#6b7280"
+    "secondary": "#b8956a",
+    "accent": "#a84a2e",
+    "background": "#f7f3ee",
+    "surface": "#f2ede6",
+    "surfaceAlt": "#ebe5db",
+    "text": "#2c2c2c",
+    "textMuted": "#6d6253",
+    "border": "#d9d0c4",
+    "heroBg": "#1b3327",
+    "heroText": "#f0ebe4",
+    "heroMuted": "#c2bdb5"
   },
   "fonts": {
     "heading": "Georgia, 'Times New Roman', serif",
+    "display": "'Bebas Neue', Impact, 'Arial Narrow', sans-serif",
     "body": "system-ui, -apple-system, sans-serif"
   },
-  "cornerRadius": "0.375rem",
+  "cornerRadius": "0.25rem",
   "heroStyle": "image-overlay"
 }

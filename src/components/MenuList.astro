@@ -6,52 +6,81 @@ const menu = getMenu();
 const locale = getLocale(Astro.url);
 ---
 
-{menu.categories.map((category) => (
-  <section class="mb-10">
-    <h2
-      class="text-2xl font-bold mb-6 pb-2 border-b"
-      style={`font-family: var(--font-heading); color: var(--color-primary); border-color: var(--color-secondary);`}
-    >
+<!-- Category jump-links — bold pills -->
+<nav class="category-nav mb-14 md:mb-16" aria-label={locale === "sv" ? "Menykategorier" : "Menu categories"}>
+  {menu.categories.map((category) => (
+    <a href={`#cat-${category.id}`} class="category-pill">
       {localized(category.name, locale)}
-    </h2>
-    <ul class="space-y-6">
+    </a>
+  ))}
+</nav>
+
+<!-- Menu categories -->
+{menu.categories.map((category, catIndex) => (
+  <section
+    class:list={[catIndex % 2 === 1 ? "menu-category-band" : "mb-14 md:mb-20"]}
+    id={`cat-${category.id}`}
+  >
+    <!-- Category heading — large display font with decorative underline -->
+    <div class="relative mb-8">
+      <h2
+        class="font-display text-3xl md:text-4xl lg:text-5xl"
+        style="color: var(--color-secondary);"
+      >
+        {localized(category.name, locale)}
+      </h2>
+      <div class="mt-3 flex items-center gap-3" style="max-width: 8rem;">
+        <div style="flex:1; height: 2px; background-color: var(--color-secondary); opacity: 0.6;"></div>
+        <div style="width: 6px; height: 6px; transform: rotate(45deg); background-color: var(--color-secondary); opacity: 0.6;"></div>
+      </div>
+    </div>
+
+    <div class="space-y-1">
       {category.items.map((item) => (
-        <li class:list={["p-4 rounded-lg", { "opacity-50": !item.available }]} style={`background-color: var(--color-surface); border-radius: var(--radius);`}>
-          <div class="flex justify-between items-start gap-4">
-            <div class="flex-1">
-              <h3 class="font-bold text-lg">{localized(item.name, locale)}</h3>
-              <p class="mt-1" style="color: var(--color-text-muted);">
-                {localized(item.description, locale)}
-              </p>
-              {(item.tags.length > 0 || item.allergens.length > 0) && (
-                <div class="mt-2 flex flex-wrap gap-2 text-xs">
-                  {item.tags.map((tag) => (
-                    <span
-                      class="px-2 py-0.5 rounded-full font-medium"
-                      style={`background-color: var(--color-primary); color: var(--color-surface); border-radius: 9999px;`}
-                    >
-                      {t(locale, `menu.tag.${tag}` as any)}
-                    </span>
-                  ))}
-                  {item.allergens.length > 0 && (
-                    <span style="color: var(--color-text-muted);">
-                      {t(locale, "menu.allergens")}: {item.allergens.join(", ")}
-                    </span>
-                  )}
-                </div>
-              )}
-              {!item.available && (
-                <p class="mt-2 text-xs font-medium italic" style="color: var(--color-text-muted);">
-                  {t(locale, "menu.unavailable")}
-                </p>
-              )}
-            </div>
-            <span class="text-lg font-bold whitespace-nowrap" style="color: var(--color-primary);">
+        <div class:list={["menu-item group", { "opacity-40": !item.available }]} style="padding: 1.5rem 0;">
+          <div class="menu-item-header">
+            <h3 class="font-display text-xl md:text-2xl" style="color: var(--color-hero-text);">
+              {localized(item.name, locale)}
+            </h3>
+            <span class="menu-item-price" style="font-size: 1.5rem;">
               {formatPrice(item.price)}
             </span>
           </div>
-        </li>
+
+          <p class="mt-2 text-sm md:text-base leading-relaxed max-w-2xl" style="color: var(--color-hero-muted);">
+            {localized(item.description, locale)}
+          </p>
+
+          {(item.tags.length > 0 || item.allergens.length > 0) && (
+            <div class="mt-3 flex flex-wrap gap-2 items-center">
+              {item.tags.map((tag) => (
+                <span class="inline-flex items-center px-3 py-1 text-xs font-bold rounded-full font-display tracking-wider" style="border: 1px solid var(--color-secondary); color: var(--color-secondary);">
+                  {t(locale, `menu.tag.${tag}` as any)}
+                </span>
+              ))}
+              {item.allergens.length > 0 && (
+                <span class="text-xs" style="color: var(--color-hero-muted); opacity: 0.7;">
+                  {t(locale, "menu.allergens")}: {item.allergens.join(", ")}
+                </span>
+              )}
+            </div>
+          )}
+
+          {!item.available && (
+            <p class="mt-2 text-xs font-medium italic" style="color: var(--color-hero-muted);">
+              {t(locale, "menu.unavailable")}
+            </p>
+          )}
+        </div>
       ))}
-    </ul>
+    </div>
+
+    {catIndex < menu.categories.length - 1 && catIndex % 2 === 0 && (
+      <div class="mt-12 flex items-center justify-center gap-3" style="opacity: 0.15;">
+        <div style="flex: 1; max-width: 6rem; height: 1px; background: var(--color-hero-text);"></div>
+        <div style="width: 6px; height: 6px; transform: rotate(45deg); border: 1px solid var(--color-hero-text);"></div>
+        <div style="flex: 1; max-width: 6rem; height: 1px; background: var(--color-hero-text);"></div>
+      </div>
+    )}
   </section>
 ))}

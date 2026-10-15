@@ -1,32 +1,126 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getPages, localized } from "../content/load";
-import { getLocale, t } from "../i18n";
+import { getPages, getSettings, localized } from "../content/load";
+import { getLocale, t, localePath } from "../i18n";
 
 const locale = getLocale(Astro.url);
 const pages = getPages();
+const settings = getSettings();
+const siteName = localized(settings.name, locale);
+const cuisine = localized(settings.cuisine, locale);
 ---
 
 <Base title={t(locale, "nav.about")}>
-  <h1 class="text-3xl font-bold mb-8" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-    {t(locale, "nav.about")}
-  </h1>
-
-  <section class="mb-10">
-    <h2 class="text-2xl font-bold mb-4" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-      {t(locale, "about.story.heading")}
-    </h2>
-    <p class="leading-relaxed" style="color: var(--color-text);">
-      {localized(pages.about.story, locale)}
-    </p>
+  <!-- About hero — full-bleed dark with ghost text -->
+  <section class="section-dark relative overflow-hidden">
+    <div class="ghost-text top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="font-size: clamp(4rem, 14vw, 14rem);">
+      {siteName}
+    </div>
+    <div class="section-container py-20 md:py-28 lg:py-32 relative" style="z-index: 1;">
+      <p class="font-display text-base md:text-lg tracking-widest mb-4" style="color: var(--color-hero-muted);">
+        {cuisine}
+      </p>
+      <h1 class="font-display text-5xl md:text-6xl lg:text-7xl mb-4" style="color: var(--color-hero-text);">
+        {t(locale, "nav.about")}
+      </h1>
+      <div class="flex items-center gap-3" style="max-width: 10rem;">
+        <div style="flex:1; height: 2px; background-color: var(--color-secondary); opacity: 0.6;"></div>
+        <div style="width: 6px; height: 6px; transform: rotate(45deg); background-color: var(--color-secondary); opacity: 0.6;"></div>
+      </div>
+    </div>
   </section>
 
-  <section>
-    <h2 class="text-2xl font-bold mb-4" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-      {t(locale, "about.chef.heading")}
-    </h2>
-    <p class="leading-relaxed" style="color: var(--color-text);">
-      {localized(pages.about.chef, locale)}
-    </p>
+  <!-- Our Story — alternating full-bleed image/text -->
+  <section style="background-color: var(--color-bg);">
+    <div class="grid md:grid-cols-2">
+      <!-- Photo side -->
+      <div class="relative aspect-[4/5] md:aspect-auto">
+        {pages.about.storyImage ? (
+          <img
+            src={pages.about.storyImage}
+            alt={siteName}
+            class="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div class="absolute inset-0" style="background: linear-gradient(160deg, var(--color-surface) 0%, var(--color-surface-alt) 100%);"></div>
+        )}
+      </div>
+
+      <!-- Text side -->
+      <div class="flex items-center">
+        <div class="p-8 md:p-12 lg:p-16 xl:p-20 max-w-xl">
+          <h2 class="font-display text-3xl md:text-4xl lg:text-5xl mb-8" style="color: var(--color-primary);">
+            {t(locale, "about.story.heading")}
+          </h2>
+          <div class="prose-themed text-base md:text-lg leading-relaxed" style="color: var(--color-text);">
+            <p>{localized(pages.about.story, locale)}</p>
+          </div>
+          <hr class="divider-squiggle mt-10 mb-0" style="margin-left: 0;" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pull quote — dark band -->
+  <section class="section-dark relative overflow-hidden">
+    <div class="section-container py-16 md:py-24 text-center relative" style="z-index: 1;">
+      <blockquote>
+        <p class="font-display text-2xl md:text-4xl lg:text-5xl leading-tight max-w-4xl mx-auto" style="color: var(--color-hero-text);">
+          &ldquo;{localized(settings.tagline, locale)}&rdquo;
+        </p>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- The Kitchen — reversed layout (text left, image right) -->
+  <section style="background-color: var(--color-bg);">
+    <div class="grid md:grid-cols-2">
+      <!-- Text side -->
+      <div class="flex items-center order-2 md:order-1">
+        <div class="p-8 md:p-12 lg:p-16 xl:p-20 max-w-xl md:ml-auto">
+          <h2 class="font-display text-3xl md:text-4xl lg:text-5xl mb-8" style="color: var(--color-primary);">
+            {t(locale, "about.chef.heading")}
+          </h2>
+          <div class="prose-themed text-base md:text-lg leading-relaxed" style="color: var(--color-text);">
+            <p>{localized(pages.about.chef, locale)}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photo side -->
+      <div class="relative aspect-[4/5] md:aspect-auto order-1 md:order-2">
+        {pages.about.kitchenImage ? (
+          <img
+            src={pages.about.kitchenImage}
+            alt={localized(pages.about.chef, locale).slice(0, 80)}
+            class="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div class="absolute inset-0" style="background: linear-gradient(200deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);"></div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA band — dramatic dark with starburst -->
+  <section class="section-dark relative overflow-hidden">
+    <div class="ghost-text top-1/2 left-0 -translate-x-1/4 -translate-y-1/2" style="font-size: clamp(4rem, 10vw, 10rem);">
+      {t(locale, "cta.booknow" as any)}
+    </div>
+    <div class="section-container py-16 md:py-24 relative flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16" style="z-index: 1;">
+      <div class="text-center md:text-left">
+        <h2 class="font-display text-3xl md:text-4xl lg:text-5xl mb-3" style="color: var(--color-hero-text);">
+          {t(locale, "about.cta" as any)}
+        </h2>
+        <p class="text-base max-w-sm" style="color: var(--color-hero-muted);">
+          {localized(settings.tagline, locale)}
+        </p>
+      </div>
+      <a href={localePath(locale, "/book/")} class="btn-starburst">
+        {t(locale, "home.book")}
+      </a>
+    </div>
   </section>
 </Base>

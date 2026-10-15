@@ -53,4 +53,11 @@ export default {
   "hours.exception": "Avvikande oppettider",
   "book.heading": "Boka bord",
   "book.intro": "Valj datum och tid for din bokning.",
+  "cta.visit": "Redo att besoka oss?",
+  "cta.booknow": "Boka ditt bord",
+  "footer.follow": "Folj oss",
+  "footer.visit": "Besok oss",
+  "about.cta": "Kom och smaka sjalv",
+  "menu.cta": "Gillar du vad du ser?",
+  "nav.book.short": "Boka",
 } as const;

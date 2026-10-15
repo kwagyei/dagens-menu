@@ -4,7 +4,16 @@
       "sv": "Vastafrikanskt kok i Goteborg",
       "en": "West African kitchen in Gothenburg"
     },
-    "highlights": ["starters-0", "mains-0", "mains-4"]
+    "highlights": ["starters-0", "mains-0", "mains-4"],
+    "heroImage": "/images/westafrican/hero-buffet-service.jpg",
+    "highlightImages": {
+      "starters-0": "/images/westafrican/stew-rice-peppers.jpg",
+      "mains-0": "/images/westafrican/egusi-soup.jpg",
+      "mains-4": "/images/westafrican/jollof-grilled-chicken.jpg"
+    }
+  },
+  "menu": {
+    "heroImage": "/images/westafrican/gallery-grilled-platter.jpg"
   },
   "about": {
     "story": {
@@ -14,6 +23,8 @@
     "chef": {
       "sv": "Var kock Abena vaxte upp i Accra och lagrade laga mat vid sin mormors sida pa familjens gard. Efter utbildning i Dakar och ar pa restauranger i London och Kopenhamn flyttade hon till Goteborg for att oppna sin egen restaurang. Koket blandar tre matkulturar — ghananskt, nigerianskt och senegalesiskt — men alltid med respekt for varje ratts ursprung.",
       "en": "Our chef Abena grew up in Accra, learning to cook at her grandmother's side on the family compound. After training in Dakar and years in restaurants in London and Copenhagen, she moved to Gothenburg to open her own place. The kitchen blends three food cultures — Ghanaian, Nigerian and Senegalese — but always with respect for each dish's origins."
-    }
+    },
+    "storyImage": "/images/westafrican/about-bar-rattan.jpg",
+    "kitchenImage": "/images/westafrican/about-chefs-plating.jpg"
   }
 }

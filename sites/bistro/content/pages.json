@@ -4,7 +4,16 @@
       "sv": "Skandinavisk mat med karlek",
       "en": "Scandinavian food with love"
     },
-    "highlights": ["starters-0", "mains-2", "desserts-0"]
+    "highlights": ["starters-0", "mains-2", "desserts-0"],
+    "heroImage": "/images/bistro/hero-brick-interior.jpg",
+    "highlightImages": {
+      "starters-0": "/images/bistro/toast-skagen.jpg",
+      "mains-2": "/images/bistro/meatballs-mash.jpg",
+      "desserts-0": "/images/bistro/chocolate-fondant.jpg"
+    }
+  },
+  "menu": {
+    "heroImage": "/images/bistro/gallery-grilled-fish.jpg"
   },
   "about": {
     "story": {
@@ -12,8 +21,10 @@
       "en": "Bistro Norden opened in 2020 in the heart of Stockholm's old town with a simple idea: to serve honest, Scandinavian food made from scratch. We believe in short distances from soil to plate, in ingredients that speak for themselves and in the power of a meal to bring people together. Our menu follows the seasons and we work closely with local growers and fishermen along the Swedish coast."
     },
     "chef": {
-      "sv": "Koket leds av en grupp kockar med bakgrund fran norrlandska krog-kok och skanska gardsrestauranger. De delar en gemensam overt\\u00e4gelse: lat ravaran styra. Varje morgon borjar med dagens leverans — vad som ar farskt dikterar menyn. Ingen halvfabrikat, inga genvargar.",
+      "sv": "Koket leds av en grupp kockar med bakgrund fran norrlandska krog-kok och skanska gardsrestauranger. De delar en gemensam overtägelse: lat ravaran styra. Varje morgon borjar med dagens leverans — vad som ar farskt dikterar menyn. Ingen halvfabrikat, inga genvargar.",
       "en": "The kitchen is led by a team of chefs with roots in northern Swedish country kitchens and Scanian farm restaurants. They share a common conviction: let the ingredient lead. Every morning begins with the day's delivery — what is fresh dictates the menu. No shortcuts, no compromises."
-    }
+    },
+    "storyImage": "/images/bistro/about-dining-room.jpg",
+    "kitchenImage": "/images/bistro/about-bar-shelving.jpg"
   }
 }

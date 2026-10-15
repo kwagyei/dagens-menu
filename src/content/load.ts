@@ -60,10 +60,17 @@ export interface Pages {
   home: {
     tagline: LocalizedString;
     highlights: string[];
+    heroImage?: string;
+    highlightImages?: Record<string, string>;
+  };
+  menu: {
+    heroImage?: string;
   };
   about: {
     story: LocalizedString;
     chef: LocalizedString;
+    storyImage?: string;
+    kitchenImage?: string;
   };
 }
 
@@ -80,13 +87,20 @@ export interface Theme {
   colors: {
     primary: string;
     secondary: string;
+    accent: string;
     background: string;
     surface: string;
+    surfaceAlt: string;
     text: string;
     textMuted: string;
+    border: string;
+    heroBg: string;
+    heroText: string;
+    heroMuted: string;
   };
   fonts: {
     heading: string;
+    display: string;
     body: string;
   };
   cornerRadius: string;

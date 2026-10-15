@@ -1,32 +1,85 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getGallery, localized } from "../content/load";
-import { getLocale, t } from "../i18n";
+import { getGallery, getSettings, localized } from "../content/load";
+import { getLocale, t, localePath } from "../i18n";
 
 const locale = getLocale(Astro.url);
 const gallery = getGallery();
+const settings = getSettings();
+const siteName = localized(settings.name, locale);
 ---
 
 <Base title={t(locale, "nav.gallery")}>
-  <h1 class="text-3xl font-bold mb-8" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-    {t(locale, "nav.gallery")}
-  </h1>
-
-  {gallery.images.length > 0 ? (
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {gallery.images.map((image) => (
-        <figure class="overflow-hidden" style={`border-radius: var(--radius);`}>
-          <img
-            src={image.src}
-            alt={localized(image.alt, locale)}
-            class="w-full h-64 object-cover"
-            loading="lazy"
-            decoding="async"
-          />
-        </figure>
-      ))}
+  <!-- Gallery hero — dark section with large title -->
+  <section class="section-dark relative overflow-hidden">
+    <div class="ghost-text top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+      {t(locale, "nav.gallery")}
     </div>
-  ) : (
-    <p style="color: var(--color-text-muted);">{t(locale, "gallery.alt.missing")}</p>
-  )}
+    <div class="section-container py-16 md:py-24 relative" style="z-index: 1;">
+      <p class="font-display text-base tracking-widest mb-4" style="color: var(--color-hero-muted);">
+        {siteName}
+      </p>
+      <h1 class="font-display text-5xl md:text-6xl lg:text-7xl mb-4" style="color: var(--color-hero-text);">
+        {t(locale, "nav.gallery")}
+      </h1>
+      <div class="flex items-center gap-3" style="max-width: 10rem;">
+        <div style="flex:1; height: 2px; background-color: var(--color-secondary); opacity: 0.6;"></div>
+        <div style="width: 6px; height: 6px; transform: rotate(45deg); background-color: var(--color-secondary); opacity: 0.6;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery grid — dark background for maximum image contrast -->
+  <section class="section-dark" style="border-top: 1px solid rgba(255,255,255,0.06);">
+    <div class="section-container pb-16 md:pb-24">
+      {gallery.images.length > 0 ? (
+        <div class="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {gallery.images.map((image, i) => {
+            const isFeature = i === 0 || i === 5;
+            return (
+              <figure
+                class:list={[
+                  "gallery-item overflow-hidden relative group",
+                  isFeature && "sm:col-span-2 sm:row-span-2"
+                ]}
+              >
+                <img
+                  src={image.src}
+                  alt={localized(image.alt, locale)}
+                  class:list={[
+                    "w-full object-cover transition-transform duration-500 group-hover:scale-105",
+                    isFeature ? "aspect-square" : "aspect-[4/3]"
+                  ]}
+                  style={`border-radius: var(--radius);`}
+                  loading={i < 3 ? "eager" : "lazy"}
+                />
+                <figcaption
+                  class="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style="background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);"
+                >
+                  <p class="font-display text-sm tracking-wider" style="color: var(--color-hero-text);">
+                    {localized(image.alt, locale)}
+                  </p>
+                </figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      ) : (
+        <p style="color: var(--color-hero-muted);">{t(locale, "gallery.alt.missing")}</p>
+      )}
+    </div>
+  </section>
+
+  <!-- CTA — dark band -->
+  <section class="section-dark relative overflow-hidden" style="border-top: 1px solid rgba(255,255,255,0.08);">
+    <div class="section-container py-14 md:py-20 text-center relative" style="z-index: 1;">
+      <h2 class="font-display text-3xl md:text-4xl lg:text-5xl mb-4" style="color: var(--color-hero-text);">
+        {t(locale, "cta.visit" as any)}
+      </h2>
+      <a href={localePath(locale, "/book/")} class="btn btn-primary-on-dark">
+        {t(locale, "home.book")}
+      </a>
+    </div>
+  </section>
 </Base>
