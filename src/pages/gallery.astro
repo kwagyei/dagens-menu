@@ -1,0 +1,32 @@
+---
+import Base from "../layouts/Base.astro";
+import { getGallery, localized } from "../content/load";
+import { getLocale, t } from "../i18n";
+
+const locale = getLocale(Astro.url);
+const gallery = getGallery();
+---
+
+<Base title={t(locale, "nav.gallery")}>
+  <h1 class="text-3xl font-bold mb-8" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
+    {t(locale, "nav.gallery")}
+  </h1>
+
+  {gallery.images.length > 0 ? (
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {gallery.images.map((image) => (
+        <figure class="overflow-hidden" style={`border-radius: var(--radius);`}>
+          <img
+            src={image.src}
+            alt={localized(image.alt, locale)}
+            class="w-full h-64 object-cover"
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
+      ))}
+    </div>
+  ) : (
+    <p style="color: var(--color-text-muted);">{t(locale, "gallery.alt.missing")}</p>
+  )}
+</Base>

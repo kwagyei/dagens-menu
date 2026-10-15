@@ -1,0 +1,57 @@
+---
+import { getMenu, formatPrice, localized } from "../content/load";
+import { getLocale, t } from "../i18n";
+
+const menu = getMenu();
+const locale = getLocale(Astro.url);
+---
+
+{menu.categories.map((category) => (
+  <section class="mb-10">
+    <h2
+      class="text-2xl font-bold mb-6 pb-2 border-b"
+      style={`font-family: var(--font-heading); color: var(--color-primary); border-color: var(--color-secondary);`}
+    >
+      {localized(category.name, locale)}
+    </h2>
+    <ul class="space-y-6">
+      {category.items.map((item) => (
+        <li class:list={["p-4 rounded-lg", { "opacity-50": !item.available }]} style={`background-color: var(--color-surface); border-radius: var(--radius);`}>
+          <div class="flex justify-between items-start gap-4">
+            <div class="flex-1">
+              <h3 class="font-bold text-lg">{localized(item.name, locale)}</h3>
+              <p class="mt-1" style="color: var(--color-text-muted);">
+                {localized(item.description, locale)}
+              </p>
+              {(item.tags.length > 0 || item.allergens.length > 0) && (
+                <div class="mt-2 flex flex-wrap gap-2 text-xs">
+                  {item.tags.map((tag) => (
+                    <span
+                      class="px-2 py-0.5 rounded-full font-medium"
+                      style={`background-color: var(--color-primary); color: var(--color-surface); border-radius: 9999px;`}
+                    >
+                      {t(locale, `menu.tag.${tag}` as any)}
+                    </span>
+                  ))}
+                  {item.allergens.length > 0 && (
+                    <span style="color: var(--color-text-muted);">
+                      {t(locale, "menu.allergens")}: {item.allergens.join(", ")}
+                    </span>
+                  )}
+                </div>
+              )}
+              {!item.available && (
+                <p class="mt-2 text-xs font-medium italic" style="color: var(--color-text-muted);">
+                  {t(locale, "menu.unavailable")}
+                </p>
+              )}
+            </div>
+            <span class="text-lg font-bold whitespace-nowrap" style="color: var(--color-primary);">
+              {formatPrice(item.price)}
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+))}

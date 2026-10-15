@@ -1,0 +1,54 @@
+---
+import type { OpeningHours } from "../content/load";
+import { getLocale, t } from "../i18n";
+
+interface Props {
+  hours: OpeningHours;
+}
+
+const { hours } = Astro.props;
+const locale = getLocale(Astro.url);
+
+const dayKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+const dayNames: Record<string, Record<string, string>> = {
+  monday: { sv: "Mandag", en: "Monday" },
+  tuesday: { sv: "Tisdag", en: "Tuesday" },
+  wednesday: { sv: "Onsdag", en: "Wednesday" },
+  thursday: { sv: "Torsdag", en: "Thursday" },
+  friday: { sv: "Fredag", en: "Friday" },
+  saturday: { sv: "Lordag", en: "Saturday" },
+  sunday: { sv: "Sondag", en: "Sunday" },
+};
+---
+
+<table class="w-full text-left text-sm">
+  <tbody>
+    {dayKeys.map((day) => {
+      const h = hours.weekly[day];
+      return (
+        <tr class="border-b last:border-b-0" style="border-color: var(--color-bg);">
+          <td class="py-2 font-medium">{dayNames[day][locale]}</td>
+          <td class="py-2 text-right">
+            {h ? `${h.open}\u2013${h.close}` : t(locale, "hours.closed")}
+          </td>
+        </tr>
+      );
+    })}
+  </tbody>
+</table>
+
+{hours.exceptions.length > 0 && (
+  <div class="mt-4">
+    <h3 class="font-medium text-sm mb-2">{t(locale, "hours.exception")}</h3>
+    <ul class="text-sm space-y-1">
+      {hours.exceptions.map((exc) => (
+        <li>
+          <span class="font-medium">{exc.date}</span>
+          {" \u2013 "}
+          {locale === "en" ? exc.note.en : exc.note.sv}
+          {exc.hours ? ` (${exc.hours.open}\u2013${exc.hours.close})` : ` (${t(locale, "hours.closed")})`}
+        </li>
+      ))}
+    </ul>
+  </div>
+)}

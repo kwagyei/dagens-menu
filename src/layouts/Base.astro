@@ -1,7 +1,9 @@
 ---
 import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
 import { getSettings, getTheme, localized } from "../content/load";
-import { getLocale, t, localePath } from "../i18n";
+import { getLocale } from "../i18n";
 
 interface Props {
   title?: string;
@@ -41,51 +43,18 @@ const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathnam
         "radius": theme.cornerRadius,
       }}
     >
-      :root {
-        --color-primary: var(--color-primary);
-        --color-secondary: var(--color-secondary);
-        --color-bg: var(--color-bg);
-        --color-surface: var(--color-surface);
-        --color-text: var(--color-text);
-        --color-text-muted: var(--color-text-muted);
-        --font-heading: var(--font-heading);
-        --font-body: var(--font-body);
-        --radius: var(--radius);
-      }
     </style>
   </head>
   <body
-    class="min-h-screen"
+    class="min-h-screen flex flex-col"
     style={`background-color: var(--color-bg); color: var(--color-text); font-family: var(--font-body);`}
   >
-    <header class="border-b" style={`border-color: var(--color-primary); background-color: var(--color-surface);`}>
-      <nav class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-        <a href={localePath(locale, "/")} class="text-xl font-bold" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-          {siteName}
-        </a>
-        <ul class="flex gap-6 text-sm">
-          <li><a href={localePath(locale, "/")}>{t(locale, "nav.home")}</a></li>
-          <li><a href={localePath(locale, "/menu/")}>{t(locale, "nav.menu")}</a></li>
-          <li><a href={localePath(locale, "/book/")}>{t(locale, "nav.book")}</a></li>
-          <li><a href={localePath(locale, "/about/")}>{t(locale, "nav.about")}</a></li>
-          <li><a href={localePath(locale, "/gallery/")}>{t(locale, "nav.gallery")}</a></li>
-          <li><a href={localePath(locale, "/contact/")}>{t(locale, "nav.contact")}</a></li>
-        </ul>
-        <a href={altPath} class="text-sm underline" style={`color: var(--color-text-muted);`}>
-          {altLocale === "en" ? "English" : "Svenska"}
-        </a>
-      </nav>
-    </header>
+    <Header />
 
-    <main class="mx-auto max-w-5xl px-4 py-8">
+    <main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
       <slot />
     </main>
 
-    <footer class="border-t py-6 text-center text-sm" style={`border-color: var(--color-primary); color: var(--color-text-muted);`}>
-      <p>&copy; {new Date().getFullYear()} {siteName}. {t(locale, "footer.rights")}.</p>
-      <p class="mt-2">
-        <a href={localePath(locale, "/privacy/")} class="underline">{t(locale, "nav.privacy")}</a>
-      </p>
-    </footer>
+    <Footer />
   </body>
 </html>

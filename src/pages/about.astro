@@ -1,0 +1,32 @@
+---
+import Base from "../layouts/Base.astro";
+import { getPages, localized } from "../content/load";
+import { getLocale, t } from "../i18n";
+
+const locale = getLocale(Astro.url);
+const pages = getPages();
+---
+
+<Base title={t(locale, "nav.about")}>
+  <h1 class="text-3xl font-bold mb-8" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
+    {t(locale, "nav.about")}
+  </h1>
+
+  <section class="mb-10">
+    <h2 class="text-2xl font-bold mb-4" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
+      {t(locale, "about.story.heading")}
+    </h2>
+    <p class="leading-relaxed" style="color: var(--color-text);">
+      {localized(pages.about.story, locale)}
+    </p>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-bold mb-4" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
+      {t(locale, "about.chef.heading")}
+    </h2>
+    <p class="leading-relaxed" style="color: var(--color-text);">
+      {localized(pages.about.chef, locale)}
+    </p>
+  </section>
+</Base>
