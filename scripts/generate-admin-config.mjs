@@ -7,7 +7,7 @@ const config = `backend:
   name: github
   repo: kwagyei/dagens-menu
   branch: main
-  base_url: https://decap-oauth.dagens-menu.workers.dev
+  base_url: https://decap-oauth.kwabenasasuboakye.workers.dev
 
 media_folder: "sites/${site}/images"
 public_folder: "/images"

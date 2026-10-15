@@ -84,13 +84,19 @@ export default {
 };
 
 function renderMessage(status: "success" | "error", content: string): string {
-  const msg = JSON.stringify({ provider: "github", [status === "success" ? "token" : "error"]: content });
+  const data = JSON.stringify({ token: content, provider: "github" });
+  const authStatus = status === "success" ? "success" : "error";
   return `<!doctype html>
 <html><body><script>
 (function() {
-  function sendMessage(e) { return e.postMessage(${msg}, e.location.origin); }
-  if (window.opener) { sendMessage(window.opener); }
-  else if (window.parent && window.parent !== window) { sendMessage(window.parent); }
+  function sendAuth(e) {
+    window.opener.postMessage(
+      "authorization:github:${authStatus}:" + ${JSON.stringify(data)},
+      e.origin
+    );
+  }
+  window.addEventListener("message", sendAuth, false);
+  window.opener.postMessage("authorizing:github", "*");
 })();
 </script></body></html>`;
 }
