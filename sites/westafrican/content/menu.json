@@ -1,14 +1,128 @@
 {
   "categories": [
     {
+      "id": "starters",
+      "name": { "sv": "Forratter", "en": "Starters" },
+      "items": [
+        {
+          "name": { "sv": "Kelewele", "en": "Kelewele" },
+          "description": { "sv": "Kryddigt stekt plantain med ingefara och chili", "en": "Spiced fried plantain with ginger and chilli" },
+          "price": 8500,
+          "tags": ["vegan", "gluten-free", "spicy"],
+          "allergens": [],
+          "available": true
+        },
+        {
+          "name": { "sv": "Suya-spett", "en": "Suya skewers" },
+          "description": { "sv": "Grillat nötkott med jordnötskrydda och lok", "en": "Grilled beef with peanut spice and onion" },
+          "price": 11500,
+          "tags": ["spicy", "gluten-free"],
+          "allergens": ["peanuts"],
+          "available": true
+        },
+        {
+          "name": { "sv": "Akara", "en": "Akara" },
+          "description": { "sv": "Friterade bonbullar med chilisas", "en": "Black-eyed pea fritters with chilli sauce" },
+          "price": 9500,
+          "tags": ["vegan"],
+          "allergens": [],
+          "available": true
+        }
+      ]
+    },
+    {
       "id": "mains",
       "name": { "sv": "Varmratter", "en": "Mains" },
       "items": [
         {
           "name": { "sv": "Jollof ris", "en": "Jollof rice" },
-          "description": { "sv": "Kryddigt ris med tomatsas och kyckling", "en": "Spiced rice with tomato sauce and chicken" },
+          "description": { "sv": "Kryddigt tomatstokt ris med grillad kyckling och stekt plantain", "en": "Spiced tomato rice with grilled chicken and fried plantain" },
           "price": 17500,
           "tags": ["spicy"],
+          "allergens": [],
+          "available": true
+        },
+        {
+          "name": { "sv": "Egusi-soppa", "en": "Egusi soup" },
+          "description": { "sv": "Pumpafrösoppa med bladgrönsaker, getköt och fufu", "en": "Melon seed soup with leafy greens, goat meat and fufu" },
+          "price": 18500,
+          "tags": ["spicy", "gluten-free"],
+          "allergens": [],
+          "available": true
+        },
+        {
+          "name": { "sv": "Thieboudienne", "en": "Thieboudienne" },
+          "description": { "sv": "Senegalesisk fiskgryta med ris, grönsaker och tamarind", "en": "Senegalese fish stew with rice, vegetables and tamarind" },
+          "price": 19500,
+          "tags": [],
+          "allergens": ["fish"],
+          "available": true
+        },
+        {
+          "name": { "sv": "Waakye", "en": "Waakye" },
+          "description": { "sv": "Ris och bonor med shitostew, spaghetti och stekt plantain", "en": "Rice and beans with shito stew, spaghetti and fried plantain" },
+          "price": 16500,
+          "tags": ["spicy"],
+          "allergens": ["gluten"],
+          "available": true
+        },
+        {
+          "name": { "sv": "Groundnut soup", "en": "Groundnut soup" },
+          "description": { "sv": "Krämig jordnötssoppa med kyckling och ris", "en": "Creamy peanut soup with chicken, served with rice" },
+          "price": 17500,
+          "tags": [],
+          "allergens": ["peanuts"],
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "desserts",
+      "name": { "sv": "Efterratter", "en": "Desserts" },
+      "items": [
+        {
+          "name": { "sv": "Puff-puff", "en": "Puff-puff" },
+          "description": { "sv": "Friterade degbollar med kanel och honung", "en": "Deep-fried dough balls with cinnamon and honey" },
+          "price": 7500,
+          "tags": ["vegetarian"],
+          "allergens": ["gluten", "eggs"],
+          "available": true
+        },
+        {
+          "name": { "sv": "Mangoglass", "en": "Mango sorbet" },
+          "description": { "sv": "Hemgjord sorbet med färsk mango och lime", "en": "Homemade sorbet with fresh mango and lime" },
+          "price": 8500,
+          "tags": ["vegan", "gluten-free"],
+          "allergens": [],
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "drinks",
+      "name": { "sv": "Drycker", "en": "Drinks" },
+      "items": [
+        {
+          "name": { "sv": "Sobolo", "en": "Sobolo" },
+          "description": { "sv": "Hibiskusdryck med ingefara och kryddnejlika", "en": "Hibiscus drink with ginger and cloves" },
+          "price": 6500,
+          "tags": ["vegan"],
+          "allergens": [],
+          "available": true
+        },
+        {
+          "name": { "sv": "Chapman", "en": "Chapman" },
+          "description": { "sv": "Nigeriansk festdryck med grenadine och citrus", "en": "Nigerian celebration drink with grenadine and citrus" },
+          "price": 7500,
+          "tags": ["vegan"],
+          "allergens": [],
+          "available": true
+        },
+        {
+          "name": { "sv": "Ingefärsshot", "en": "Ginger shot" },
+          "description": { "sv": "Färskpressad ingefära med citron och honung", "en": "Fresh-pressed ginger with lemon and honey" },
+          "price": 4500,
+          "tags": ["vegan"],
           "allergens": [],
           "available": true
         }

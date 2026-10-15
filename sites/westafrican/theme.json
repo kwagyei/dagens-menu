@@ -8,7 +8,7 @@
     "textMuted": "#6b7280"
   },
   "fonts": {
-    "heading": "Georgia, 'Times New Roman', serif",
+    "heading": "'Palatino Linotype', Palatino, Georgia, serif",
     "body": "system-ui, -apple-system, sans-serif"
   },
   "cornerRadius": "0.75rem",

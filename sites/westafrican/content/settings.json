@@ -4,14 +4,15 @@
     "en": "Chez Abena"
   },
   "tagline": {
-    "sv": "Vastafrikanskt kok i Stockholm",
-    "en": "West African kitchen in Stockholm"
+    "sv": "Vastafrikanskt kok i Goteborg",
+    "en": "West African kitchen in Gothenburg"
   },
   "address": "Sodra vagen 45, 412 54 Goteborg",
   "phone": "+46 31 987 65 43",
   "email": "info@chezabena.se",
   "socialLinks": {
-    "instagram": "https://instagram.com/chezabena"
+    "instagram": "https://instagram.com/chezabena",
+    "facebook": "https://facebook.com/chezabena"
   },
   "booking": {
     "provider": "none"
