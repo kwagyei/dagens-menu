@@ -2,14 +2,10 @@ backend:
   name: github
   repo: kwagyei/dagens-menu
   branch: main
+  base_url: https://decap-oauth.dagens-menu.workers.dev
 
 media_folder: "sites/bistro/images"
 public_folder: "/images"
-
-i18n:
-  structure: single_file
-  locales: [sv, en]
-  default_locale: sv
 
 collections:
   - name: settings
@@ -18,7 +14,6 @@ collections:
       - name: settings
         label: Site settings
         file: "sites/bistro/content/settings.json"
-        i18n: true
         fields:
           - label: Name
             name: name

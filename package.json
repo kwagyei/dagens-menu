@@ -10,12 +10,13 @@
     "dev": "astro dev",
     "dev:bistro": "SITE=bistro astro dev",
     "dev:westafrican": "SITE=westafrican astro dev",
+    "prebuild": "node scripts/generate-admin-config.mjs",
     "build": "astro build",
-    "build:bistro": "SITE=bistro astro build",
-    "build:westafrican": "SITE=westafrican astro build",
+    "build:bistro": "SITE=bistro npm run build",
+    "build:westafrican": "SITE=westafrican npm run build",
     "preview": "astro preview",
-    "deploy:bistro": "SITE=bistro astro build && npx wrangler pages deploy dist --project-name dagens-menu-bistro",
-    "deploy:westafrican": "SITE=westafrican astro build && npx wrangler pages deploy dist --project-name dagens-menu-westafrican",
+    "deploy:bistro": "SITE=bistro npm run build && npx wrangler pages deploy dist --project-name dagens-menu-bistro",
+    "deploy:westafrican": "SITE=westafrican npm run build && npx wrangler pages deploy dist --project-name dagens-menu-westafrican",
     "astro": "astro"
   },
   "dependencies": {
