@@ -11,6 +11,6 @@
     "heading": "Georgia, 'Times New Roman', serif",
     "body": "system-ui, -apple-system, sans-serif"
   },
-  "cornerRadius": "0.5rem",
+  "cornerRadius": "0.375rem",
   "heroStyle": "image-overlay"
 }

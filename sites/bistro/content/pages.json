@@ -4,16 +4,16 @@
       "sv": "Skandinavisk mat med karlek",
       "en": "Scandinavian food with love"
     },
-    "highlights": ["lunch-0"]
+    "highlights": ["starters-0", "mains-2", "desserts-0"]
   },
   "about": {
     "story": {
-      "sv": "Bistro Norden oppnade 2020 med en enkel ide: att servera arlig, skandinavisk mat lagad fran grunden.",
-      "en": "Bistro Norden opened in 2020 with a simple idea: to serve honest, Scandinavian food made from scratch."
+      "sv": "Bistro Norden oppnade 2020 i hjartat av Stockholms gamla stan med en enkel ide: att servera arlig, skandinavisk mat lagad fran grunden. Vi tror pa korta avstand fran jord till tallrik, pa ravaror som talar for sig sjalva och pa maltidens kraft att samla manniskor. Var meny foljer sasongerna och vi samarbetar med lokala odlare och fiskare langs den svenska kusten.",
+      "en": "Bistro Norden opened in 2020 in the heart of Stockholm's old town with a simple idea: to serve honest, Scandinavian food made from scratch. We believe in short distances from soil to plate, in ingredients that speak for themselves and in the power of a meal to bring people together. Our menu follows the seasons and we work closely with local growers and fishermen along the Swedish coast."
     },
     "chef": {
-      "sv": "Kockarna anvander lokala ravaror fran sasong.",
-      "en": "The chefs use local, seasonal ingredients."
+      "sv": "Koket leds av en grupp kockar med bakgrund fran norrlandska krog-kok och skanska gardsrestauranger. De delar en gemensam overt\\u00e4gelse: lat ravaran styra. Varje morgon borjar med dagens leverans — vad som ar farskt dikterar menyn. Ingen halvfabrikat, inga genvargar.",
+      "en": "The kitchen is led by a team of chefs with roots in northern Swedish country kitchens and Scanian farm restaurants. They share a common conviction: let the ingredient lead. Every morning begins with the day's delivery — what is fresh dictates the menu. No shortcuts, no compromises."
     }
   }
 }
