@@ -10,7 +10,12 @@
       "starters-0": "/images/bistro/toast-skagen.jpg",
       "mains-2": "/images/bistro/meatballs-mash.jpg",
       "desserts-0": "/images/bistro/chocolate-fondant.jpg"
-    }
+    },
+    "pullQuote": {
+      "sv": "Lat ravaran tala — vi lyssnar, sasongerna bestammer.",
+      "en": "Let the ingredient speak — we listen, the seasons decide."
+    },
+    "ctaImage": "/images/bistro/gallery-table-wine.jpg"
   },
   "menu": {
     "heroImage": "/images/bistro/gallery-grilled-fish.jpg"

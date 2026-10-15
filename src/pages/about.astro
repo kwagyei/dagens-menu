@@ -8,33 +8,46 @@ const pages = getPages();
 const settings = getSettings();
 const siteName = localized(settings.name, locale);
 const cuisine = localized(settings.cuisine, locale);
+const tagline = localized(settings.tagline, locale);
 ---
 
 <Base title={t(locale, "nav.about")}>
-  <!-- About hero — full-bleed dark with ghost text -->
-  <section class="section-dark relative overflow-hidden">
-    <div class="ghost-text top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="font-size: clamp(4rem, 14vw, 14rem);">
-      {siteName}
-    </div>
-    <div class="section-container py-20 md:py-28 lg:py-32 relative" style="z-index: 1;">
+
+  <!-- Hero — full-bleed photo with massive title and duotone -->
+  <section class="about-hero relative overflow-hidden" style="background-color: var(--color-hero-bg);">
+    {pages.about.storyImage && (
+      <img
+        src={pages.about.storyImage}
+        alt=""
+        class="absolute inset-0 w-full h-full object-cover about-hero-img"
+        loading="eager"
+      />
+    )}
+    <div class="absolute inset-0 about-duotone"></div>
+
+    <div class="section-container relative py-28 md:py-36 lg:py-44" style="z-index: 2;">
       <p class="font-display text-base md:text-lg tracking-widest mb-4" style="color: var(--color-hero-muted);">
         {cuisine}
       </p>
-      <h1 class="font-display text-5xl md:text-6xl lg:text-7xl mb-4" style="color: var(--color-hero-text);">
-        {t(locale, "nav.about")}
-      </h1>
-      <div class="flex items-center gap-3" style="max-width: 10rem;">
+      <div class="flex items-center gap-3 mb-6" style="max-width: 10rem;">
         <div style="flex:1; height: 2px; background-color: var(--color-secondary); opacity: 0.6;"></div>
         <div style="width: 6px; height: 6px; transform: rotate(45deg); background-color: var(--color-secondary); opacity: 0.6;"></div>
       </div>
     </div>
+
+    <!-- Massive viewport-width title -->
+    <div class="about-title-wrap" style="z-index: 2;">
+      <h1 class="about-title font-display">
+        {t(locale, "nav.about")}
+      </h1>
+    </div>
   </section>
 
-  <!-- Our Story — alternating full-bleed image/text -->
-  <section style="background-color: var(--color-bg);">
-    <div class="grid md:grid-cols-2">
-      <!-- Photo side -->
-      <div class="relative aspect-[4/5] md:aspect-auto">
+  <!-- Story — image bleeds left, text right -->
+  <section class="relative overflow-hidden" style="background-color: var(--color-bg);">
+    <div class="about-story-grid">
+      <!-- Photo bleeding off left edge -->
+      <div class="about-story-image relative">
         {pages.about.storyImage ? (
           <img
             src={pages.about.storyImage}
@@ -47,39 +60,44 @@ const cuisine = localized(settings.cuisine, locale);
         )}
       </div>
 
-      <!-- Text side -->
-      <div class="flex items-center">
-        <div class="p-8 md:p-12 lg:p-16 xl:p-20 max-w-xl">
-          <h2 class="font-display text-3xl md:text-4xl lg:text-5xl mb-8" style="color: var(--color-primary);">
+      <!-- Text side with generous left padding -->
+      <div class="about-story-text flex items-center">
+        <div class="py-12 px-6 md:py-16 md:px-10 lg:py-20 lg:pl-16 lg:pr-12 xl:pl-20">
+          <h2 class="font-display text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-6" style="color: var(--color-primary);">
             {t(locale, "about.story.heading")}
           </h2>
           <div class="prose-themed text-base md:text-lg leading-relaxed" style="color: var(--color-text);">
             <p>{localized(pages.about.story, locale)}</p>
           </div>
-          <hr class="divider-squiggle mt-10 mb-0" style="margin-left: 0;" />
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Pull quote — dark band -->
-  <section class="section-dark relative overflow-hidden">
-    <div class="section-container py-16 md:py-24 text-center relative" style="z-index: 1;">
-      <blockquote>
-        <p class="font-display text-2xl md:text-4xl lg:text-5xl leading-tight max-w-4xl mx-auto" style="color: var(--color-hero-text);">
-          &ldquo;{localized(settings.tagline, locale)}&rdquo;
+  <!-- Pull quote — full-width gold/secondary takeover -->
+  <section class="about-quote-section relative overflow-hidden">
+    <div class="about-quote-ghost font-display">
+      &ldquo;&rdquo;
+    </div>
+    <div class="section-container py-16 md:py-24 lg:py-28 relative" style="z-index: 1;">
+      <blockquote class="max-w-4xl mx-auto text-center">
+        <p class="about-quote-text font-heading italic text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight">
+          &ldquo;{tagline}&rdquo;
         </p>
+        <footer class="mt-6 font-display text-sm tracking-widest" style="opacity: 0.7;">
+          &mdash; {siteName}
+        </footer>
       </blockquote>
     </div>
   </section>
 
-  <!-- The Kitchen — reversed layout (text left, image right) -->
-  <section style="background-color: var(--color-bg);">
-    <div class="grid md:grid-cols-2">
+  <!-- Kitchen — reversed layout, image bleeds right -->
+  <section class="relative overflow-hidden" style="background-color: var(--color-bg);">
+    <div class="about-kitchen-grid">
       <!-- Text side -->
-      <div class="flex items-center order-2 md:order-1">
-        <div class="p-8 md:p-12 lg:p-16 xl:p-20 max-w-xl md:ml-auto">
-          <h2 class="font-display text-3xl md:text-4xl lg:text-5xl mb-8" style="color: var(--color-primary);">
+      <div class="about-kitchen-text flex items-center order-2 md:order-1">
+        <div class="py-12 px-6 md:py-16 md:px-10 lg:py-20 lg:pr-16 lg:pl-12 xl:pr-20">
+          <h2 class="font-display text-3xl md:text-4xl lg:text-5xl xl:text-6xl mb-6" style="color: var(--color-primary);">
             {t(locale, "about.chef.heading")}
           </h2>
           <div class="prose-themed text-base md:text-lg leading-relaxed" style="color: var(--color-text);">
@@ -88,23 +106,23 @@ const cuisine = localized(settings.cuisine, locale);
         </div>
       </div>
 
-      <!-- Photo side -->
-      <div class="relative aspect-[4/5] md:aspect-auto order-1 md:order-2">
+      <!-- Photo bleeding off right edge, slightly tilted -->
+      <div class="about-kitchen-image relative order-1 md:order-2">
         {pages.about.kitchenImage ? (
           <img
             src={pages.about.kitchenImage}
-            alt={localized(pages.about.chef, locale).slice(0, 80)}
-            class="absolute inset-0 w-full h-full object-cover"
+            alt={t(locale, "about.chef.heading")}
+            class="absolute inset-0 w-full h-full object-cover about-kitchen-img"
             loading="lazy"
           />
         ) : (
-          <div class="absolute inset-0" style="background: linear-gradient(200deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);"></div>
+          <div class="absolute inset-0" style="background: linear-gradient(200deg, var(--color-surface) 0%, var(--color-surface-alt) 100%);"></div>
         )}
       </div>
     </div>
   </section>
 
-  <!-- CTA band — dramatic dark with starburst -->
+  <!-- CTA — dark with starburst -->
   <section class="section-dark relative overflow-hidden">
     <div class="ghost-text top-1/2 left-0 -translate-x-1/4 -translate-y-1/2" style="font-size: clamp(4rem, 10vw, 10rem);">
       {t(locale, "cta.booknow" as any)}
@@ -115,7 +133,7 @@ const cuisine = localized(settings.cuisine, locale);
           {t(locale, "about.cta" as any)}
         </h2>
         <p class="text-base max-w-sm" style="color: var(--color-hero-muted);">
-          {localized(settings.tagline, locale)}
+          {tagline}
         </p>
       </div>
       <a href={localePath(locale, "/book/")} class="btn-starburst">
@@ -123,4 +141,141 @@ const cuisine = localized(settings.cuisine, locale);
       </a>
     </div>
   </section>
+
 </Base>
+
+<style>
+  /* Hero duotone overlay — brand-colour tinted */
+  .about-hero {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .about-hero-img {
+    mix-blend-mode: luminosity;
+    opacity: 0.45;
+  }
+
+  .about-duotone {
+    background: linear-gradient(
+      160deg,
+      var(--color-hero-bg) 0%,
+      color-mix(in srgb, var(--color-hero-bg) 70%, var(--color-primary)) 50%,
+      color-mix(in srgb, var(--color-hero-bg) 50%, var(--color-secondary)) 100%
+    );
+    mix-blend-mode: multiply;
+    z-index: 1;
+  }
+
+  /* Title fills the viewport width, sits at the bottom of the hero */
+  .about-title-wrap {
+    position: relative;
+    overflow: hidden;
+    line-height: 0;
+  }
+
+  .about-title {
+    font-size: clamp(5rem, 22vw, 20rem);
+    color: var(--color-hero-text);
+    letter-spacing: 0.02em;
+    line-height: 0.82;
+    padding-left: 1.5rem;
+    margin-bottom: -0.06em;
+    white-space: nowrap;
+  }
+
+  /* Story section — asymmetric 40/60 with image bleeding left */
+  .about-story-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .about-story-image {
+    aspect-ratio: 4/3;
+  }
+
+  @media (min-width: 768px) {
+    .about-story-grid {
+      grid-template-columns: 45% 55%;
+    }
+
+    .about-story-image {
+      aspect-ratio: auto;
+      min-height: 500px;
+      margin-left: -3rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .about-story-image {
+      margin-left: -5rem;
+    }
+  }
+
+  /* Gold/secondary pull quote takeover */
+  .about-quote-section {
+    background-color: var(--color-secondary);
+    color: var(--color-hero-bg);
+  }
+
+  .about-quote-text {
+    color: var(--color-hero-bg);
+  }
+
+  .about-quote-ghost {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(10rem, 30vw, 28rem);
+    line-height: 0.85;
+    color: rgba(0, 0, 0, 0.06);
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  /* Kitchen section — reversed, image bleeds right */
+  .about-kitchen-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .about-kitchen-image {
+    aspect-ratio: 4/3;
+  }
+
+  .about-kitchen-img {
+    transition: transform 6s ease;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .about-kitchen-image:hover .about-kitchen-img {
+      transform: scale(1.03) rotate(0.5deg);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .about-kitchen-grid {
+      grid-template-columns: 55% 45%;
+    }
+
+    .about-kitchen-image {
+      aspect-ratio: auto;
+      min-height: 500px;
+      margin-right: -3rem;
+    }
+
+    .about-kitchen-text {
+      justify-content: flex-end;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .about-kitchen-image {
+      margin-right: -5rem;
+    }
+  }
+</style>

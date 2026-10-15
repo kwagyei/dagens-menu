@@ -4,7 +4,7 @@ backend:
   branch: main
   base_url: https://decap-oauth.kwabenasasuboakye.workers.dev
 
-media_folder: "sites/bistro/images"
+media_folder: "sites/westafrican/images"
 public_folder: "/images"
 
 collections:
@@ -13,7 +13,7 @@ collections:
     files:
       - name: settings
         label: Site settings
-        file: "sites/bistro/content/settings.json"
+        file: "sites/westafrican/content/settings.json"
         fields:
           - label: Name
             name: name
@@ -60,7 +60,7 @@ collections:
     files:
       - name: theme
         label: Theme settings
-        file: "sites/bistro/theme.json"
+        file: "sites/westafrican/theme.json"
         fields:
           - label: Colours
             name: colors
@@ -90,7 +90,7 @@ collections:
     files:
       - name: hours
         label: Weekly hours and exceptions
-        file: "sites/bistro/content/hours.json"
+        file: "sites/westafrican/content/hours.json"
         fields:
           - label: Weekly
             name: weekly
@@ -134,7 +134,7 @@ collections:
     files:
       - name: menu
         label: Menu categories and items
-        file: "sites/bistro/content/menu.json"
+        file: "sites/westafrican/content/menu.json"
         fields:
           - label: Categories
             name: categories
@@ -202,7 +202,7 @@ collections:
     files:
       - name: pages
         label: Page content
-        file: "sites/bistro/content/pages.json"
+        file: "sites/westafrican/content/pages.json"
         fields:
           - label: Home
             name: home
@@ -240,7 +240,7 @@ collections:
     files:
       - name: gallery
         label: Gallery images
-        file: "sites/bistro/content/gallery.json"
+        file: "sites/westafrican/content/gallery.json"
         fields:
           - label: Images
             name: images

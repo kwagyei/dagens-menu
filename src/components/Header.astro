@@ -26,7 +26,7 @@ const currentPath = Astro.url.pathname.replace(/^\/en/, "") || "/";
   <nav class="section-container flex items-center justify-between py-3 md:py-4" aria-label={locale === "sv" ? "Huvudnavigering" : "Main navigation"}>
 
     <!-- Logo / site name — large Bebas Neue -->
-    <a href={localePath(locale, "/")} class="font-display text-2xl md:text-3xl tracking-wider" style={`color: var(--color-hero-text); text-transform: uppercase; letter-spacing: 0.1em; line-height: 1;`}>
+    <a href={localePath(locale, "/")} class="font-display text-3xl md:text-4xl lg:text-5xl tracking-wider" style={`color: var(--color-hero-text); text-transform: uppercase; letter-spacing: 0.1em; line-height: 1;`}>
       {siteName}
     </a>
 
@@ -61,10 +61,17 @@ const currentPath = Astro.url.pathname.replace(/^\/en/, "") || "/";
         {altLocale === "en" ? "EN" : "SV"}
       </a>
 
-      <!-- Booking CTA (desktop) — eye-catching accent button -->
+      <!-- Booking CTA (desktop) — starburst on large screens, pill on medium -->
       <a
         href={localePath(locale, "/book/")}
-        class="btn header-cta hidden md:inline-flex"
+        class="btn header-cta hidden md:inline-flex lg:hidden"
+      >
+        {t(locale, "nav.book.short" as any)}
+      </a>
+      <a
+        href={localePath(locale, "/book/")}
+        class="btn-starburst hidden lg:inline-flex"
+        style="width: 5.5rem; height: 5.5rem; font-size: 0.7rem; position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%);"
       >
         {t(locale, "nav.book.short" as any)}
       </a>

@@ -60,4 +60,5 @@ export default {
   "about.cta": "Come taste for yourself",
   "menu.cta": "Like what you see?",
   "nav.book.short": "Book",
+  "home.quote.attribution": "— The Kitchen",
 } as const;

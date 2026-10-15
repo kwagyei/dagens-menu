@@ -12,67 +12,73 @@ const siteName = localized(settings.name, locale);
 ---
 
 <Base title={t(locale, "nav.contact")}>
-  <!-- Contact hero — dark with ghost watermark -->
-  <section class="section-dark relative overflow-hidden">
-    <div class="ghost-text top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="font-size: clamp(3rem, 12vw, 10rem);">
-      {t(locale, "footer.visit" as any)}
-    </div>
-    <div class="section-container py-16 md:py-24 relative" style="z-index: 1;">
+
+  <!-- Hero — dark section with massive title -->
+  <section class="section-dark contact-hero relative overflow-hidden">
+    <div class="section-container relative py-20 md:py-28" style="z-index: 1;">
       <p class="font-display text-base tracking-widest mb-4" style="color: var(--color-hero-muted);">
         {siteName}
       </p>
-      <h1 class="font-display text-5xl md:text-6xl lg:text-7xl mb-4" style="color: var(--color-hero-text);">
+    </div>
+    <!-- Massive title at bottom -->
+    <div class="contact-title-wrap relative" style="z-index: 1;">
+      <h1 class="contact-title font-display">
         {t(locale, "nav.contact")}
       </h1>
-      <div class="flex items-center gap-3" style="max-width: 10rem;">
-        <div style="flex:1; height: 2px; background-color: var(--color-secondary); opacity: 0.6;"></div>
-        <div style="width: 6px; height: 6px; transform: rotate(45deg); background-color: var(--color-secondary); opacity: 0.6;"></div>
-      </div>
     </div>
   </section>
 
-  <!-- Contact info — large, tappable -->
+  <!-- Contact info — dramatic, large typography -->
   <section style="background-color: var(--color-bg);">
     <div class="section-container py-16 md:py-24">
-      <div class="grid gap-10 md:gap-16 md:grid-cols-2">
-        <!-- Left: contact details as big blocks -->
-        <div class="space-y-10">
+      <div class="grid gap-12 md:gap-16 lg:grid-cols-5">
+        <!-- Left: contact details as big blocks — 3 cols -->
+        <div class="lg:col-span-3 space-y-12">
+          <!-- Phone — HUGE -->
           <div>
-            <h2 class="font-display text-sm tracking-widest mb-3" style="color: var(--color-text-muted);">
-              {t(locale, "contact.address")}
-            </h2>
-            <p class="font-heading text-xl md:text-2xl font-medium leading-snug" style="color: var(--color-text);">
-              {settings.address}
-            </p>
-          </div>
-
-          <div>
-            <h2 class="font-display text-sm tracking-widest mb-3" style="color: var(--color-text-muted);">
+            <h2 class="font-display text-sm tracking-widest mb-4" style="color: var(--color-text-muted);">
               {t(locale, "contact.phone")}
             </h2>
             <a
               href={`tel:${settings.phone}`}
-              class="font-display text-3xl md:text-4xl block"
-              style="color: var(--color-primary); text-decoration: none; transition: color 0.15s ease;"
+              class="contact-phone font-display block"
+              style="color: var(--color-primary); text-decoration: none;"
             >
               {settings.phone}
             </a>
           </div>
 
+          <!-- Email — large -->
           <div>
-            <h2 class="font-display text-sm tracking-widest mb-3" style="color: var(--color-text-muted);">
+            <h2 class="font-display text-sm tracking-widest mb-4" style="color: var(--color-text-muted);">
               {t(locale, "contact.email")}
             </h2>
             <a
               href={`mailto:${settings.email}`}
-              class="font-heading text-lg md:text-xl font-medium"
-              style="color: var(--color-primary); text-decoration: underline; text-underline-offset: 4px;"
+              class="contact-email font-display block"
+              style="color: var(--color-primary); text-decoration: none; border-bottom: 2px solid var(--color-secondary); display: inline-block; padding-bottom: 2px;"
             >
               {settings.email}
             </a>
           </div>
 
-          <div class="pt-4">
+          <!-- Address with map pin icon -->
+          <div>
+            <h2 class="font-display text-sm tracking-widest mb-4" style="color: var(--color-text-muted);">
+              {t(locale, "contact.address")}
+            </h2>
+            <div class="flex items-start gap-3">
+              <svg class="contact-pin flex-shrink-0 mt-1" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-secondary);">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                <circle cx="12" cy="9" r="2.5"/>
+              </svg>
+              <p class="font-heading text-xl md:text-2xl lg:text-3xl font-medium leading-snug" style="color: var(--color-text);">
+                {settings.address}
+              </p>
+            </div>
+          </div>
+
+          <div class="pt-2">
             <a href={localePath(locale, "/book/")} class="btn btn-primary">
               {t(locale, "home.book")}
               <span aria-hidden="true">&rarr;</span>
@@ -80,24 +86,124 @@ const siteName = localized(settings.name, locale);
           </div>
         </div>
 
-        <!-- Right: opening hours in a lifted card -->
-        <div class="card-lifted p-6 md:p-8 h-fit">
-          <h2 class="font-display text-xl md:text-2xl mb-6" style="color: var(--color-primary);">
-            {t(locale, "contact.hours")}
-          </h2>
-          <HoursTable hours={hours} />
+        <!-- Right: hours card with gold top border — 2 cols -->
+        <div class="lg:col-span-2">
+          <div class="contact-hours-card p-6 md:p-8">
+            <h2 class="font-display text-xl md:text-2xl mb-6" style="color: var(--color-primary);">
+              {t(locale, "contact.hours")}
+            </h2>
+            <HoursTable hours={hours} />
+          </div>
         </div>
       </div>
     </div>
   </section>
 
+  <!-- Wavy SVG divider -->
+  <div class="contact-wave-divider" style="background-color: var(--color-bg);">
+    <svg viewBox="0 0 1440 80" preserveAspectRatio="none" class="contact-wave-svg" style="display: block; width: 100%;">
+      <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z" style="fill: var(--color-hero-bg);"/>
+    </svg>
+  </div>
+
   <!-- Map — dark section -->
   <section class="section-dark">
     <div class="section-container py-12 md:py-16">
-      <h2 class="font-display text-2xl md:text-3xl mb-6" style="color: var(--color-hero-text);">
-        {t(locale, "footer.visit" as any)}
-      </h2>
+      <div class="flex items-center gap-4 mb-6">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--color-secondary);">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+          <circle cx="12" cy="9" r="2.5"/>
+        </svg>
+        <h2 class="font-display text-2xl md:text-3xl" style="color: var(--color-hero-text);">
+          {t(locale, "footer.visit" as any)}
+        </h2>
+      </div>
       <MapEmbed />
     </div>
   </section>
+
 </Base>
+
+<style>
+  /* Hero with massive bottom title */
+  .contact-hero {
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+
+  .contact-title-wrap {
+    overflow: hidden;
+    line-height: 0;
+  }
+
+  .contact-title {
+    font-size: clamp(5rem, 20vw, 18rem);
+    color: var(--color-hero-text);
+    letter-spacing: 0.02em;
+    line-height: 0.85;
+    padding-left: 1.5rem;
+    margin-bottom: -0.06em;
+    white-space: nowrap;
+  }
+
+  /* Phone number — huge display font */
+  .contact-phone {
+    font-size: clamp(2rem, 6vw, 4.5rem);
+    line-height: 1;
+    letter-spacing: 0.02em;
+    transition: color 0.15s ease;
+  }
+
+  .contact-phone:hover {
+    color: var(--color-secondary) !important;
+  }
+
+  /* Email — large display font */
+  .contact-email {
+    font-size: clamp(1.25rem, 3vw, 2.25rem);
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    transition: color 0.15s ease;
+  }
+
+  .contact-email:hover {
+    color: var(--color-secondary) !important;
+  }
+
+  /* Map pin subtle pulse */
+  .contact-pin {
+    animation: pin-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pin-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact-pin {
+      animation: none;
+    }
+  }
+
+  /* Hours card with gold top border */
+  .contact-hours-card {
+    background-color: var(--color-bg);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--color-border);
+    border-top: 4px solid var(--color-secondary);
+    position: sticky;
+    top: 6rem;
+  }
+
+  /* Wavy SVG divider */
+  .contact-wave-divider {
+    margin-top: -1px;
+  }
+
+  .contact-wave-svg {
+    height: clamp(40px, 6vw, 80px);
+  }
+</style>

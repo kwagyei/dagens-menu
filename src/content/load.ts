@@ -62,6 +62,8 @@ export interface Pages {
     highlights: string[];
     heroImage?: string;
     highlightImages?: Record<string, string>;
+    pullQuote?: LocalizedString;
+    ctaImage?: string;
   };
   menu: {
     heroImage?: string;

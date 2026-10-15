@@ -60,4 +60,5 @@ export default {
   "about.cta": "Kom och smaka sjalv",
   "menu.cta": "Gillar du vad du ser?",
   "nav.book.short": "Boka",
+  "home.quote.attribution": "— Koket",
 } as const;

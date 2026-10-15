@@ -10,7 +10,8 @@
           "price": 8500,
           "tags": ["vegan", "gluten-free", "spicy"],
           "allergens": [],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/gallery-kelewele-plate.jpg"
         },
         {
           "name": { "sv": "Suya-spett", "en": "Suya skewers" },
@@ -40,7 +41,8 @@
           "price": 17500,
           "tags": ["spicy"],
           "allergens": [],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/jollof-grilled-chicken.jpg"
         },
         {
           "name": { "sv": "Egusi-soppa", "en": "Egusi soup" },
@@ -86,7 +88,8 @@
           "price": 7500,
           "tags": ["vegetarian"],
           "allergens": ["gluten", "eggs"],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/gallery-puff-puff.jpg"
         },
         {
           "name": { "sv": "Mangoglass", "en": "Mango sorbet" },
