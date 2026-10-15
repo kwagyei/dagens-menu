@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import HoursTable from "../components/HoursTable.astro";
+import MapEmbed from "../components/MapEmbed.astro";
 import { getSettings, getHours } from "../content/load";
 import { getLocale, t } from "../i18n";
 
@@ -33,39 +34,14 @@ const hours = getHours();
         </a>
       </div>
 
-      {settings.mapEmbed && (
-        <div>
-          <button
-            id="load-map"
-            class="px-4 py-2 text-sm font-medium"
-            style={`background-color: var(--color-primary); color: var(--color-surface); border-radius: var(--radius);`}
-          >
-            {t(locale, "contact.map.load")}
-          </button>
-          <div id="map-container" class="mt-4 hidden aspect-video w-full overflow-hidden" style={`border-radius: var(--radius);`}></div>
-        </div>
-      )}
+      <MapEmbed />
     </div>
 
     <div class="p-6" style={`background-color: var(--color-surface); border-radius: var(--radius);`}>
-      <h2 class="text-xl font-bold mb-4" style={`font-family: var(--font-heading);`}>
+      <h2 class="text-xl font-bold mb-4" style="font-family: var(--font-heading);">
         {t(locale, "contact.hours")}
       </h2>
       <HoursTable hours={hours} />
     </div>
   </div>
 </Base>
-
-{settings.mapEmbed && (
-  <script define:vars={{ mapEmbed: settings.mapEmbed }}>
-    const btn = document.getElementById("load-map");
-    const container = document.getElementById("map-container");
-    if (btn && container) {
-      btn.addEventListener("click", () => {
-        container.innerHTML = `<iframe src="${mapEmbed}" class="w-full h-full" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map"></iframe>`;
-        container.classList.remove("hidden");
-        btn.remove();
-      });
-    }
-  </script>
-)}
