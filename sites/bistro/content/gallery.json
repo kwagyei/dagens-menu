@@ -1,0 +1,16 @@
+{
+  "images": [
+    {
+      "src": "/images/gallery/interior.jpg",
+      "alt": { "sv": "Restaurangens interiör med träbord och varmt ljus", "en": "Restaurant interior with wooden tables and warm lighting" }
+    },
+    {
+      "src": "/images/gallery/dish-1.jpg",
+      "alt": { "sv": "Dagens soppa serverad med nybakat bröd", "en": "Soup of the day served with freshly baked bread" }
+    },
+    {
+      "src": "/images/gallery/bar.jpg",
+      "alt": { "sv": "Bardisken med hantverksöl på fat", "en": "Bar counter with craft beer on tap" }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+---
+import Base from "../layouts/Base.astro";
+import { getSettings } from "../content/load";
+import { getLocale, t } from "../i18n";
+
+const locale = getLocale(Astro.url);
+const settings = getSettings();
+const hasBooking = settings.booking.provider !== "none";
+const hasMap = !!settings.mapEmbed;
+const hasThirdParty = hasBooking || hasMap;
+---
+
+<Base title={t(locale, "privacy.heading")}>
+  <h1 class="text-3xl font-bold mb-8" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
+    {t(locale, "privacy.heading")}
+  </h1>
+
+  <div class="prose max-w-none space-y-6">
+    <p>{t(locale, "privacy.intro")}</p>
+
+    {!hasThirdParty && (
+      <p class="font-medium">{t(locale, "privacy.no-third-party")}</p>
+    )}
+
+    {hasBooking && (
+      <section>
+        <h2 class="text-xl font-bold mb-2" style={`font-family: var(--font-heading);`}>
+          {t(locale, "privacy.booking.heading")}
+        </h2>
+        <p>{t(locale, "privacy.booking.text")}</p>
+      </section>
+    )}
+
+    {hasMap && (
+      <section>
+        <h2 class="text-xl font-bold mb-2" style={`font-family: var(--font-heading);`}>
+          {t(locale, "privacy.map.heading")}
+        </h2>
+        <p>{t(locale, "privacy.map.text")}</p>
+      </section>
+    )}
+
+    <section>
+      <h2 class="text-xl font-bold mb-2" style={`font-family: var(--font-heading);`}>
+        {t(locale, "privacy.cookies.heading")}
+      </h2>
+      <p>{t(locale, "privacy.cookies.text")}</p>
+    </section>
+  </div>
+</Base>

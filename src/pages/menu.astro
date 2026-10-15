@@ -1,0 +1,14 @@
+---
+import Base from "../layouts/Base.astro";
+import MenuList from "../components/MenuList.astro";
+import { getLocale, t } from "../i18n";
+
+const locale = getLocale(Astro.url);
+---
+
+<Base title={t(locale, "nav.menu")}>
+  <h1 class="text-3xl font-bold mb-8" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
+    {t(locale, "nav.menu")}
+  </h1>
+  <MenuList />
+</Base>

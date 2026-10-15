@@ -1,0 +1,98 @@
+---
+import { getSettings, localized } from "../content/load";
+import { getLocale, t, localePath } from "../i18n";
+
+const settings = getSettings();
+const locale = getLocale(Astro.url);
+const siteName = localized(settings.name, locale);
+const altLocale = locale === "sv" ? "en" : "sv";
+const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
+
+const navItems = [
+  { key: "nav.home" as const, path: "/" },
+  { key: "nav.menu" as const, path: "/menu/" },
+  { key: "nav.book" as const, path: "/book/" },
+  { key: "nav.about" as const, path: "/about/" },
+  { key: "nav.gallery" as const, path: "/gallery/" },
+  { key: "nav.contact" as const, path: "/contact/" },
+];
+
+const currentPath = Astro.url.pathname.replace(/^\/en/, "") || "/";
+---
+
+<header class="border-b" style={`border-color: var(--color-primary); background-color: var(--color-surface);`}>
+  <nav class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4" aria-label={locale === "sv" ? "Huvudnavigering" : "Main navigation"}>
+    <a href={localePath(locale, "/")} class="text-xl font-bold" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
+      {siteName}
+    </a>
+
+    <button
+      id="menu-toggle"
+      class="md:hidden p-2"
+      aria-expanded="false"
+      aria-controls="nav-menu"
+      aria-label={locale === "sv" ? "Oppna meny" : "Open menu"}
+    >
+      <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+
+    <ul id="nav-menu" class="hidden md:flex gap-6 text-sm">
+      {navItems.map(({ key, path }) => {
+        const isActive = currentPath === path;
+        return (
+          <li>
+            <a
+              href={localePath(locale, path)}
+              class:list={["hover:underline", { "font-bold underline": isActive }]}
+              {...(isActive ? { "aria-current": "page" } : {})}
+            >
+              {t(locale, key)}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+
+    <a href={altPath} class="text-sm underline hidden md:inline" style={`color: var(--color-text-muted);`} hreflang={altLocale} lang={altLocale}>
+      {altLocale === "en" ? "English" : "Svenska"}
+    </a>
+  </nav>
+
+  <!-- Mobile nav -->
+  <ul id="nav-menu-mobile" class="hidden flex-col gap-2 px-4 pb-4 text-sm md:hidden">
+    {navItems.map(({ key, path }) => {
+      const isActive = currentPath === path;
+      return (
+        <li>
+          <a
+            href={localePath(locale, path)}
+            class:list={["block py-1 hover:underline", { "font-bold underline": isActive }]}
+            {...(isActive ? { "aria-current": "page" } : {})}
+          >
+            {t(locale, key)}
+          </a>
+        </li>
+      );
+    })}
+    <li>
+      <a href={altPath} class="block py-1 underline" style={`color: var(--color-text-muted);`} hreflang={altLocale} lang={altLocale}>
+        {altLocale === "en" ? "English" : "Svenska"}
+      </a>
+    </li>
+  </ul>
+</header>
+
+<script>
+  const toggle = document.getElementById("menu-toggle");
+  const menu = document.getElementById("nav-menu-mobile");
+  if (toggle && menu) {
+    toggle.addEventListener("click", () => {
+      const expanded = toggle.getAttribute("aria-expanded") === "true";
+      toggle.setAttribute("aria-expanded", String(!expanded));
+      menu.classList.toggle("hidden");
+      menu.classList.toggle("flex");
+    });
+  }
+</script>

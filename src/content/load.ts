@@ -66,6 +66,15 @@ export interface Pages {
   };
 }
 
+export interface GalleryImage {
+  src: string;
+  alt: LocalizedString;
+}
+
+export interface Gallery {
+  images: GalleryImage[];
+}
+
 export interface Theme {
   colors: {
     primary: string;
@@ -99,8 +108,41 @@ export function getPages(): Pages {
   return loadJson<Pages>("content/pages.json");
 }
 
+export function getGallery(): Gallery {
+  return loadJson<Gallery>("content/gallery.json");
+}
+
 export function getTheme(): Theme {
   return loadJson<Theme>("theme.json");
+}
+
+/** Resolve highlight IDs like "lunch-0" to actual menu items */
+export function resolveHighlights(menu: Menu, ids: string[]): MenuItem[] {
+  const items: MenuItem[] = [];
+  for (const id of ids) {
+    const dashIdx = id.lastIndexOf("-");
+    if (dashIdx === -1) continue;
+    const catId = id.slice(0, dashIdx);
+    const itemIdx = parseInt(id.slice(dashIdx + 1), 10);
+    const category = menu.categories.find((c) => c.id === catId);
+    if (category && category.items[itemIdx]) {
+      items.push(category.items[itemIdx]);
+    }
+  }
+  return items;
+}
+
+/** Get today's opening hours */
+export function getTodayHours(hours: OpeningHours): DayHours | null {
+  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const today = days[new Date().getDay()];
+
+  // Check exceptions first
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const exception = hours.exceptions.find((e) => e.date === todayStr);
+  if (exception) return exception.hours;
+
+  return hours.weekly[today] ?? null;
 }
 
 /** Format a price in minor units (ore) to SEK display string */

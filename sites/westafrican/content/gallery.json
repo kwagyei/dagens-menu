@@ -1,0 +1,16 @@
+{
+  "images": [
+    {
+      "src": "/images/gallery/dining-room.jpg",
+      "alt": { "sv": "Matsalen med färgglada textilier och träinredning", "en": "Dining room with colourful textiles and wooden decor" }
+    },
+    {
+      "src": "/images/gallery/jollof.jpg",
+      "alt": { "sv": "Jollof ris med grillad kyckling", "en": "Jollof rice with grilled chicken" }
+    },
+    {
+      "src": "/images/gallery/spices.jpg",
+      "alt": { "sv": "Kryddor och färska råvaror på marknaden", "en": "Spices and fresh ingredients at the market" }
+    }
+  ]
+}

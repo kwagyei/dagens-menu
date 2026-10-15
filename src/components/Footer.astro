@@ -1,0 +1,15 @@
+---
+import { getSettings, localized } from "../content/load";
+import { getLocale, t, localePath } from "../i18n";
+
+const settings = getSettings();
+const locale = getLocale(Astro.url);
+const siteName = localized(settings.name, locale);
+---
+
+<footer class="border-t py-6 text-center text-sm" style={`border-color: var(--color-primary); color: var(--color-text-muted);`}>
+  <p>&copy; {new Date().getFullYear()} {siteName}. {t(locale, "footer.rights")}.</p>
+  <p class="mt-2">
+    <a href={localePath(locale, "/privacy/")} class="underline">{t(locale, "nav.privacy")}</a>
+  </p>
+</footer>
