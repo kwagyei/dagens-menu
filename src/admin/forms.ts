@@ -133,6 +133,13 @@ export function parseCategoryForm(form: FormData, locale: Locale): ParsedCategor
   return { values, errors, name: Object.keys(errors).length ? null : { sv: cleanText(values.name_sv), en: cleanText(values.name_en) } };
 }
 
+/**
+ * The browser's maxlength counts UTF-16 units, not characters: one emoji is two, so a
+ * maxlength equal to the limit would stop a valid name short. Twice the limit still stops
+ * a pasted novel; the server checks the real limit and says so in the owner's words.
+ */
+export const inputMaxLength = (limit: number) => limit * 2;
+
 /** Ore → what the owner would type: 14500 → "145", 14550 → "145,50". */
 export function kronorText(ore: number): string {
   const kr = Math.floor(ore / 100);
@@ -249,15 +256,15 @@ export function parseSettingsForm(form: FormData, locale: Locale, storedLinks: R
     const error = textError(locale, values[name], max);
     if (error) errors[name] = error;
   }
-  const phone = values.phone.trim();
-  const email = values.email.trim();
-  if (!ownerSettingsSchema.shape.phone.safeParse(phone).success) errors.phone = t(locale, "admin.texts.badPhone");
-  if (!ownerSettingsSchema.shape.email.safeParse(email).success) errors.email = t(locale, "admin.texts.badEmail");
+  const phone = ownerSettingsSchema.shape.phone.safeParse(values.phone);
+  const email = ownerSettingsSchema.shape.email.safeParse(values.email.trim());
+  if (!phone.success) errors.phone = t(locale, "admin.texts.badPhone");
+  if (!email.success) errors.email = t(locale, "admin.texts.badEmail");
   for (const network of SOCIAL_NETWORKS) {
     const url = values.social[network];
     if (url && !socialLinkUrl.safeParse(url).success) errors[`social_${network}`] = t(locale, "admin.texts.badLink");
   }
-  if (Object.keys(errors).length > 0) return { values, errors, settings: null };
+  if (Object.keys(errors).length > 0 || !phone.success || !email.success) return { values, errors, settings: null };
 
   const offered = new Set<string>(SOCIAL_NETWORKS);
   const kept = Object.entries(storedLinks).filter(([network]) => !offered.has(network));
@@ -271,8 +278,8 @@ export function parseSettingsForm(form: FormData, locale: Locale, storedLinks: R
       tagline: pair("tagline"),
       cuisine: pair("cuisine"),
       address: cleanText(values.address),
-      phone,
-      email,
+      phone: phone.data,
+      email: email.data,
       socialLinks: Object.fromEntries([...kept, ...entered]),
     },
   };
