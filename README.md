@@ -75,6 +75,19 @@ the colours and fonts from `sites/<SITE>/theme.json`.
   to a database means writing a new source, not touching every template.
 - **Dishes have stable ids.** Home-page highlights point at a dish's id, not its position,
   so reordering the menu can't change which dish is featured.
+- **The database repeats the schema's rules (in progress: the move to D1).** Content is
+  moving into Cloudflare D1 so owner edits go live immediately. The tables are `STRICT`,
+  and CHECK constraints repeat the schema's core rules, so a bug in the app or a
+  hand-written query still can't store a negative price or a one-language name.
+  `tests/db/` runs in the Workers runtime against a local D1 and breaks each constraint
+  with raw SQL.
+- **Every content write is one transaction.** The change, a site-wide `content_version`
+  bump and an audit entry are written together, or nothing is. An edit made from a stale
+  form is a conflict, not a silent overwrite. Every query is scoped to the Worker's own
+  site, so one restaurant's ids don't exist for another.
+- **The JSON round-trips losslessly.** `npm run seed` loads a demo's JSON into D1, and the
+  export reads it back in the same shape. A test checks that both demos come back exactly
+  as they went in.
 - **"Open today" is worked out in the browser.** A static page is built once. If the
   build picked "today", the badge would show the hours for the day of the last deploy.
   The page carries the weekly hours and a small script picks today's in

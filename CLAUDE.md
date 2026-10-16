@@ -25,6 +25,8 @@ npm run build:westafrican # build westafrican
 npm test                 # vitest: unit, content schema, parity, worker tests
 npm run check            # astro check, fails on warnings
 npm run check:consent    # after a build: no third-party requests on load
+npm run test:db          # database tests in workerd with a local D1 (migrations/)
+npm run seed -- --site bistro [--reset] [--remote]   # load a demo's JSON into D1
 ```
 
 When starting the dev server, use background mode:
