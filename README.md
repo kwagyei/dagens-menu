@@ -122,8 +122,11 @@ is the seed data the demos are loaded from.
   SameSite=Lax, and the database keeps only its hash. A session ends after 30 days, after
   14 days unused, or the moment the operator revokes the owner. Starting a passkey
   ceremony writes nothing: the challenge travels in a signed five-minute cookie.
-- **Admin writes are guarded three ways:** an Origin check on every write (form or fetch),
-  a form token tied to the session, and 10 attempts a minute per IP.
+- **Admin writes are guarded:** an Origin check on every write (form or fetch) and a form
+  token tied to the session. Sign-in, enrolment and invite links are limited to 10 a minute
+  per IP; ordinary edits aren't, so an owner can mark a dozen dishes sold out in a minute.
+  Each sign-in challenge works once, even for synced passkeys that don't count signatures.
+  The admin has its own stricter CSP: no inline scripts at all.
 - **If the database is unreachable, the site still answers.** Each Worker keeps the last
   good content in memory and serves it, marked stale, when D1 fails or takes longer than
   1.5 s. With nothing held, visitors get a page with the restaurant's phone number,
