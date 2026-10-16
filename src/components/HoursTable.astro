@@ -11,13 +11,13 @@ const locale = getLocale(Astro.url);
 
 const dayKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 const dayNames: Record<string, Record<string, string>> = {
-  monday: { sv: "Mandag", en: "Monday" },
+  monday: { sv: "Måndag", en: "Monday" },
   tuesday: { sv: "Tisdag", en: "Tuesday" },
   wednesday: { sv: "Onsdag", en: "Wednesday" },
   thursday: { sv: "Torsdag", en: "Thursday" },
   friday: { sv: "Fredag", en: "Friday" },
-  saturday: { sv: "Lordag", en: "Saturday" },
-  sunday: { sv: "Sondag", en: "Sunday" },
+  saturday: { sv: "Lördag", en: "Saturday" },
+  sunday: { sv: "Söndag", en: "Sunday" },
 };
 ---
 

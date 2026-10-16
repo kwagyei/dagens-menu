@@ -1,7 +1,7 @@
 {
   "home": {
     "tagline": {
-      "sv": "Vastafrikanskt kok i Goteborg",
+      "sv": "Västafrikanskt kök i Göteborg",
       "en": "West African kitchen in Gothenburg"
     },
     "highlights": ["starters-0", "mains-0", "mains-4"],
@@ -12,7 +12,7 @@
       "mains-4": "/images/westafrican/jollof-grilled-chicken.jpg"
     },
     "pullQuote": {
-      "sv": "Smaken av hem, lagad med karlek tusen mil fran hemmet.",
+      "sv": "Smaken av hemma, lagad med kärlek tusen mil hemifrån.",
       "en": "The taste of home, cooked with love a thousand miles from home."
     },
     "ctaImage": "/images/westafrican/gallery-grilling-skewers.jpg"
@@ -22,11 +22,11 @@
   },
   "about": {
     "story": {
-      "sv": "Chez Abena oppnade 2022 pa Sodra vagen i Goteborg med en drom: att dela det vastafrikanska kokets rika smaker med Sverige. Var mat ar rotad i traditioner fran Ghana, Nigeria och Senegal — recept som gatt i arv genom generationer, lagade med karlek och omtanke. Vi anvander sa mycket narproducerat som mojligt och importerar de kryddor och ravaror som inte kan odlas har.",
-      "en": "Chez Abena opened in 2022 on Sodra vagen in Gothenburg with a dream: to share the rich flavours of West African cooking with Sweden. Our food is rooted in traditions from Ghana, Nigeria and Senegal — recipes passed down through generations, cooked with love and care. We source locally wherever possible and import the spices and ingredients that cannot be grown here."
+      "sv": "Chez Abena öppnade 2022 på Södra vägen i Göteborg med en dröm: att dela det västafrikanska kökets rika smaker med Sverige. Vår mat är rotad i traditioner från Ghana, Nigeria och Senegal — recept som gått i arv i generationer, lagade med kärlek och omtanke. Vi använder så mycket närproducerat som möjligt och importerar de kryddor och råvaror som inte kan odlas här.",
+      "en": "Chez Abena opened in 2022 on Södra vägen in Gothenburg with a dream: to share the rich flavours of West African cooking with Sweden. Our food is rooted in traditions from Ghana, Nigeria and Senegal — recipes passed down through generations, cooked with love and care. We source locally wherever possible and import the spices and ingredients that cannot be grown here."
     },
     "chef": {
-      "sv": "Var kock Abena vaxte upp i Accra och lagrade laga mat vid sin mormors sida pa familjens gard. Efter utbildning i Dakar och ar pa restauranger i London och Kopenhamn flyttade hon till Goteborg for att oppna sin egen restaurang. Koket blandar tre matkulturar — ghananskt, nigerianskt och senegalesiskt — men alltid med respekt for varje ratts ursprung.",
+      "sv": "Vår kock Abena växte upp i Accra och lärde sig laga mat vid sin mormors sida på familjens gård. Efter utbildning i Dakar och flera år på restauranger i London och Köpenhamn flyttade hon till Göteborg för att öppna en egen restaurang. Köket blandar tre matkulturer — ghanansk, nigeriansk och senegalesisk — men alltid med respekt för varje rätts ursprung.",
       "en": "Our chef Abena grew up in Accra, learning to cook at her grandmother's side on the family compound. After training in Dakar and years in restaurants in London and Copenhagen, she moved to Gothenburg to open her own place. The kitchen blends three food cultures — Ghanaian, Nigerian and Senegalese — but always with respect for each dish's origins."
     },
     "storyImage": "/images/westafrican/about-bar-rattan.jpg",
