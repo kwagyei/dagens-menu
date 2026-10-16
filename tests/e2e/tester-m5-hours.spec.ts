@@ -183,7 +183,7 @@ test("CSRF: all three actions are refused without a valid token and change nothi
   ];
   const page0 = await (await page.request.get("/admin/hours/")).text();
   for (const body of bodies) {
-    for (const bad of [undefined, "", "garbage", csrf.slice(0, -1) + (csrf.endsWith("a") ? "b" : "a")]) {
+    for (const bad of [undefined, "", "garbage", (csrf.startsWith("A") ? "B" : "A") + csrf.slice(1)]) {
       const res = await page.request.post("/admin/hours/", { form: bad === undefined ? body : { ...body, csrf: bad }, maxRedirects: 0, headers: { Origin: BASE } });
       expect([303, 403], `${body.action} csrf=${bad}`).toContain(res.status());
       if (res.status() === 303) expect(res.headers().location).toContain("done=expired");
