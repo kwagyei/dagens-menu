@@ -4,22 +4,39 @@
  * path and the D1 seed use the same schemas later (ADR-011 §8), so a rule exists once.
  *
  * Schemas are strict: an unknown key is an error, which catches typos and fields a CMS or
- * script invented. Text is NFC-normalised and stripped of control characters and soft hyphens
- * before it is length-checked; it is not trimmed, so validation never changes visible text.
+ * script invented. Text is NFC-normalised and stripped of invisible characters before it is
+ * checked; it is not trimmed, so validation never changes visible text.
+ *
+ * Zod skips an object's own refinements while that object has other errors, so cross-field
+ * rules (unique ids, highlights) report on a later pass once field errors are fixed.
  */
 import { z } from "zod";
 import { MAX_PRICE_ORE } from "./price";
-import { ALLERGENS, BOOKING_MODES, MENU_TAGS } from "./vocabulary";
+import { ALLERGENS, BOOKING_MODES, MENU_TAGS, WEEKDAYS } from "./vocabulary";
 
-export const TEXT_LIMITS = { name: 80, short: 300, long: 3000 } as const;
+export { WEEKDAYS };
 
-export const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+export const TEXT_LIMITS = { name: 80, short: 300, long: 3000, embed: 5000 } as const;
 
-// C0 controls except tab/newline/carriage return, DEL, and the soft hyphen.
-const INVISIBLE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F­]/g;
+/** Exception dates must fall in this range; the admin narrows it to two years ahead (ADR-011 §8). */
+export const DATE_RANGE = { minYear: 2000, maxYear: 2099 } as const;
+
+// Control characters except tab, newline and carriage return; the soft hyphen; zero-width
+// space, word joiner and byte-order mark; bidi embeddings, overrides and isolates, which can
+// make a saved name or price display reversed. ZWJ and ZWNJ stay: emoji and some scripts need them.
+const INVISIBLE = /(?![\t\n\r])\p{Cc}|[­​⁠﻿‪-‮⁦-⁩]/gu;
 
 export function cleanText(value: string): string {
   return value.normalize("NFC").replace(INVISIBLE, "");
+}
+
+const graphemes = new Intl.Segmenter("sv", { granularity: "grapheme" });
+
+/** Length as a reader counts it: one emoji or one å is one character. */
+export function visibleLength(value: string): number {
+  let count = 0;
+  for (const _ of graphemes.segment(value)) count++;
+  return count;
 }
 
 const text = (max: number) =>
@@ -29,44 +46,62 @@ const text = (max: number) =>
     .pipe(
       z
         .string()
-        .refine((s) => s.trim().length > 0, "must not be empty")
-        .refine((s) => s.length <= max, `must be at most ${max} characters`),
+        .refine((s) => /[^\s\p{Cf}]/u.test(s), "must not be empty")
+        .refine((s) => visibleLength(s) <= max, `must be at most ${max} characters`),
     );
 
-/** A bilingual field: both Swedish and English, both non-empty (ADR-004: no fallback). */
-export const localized = (max: number) => z.strictObject({ sv: text(max), en: text(max) });
+/** A bilingual text field: both Swedish and English, both non-empty (ADR-004: no fallback). */
+export const localizedText = (max: number) => z.strictObject({ sv: text(max), en: text(max) });
 
 const unique = <T>(items: readonly T[]) => new Set(items).size === items.length;
 
 const itemId = z.string().regex(/^[a-z0-9]{12}$/, "must be 12 lowercase letters or digits");
-const httpsUrl = z.string().regex(/^https:\/\/[^\s"'<>]+$/, "must be an https:// URL");
+const httpsUrl = z.string().regex(/^https:\/\/[^\s"'<>/]+(\/[^\s"'<>]*)?$/, "must be an https:// URL");
+
+/**
+ * A string-keyed record. JSON.parse makes "__proto__" an own key, which z.record drops
+ * silently, unchecked; reject it instead.
+ */
+const record = <K extends z.ZodType<string>, V extends z.ZodType>(key: K, value: V) =>
+  z
+    .custom<Record<string, unknown>>((v) => typeof v === "object" && v !== null && !Array.isArray(v), "must be an object")
+    .refine((v) => !Object.hasOwn(v, "__proto__"), "must not use the key __proto__")
+    .pipe(z.record(key, value));
 
 /** 24-hour HH:MM. */
 export const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "must be HH:MM, 24-hour");
 
-/** A real calendar date, YYYY-MM-DD. */
+/** A real calendar date, YYYY-MM-DD, within DATE_RANGE. */
 export const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "must be YYYY-MM-DD")
   .refine((d) => {
     const parsed = new Date(`${d}T00:00:00Z`);
     return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(d);
-  }, "must be a real date");
+  }, "must be a real date")
+  .refine((d) => {
+    const year = Number(d.slice(0, 4));
+    return year >= DATE_RANGE.minYear && year <= DATE_RANGE.maxYear;
+  }, `must be between ${DATE_RANGE.minYear} and ${DATE_RANGE.maxYear}`);
 
 // close < open is allowed: it means closing after midnight.
 export const dayHours = z
   .strictObject({ open: time, close: time })
   .refine((h) => h.open !== h.close, "must not open and close at the same minute");
 
-/** An image path under the site's own folder (Decap uploads there; ADR-008). */
-export const imagePath = (site: string) =>
-  z.string().refine((p) => new RegExp(`^/images/${site}/[^/]+$`).test(p), `must be under /images/${site}/`);
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** An image file directly under the site's own folder (where uploads go; ADR-008). */
+export const imagePath = (site: string) => {
+  const pattern = new RegExp(`^/images/${escapeRegExp(site)}/[A-Za-z0-9_-][A-Za-z0-9._-]*$`);
+  return z.string().regex(pattern, `must be a file under /images/${site}/`);
+};
 
 export const menuItemSchema = (site: string) =>
   z.strictObject({
     id: itemId,
-    name: localized(TEXT_LIMITS.name),
-    description: localized(TEXT_LIMITS.short),
+    name: localizedText(TEXT_LIMITS.name),
+    description: localizedText(TEXT_LIMITS.short),
     price: z.number().int("must be whole öre").min(0, "must not be negative").max(MAX_PRICE_ORE),
     tags: z.array(z.enum(MENU_TAGS)).refine(unique, "must not repeat a tag"),
     allergens: z.array(z.enum(ALLERGENS)).refine(unique, "must not repeat an allergen"),
@@ -74,19 +109,31 @@ export const menuItemSchema = (site: string) =>
     image: imagePath(site).optional(),
   });
 
+/** Adds an issue at each later occurrence of a repeated value. */
+function reportDuplicates(ctx: z.RefinementCtx, values: string[], pathOf: (index: number) => PropertyKey[], what: string) {
+  const seen = new Set<string>();
+  values.forEach((value, index) => {
+    if (seen.has(value)) ctx.addIssue({ code: "custom", path: pathOf(index), message: `duplicate ${what} "${value}"` });
+    seen.add(value);
+  });
+}
+
 export const menuSchema = (site: string) =>
   z
     .strictObject({
       categories: z.array(
         z.strictObject({
           id: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "must be lowercase words joined by hyphens"),
-          name: localized(TEXT_LIMITS.name),
+          name: localizedText(TEXT_LIMITS.name),
           items: z.array(menuItemSchema(site)),
         }),
       ),
     })
-    .refine((m) => unique(m.categories.map((c) => c.id)), "category ids must be unique")
-    .refine((m) => unique(m.categories.flatMap((c) => c.items.map((i) => i.id))), "item ids must be unique");
+    .superRefine((menu, ctx) => {
+      reportDuplicates(ctx, menu.categories.map((c) => c.id), (i) => ["categories", i, "id"], "category id");
+      const positions = menu.categories.flatMap((c, ci) => c.items.map((item, ii) => ({ id: item.id, ci, ii })));
+      reportDuplicates(ctx, positions.map((p) => p.id), (i) => ["categories", positions[i].ci, "items", positions[i].ii, "id"], "item id");
+    });
 
 export const hoursSchema = z.strictObject({
   weekly: z.strictObject(
@@ -96,28 +143,33 @@ export const hoursSchema = z.strictObject({
     >,
   ),
   exceptions: z
-    .array(z.strictObject({ date: isoDate, note: localized(TEXT_LIMITS.short), hours: dayHours.nullable() }))
-    .refine((e) => unique(e.map((x) => x.date)), "each date may have only one exception"),
+    .array(z.strictObject({ date: isoDate, note: localizedText(TEXT_LIMITS.short), hours: dayHours.nullable() }))
+    .superRefine((list, ctx) => reportDuplicates(ctx, list.map((e) => e.date), (i) => [i, "date"], "exception date")),
 });
 
 export const settingsSchema = z
   .strictObject({
-    name: localized(TEXT_LIMITS.name),
-    tagline: localized(TEXT_LIMITS.short),
-    cuisine: localized(TEXT_LIMITS.name),
+    name: localizedText(TEXT_LIMITS.name),
+    tagline: localizedText(TEXT_LIMITS.short),
+    cuisine: localizedText(TEXT_LIMITS.name),
     address: text(TEXT_LIMITS.short),
-    phone: z.string().regex(/^\+?[\d\s-]{7,}$/, "must be a phone number"),
+    phone: z
+      .string()
+      .regex(/^\+?[\d\s-]+$/, "must be a phone number")
+      .refine((p) => (p.match(/\d/g) ?? []).length >= 7, "must have at least 7 digits"),
     email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "must be an email address"),
-    socialLinks: z.record(z.string().regex(/^[a-z]+$/), httpsUrl),
+    socialLinks: record(z.string().regex(/^[a-z]+$/, "must be a lowercase network name"), httpsUrl),
+    // Booking and map fields are operator-only (ADR-011 §8); checked whenever present, so a
+    // value can't sit unchecked until someone switches the mode.
     booking: z.strictObject({
       provider: z.enum(BOOKING_MODES),
-      embedCode: z.string().optional(),
-      bookingUrl: z.string().optional(),
+      embedCode: z.string().max(TEXT_LIMITS.embed).optional(),
+      bookingUrl: httpsUrl.optional(),
     }),
     mapEmbed: z.union([z.literal(""), httpsUrl]),
   })
   .superRefine((s, ctx) => {
-    if (s.booking.provider === "link" && !httpsUrl.safeParse(s.booking.bookingUrl).success) {
+    if (s.booking.provider === "link" && !s.booking.bookingUrl) {
       ctx.addIssue({ code: "custom", path: ["booking", "bookingUrl"], message: "link mode needs an https:// booking URL" });
     }
     if (s.booking.provider === "embed" && !s.booking.embedCode?.trim()) {
@@ -129,21 +181,24 @@ export const pagesSchema = (site: string) =>
   z.strictObject({
     home: z
       .strictObject({
-        tagline: localized(TEXT_LIMITS.short),
+        tagline: localizedText(TEXT_LIMITS.short),
         highlights: z.array(itemId).refine(unique, "must not repeat a highlight"),
         heroImage: imagePath(site).optional(),
-        highlightImages: z.record(itemId, imagePath(site)).optional(),
-        pullQuote: localized(TEXT_LIMITS.short).optional(),
+        highlightImages: record(itemId, imagePath(site)).optional(),
+        pullQuote: localizedText(TEXT_LIMITS.short).optional(),
         ctaImage: imagePath(site).optional(),
       })
-      .refine(
-        (h) => Object.keys(h.highlightImages ?? {}).every((id) => h.highlights.includes(id)),
-        "highlightImages may only name highlighted items",
-      ),
+      .superRefine((home, ctx) => {
+        for (const id of Object.keys(home.highlightImages ?? {})) {
+          if (!home.highlights.includes(id)) {
+            ctx.addIssue({ code: "custom", path: ["highlightImages", id], message: "names an item that is not highlighted" });
+          }
+        }
+      }),
     menu: z.strictObject({ heroImage: imagePath(site).optional() }),
     about: z.strictObject({
-      story: localized(TEXT_LIMITS.long),
-      chef: localized(TEXT_LIMITS.long),
+      story: localizedText(TEXT_LIMITS.long),
+      chef: localizedText(TEXT_LIMITS.long),
       storyImage: imagePath(site).optional(),
       kitchenImage: imagePath(site).optional(),
     }),
@@ -151,7 +206,7 @@ export const pagesSchema = (site: string) =>
 
 export const gallerySchema = (site: string) =>
   z.strictObject({
-    images: z.array(z.strictObject({ src: imagePath(site), alt: localized(TEXT_LIMITS.short) })),
+    images: z.array(z.strictObject({ src: imagePath(site), alt: localizedText(TEXT_LIMITS.short) })),
   });
 
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "must be a six-digit hex colour");
@@ -190,20 +245,17 @@ export const siteContentSchema = (site: string) =>
       theme: themeSchema,
     })
     .superRefine((c, ctx) => {
-      const items = new Map(c.menu.categories.flatMap((cat) => cat.items.map((i) => [i.id, i] as const)));
+      // Highlights must exist. A highlighted dish that is unavailable (sold out) is valid:
+      // the home page skips it, and marking a dish sold out must never break the site.
+      const ids = new Set(c.menu.categories.flatMap((cat) => cat.items.map((i) => i.id)));
       c.pages.home.highlights.forEach((id, index) => {
-        const item = items.get(id);
-        if (!item || !item.available) {
-          ctx.addIssue({
-            code: "custom",
-            path: ["pages", "home", "highlights", index],
-            message: item ? "highlights an unavailable item" : "highlights an item that does not exist",
-          });
+        if (!ids.has(id)) {
+          ctx.addIssue({ code: "custom", path: ["pages", "home", "highlights", index], message: "highlights an item that does not exist" });
         }
       });
     });
 
-export type LocalizedString = z.output<ReturnType<typeof localized>>;
+export type LocalizedString = z.output<ReturnType<typeof localizedText>>;
 export type DayHours = z.output<typeof dayHours>;
 export type OpeningHours = z.output<typeof hoursSchema>;
 export type MenuItem = z.output<ReturnType<typeof menuItemSchema>>;
