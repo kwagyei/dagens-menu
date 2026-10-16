@@ -5,5 +5,7 @@ declare namespace App {
      * parsed object serves every page, so a template that changed it would change them all.
      */
     content: import("./content/readonly").DeepReadonly<import("./content/schema").SiteContent>;
+    /** Today's date, hours and sold-out dishes for this request (src/content/today.ts). */
+    today: import("./content/today").Today;
   }
 }

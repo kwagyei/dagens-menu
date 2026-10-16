@@ -17,15 +17,19 @@ export type Gallery = DeepReadonly<Schema.Gallery>;
 export type Theme = DeepReadonly<Schema.Theme>;
 
 /**
- * Resolve the home page's highlight ids to menu items, in the order given. Unknown ids and
- * unavailable items are skipped, so a deleted or sold-out dish quietly drops off the home
+ * Resolve the home page's highlight ids to menu items, in the order given. Unknown ids,
+ * unavailable items and dishes sold out today are skipped, so a deleted or sold-out dish quietly drops off the home
  * page instead of breaking it. Each result keeps its id, for looking up its image.
  */
-export function resolveHighlights(menu: Menu, ids: readonly string[]): Array<{ id: string; item: MenuItem }> {
+export function resolveHighlights(
+  menu: Menu,
+  ids: readonly string[],
+  soldOutToday: readonly string[] = [],
+): Array<{ id: string; item: MenuItem }> {
   const byId = new Map(menu.categories.flatMap((c) => c.items.map((item) => [item.id, item] as const)));
   return ids.flatMap((id) => {
     const item = byId.get(id);
-    return item && item.available ? [{ id, item }] : [];
+    return item && item.available && !soldOutToday.includes(id) ? [{ id, item }] : [];
   });
 }
 

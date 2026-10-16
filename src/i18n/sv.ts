@@ -49,6 +49,7 @@ export default {
   "privacy.map.text": "Vi använder en inbäddad karta. Den laddas först efter att du klickar på knappen.",
   "privacy.cookies.heading": "Cookies",
   "privacy.cookies.text": "Den här sidan lagrar ditt cookieval i 6 månader. Inga andra cookies används utan ditt samtycke.",
+  "menu.soldOutToday": "Slutsåld idag",
   "menu.unavailable": "Ej tillgänglig",
   "hours.exception": "Avvikande öppettider",
   "book.heading": "Boka bord",

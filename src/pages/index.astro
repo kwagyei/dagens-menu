@@ -7,11 +7,11 @@ const locale = getLocale(Astro.url);
 const settings = Astro.locals.content.settings;
 const pages = Astro.locals.content.pages;
 const menu = Astro.locals.content.menu;
-const hours = Astro.locals.content.hours;
 const tagline = localized(pages.home.tagline, locale);
 const siteName = localized(settings.name, locale);
 const cuisine = localized(settings.cuisine, locale);
-const highlights = resolveHighlights(menu, pages.home.highlights);
+const today = Astro.locals.today;
+const highlights = resolveHighlights(menu, pages.home.highlights, today.soldOut);
 const highlightImages = pages.home.highlightImages ?? {};
 const pullQuote = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
 const ctaImage = pages.home.ctaImage;
@@ -65,16 +65,10 @@ const ctaImage = pages.home.ctaImage;
           {t(locale, "home.book")}
         </a>
 
-        <!-- Today's hours are filled in by the script below, in the visitor's browser:
-             the page is built once, so a build-time "today" would go stale the next day.
-             Without JavaScript the badge links to the full opening hours instead. -->
-        <div
-          class="hours-badge"
-          data-today-hours={JSON.stringify(hours)}
-          data-label-today={t(locale, "hours.today")}
-          data-label-closed={t(locale, "hours.closed")}
-        >
-          <a href={localePath(locale, "/contact/")} class="hours-badge-link">{t(locale, "contact.hours")}</a>
+        <!-- Today's hours, worked out on the server for each request in Stockholm time
+             (src/content/today.ts), so they are right without JavaScript. -->
+        <div class="hours-badge">
+          {t(locale, "hours.today")}: {today.hours ? `${today.hours.open}\u2013${today.hours.close}` : t(locale, "hours.closed")}
         </div>
       </div>
     </div>
@@ -234,14 +228,3 @@ const ctaImage = pages.home.ctaImage;
 
 </Base>
 
-<script>
-  import { hoursOn } from "../content/hours";
-  import type { OpeningHours } from "../content/load";
-
-  for (const badge of document.querySelectorAll<HTMLElement>("[data-today-hours]")) {
-    const { todayHours, labelToday, labelClosed } = badge.dataset;
-    if (!todayHours) continue;
-    const today = hoursOn(JSON.parse(todayHours) as OpeningHours, new Date());
-    badge.textContent = `${labelToday}: ${today ? `${today.open}\u2013${today.close}` : labelClosed}`;
-  }
-</script>

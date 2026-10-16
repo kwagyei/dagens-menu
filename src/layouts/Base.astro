@@ -4,6 +4,7 @@ import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import ConsentBanner from "../components/ConsentBanner.astro";
 import { localized } from "../content/load";
+import { serializeJsonLd } from "../server/json-ld";
 import { getLocale } from "../i18n";
 
 interface Props {
@@ -71,7 +72,7 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
     <meta property="og:site_name" content={siteName} />
 
     <!-- JSON-LD -->
-    <script type="application/ld+json" set:html={JSON.stringify(effectiveJsonLd)} />
+    <script type="application/ld+json" set:html={serializeJsonLd(effectiveJsonLd)} />
 
     <style
       define:vars={{

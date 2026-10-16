@@ -91,11 +91,11 @@ the colours and fonts from `sites/<SITE>/theme.json`.
   export reads it back in the same shape. A test checks that both demos come back exactly
   as they went in.
   `npm run db:migrate:local` then `npm run seed -- --site bistro` sets up a local database.
-- **"Open today" is worked out in the browser.** A static page is built once. If the
-  build picked "today", the badge would show the hours for the day of the last deploy.
-  The page carries the weekly hours and a small script picks today's in
-  Europe/Stockholm time, so a visitor abroad still sees the restaurant's day. Without
-  JavaScript, the badge links to the full opening hours.
+- **"Open today" is worked out on the server, per request.** Today's hours, holiday
+  exceptions and sold-out dishes are computed for every request in Europe/Stockholm time,
+  so they're right without JavaScript and roll over at midnight. The page's ETag includes
+  the restaurant's date and the content version, so a browser's cached copy is reused until
+  either changes.
 - **Nothing third-party loads before consent.** It's not left to code review. CI scans
   every built page for external scripts, styles, images and frames
   (`scripts/check-no-third-party.mjs`).

@@ -1,11 +1,41 @@
-// Loads the site's content once per request into Astro.locals.content, through the active
-// ContentSource (src/content/active-source.ts).
+// Wires the request pipeline (src/server/handler.ts) to Astro and the Worker: content from
+// D1 through one D1ContentSource per isolate, the theme and emergency details bundled at
+// build time, and the site the build was made for.
 import { defineMiddleware } from "astro:middleware";
-import { activeContentSource } from "./content/active-source";
+import { env } from "cloudflare:workers";
+import { bundledSettings, bundledTheme } from "./content/bundled";
+import { D1ContentSource } from "./content/d1-source";
+import { handlePage } from "./server/handler";
 
-export const onRequest = defineMiddleware(async (context, next) => {
-  const source = await activeContentSource();
-  const { content } = await source.load({ now: new Date() });
-  context.locals.content = content;
-  return next();
-});
+declare const __BUILD_SITE__: string;
+declare const __BUILD_ID__: string;
+
+// Kept for the life of the isolate: it holds the content until the version changes.
+const sources = new Map<string, D1ContentSource>();
+function source(site: string): D1ContentSource {
+  let found = sources.get(site);
+  if (!found) {
+    found = new D1ContentSource(env.DB, site, bundledTheme(site));
+    sources.set(site, found);
+  }
+  return found;
+}
+
+export const onRequest = defineMiddleware((context, next) =>
+  handlePage(
+    context.request,
+    {
+      runtimeSiteId: env.SITE_ID,
+      buildSiteId: __BUILD_SITE__,
+      buildId: __BUILD_ID__,
+      source,
+      emergencySettings: bundledSettings,
+      now: () => new Date(),
+    },
+    async ({ content, today }) => {
+      context.locals.content = content;
+      context.locals.today = today;
+      return next();
+    },
+  ),
+);

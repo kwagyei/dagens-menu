@@ -49,6 +49,7 @@ export default {
   "privacy.map.text": "We use an embedded map. It is loaded only after you click the button.",
   "privacy.cookies.heading": "Cookies",
   "privacy.cookies.text": "This site stores your cookie choice for 6 months. No other cookies are used without your consent.",
+  "menu.soldOutToday": "Sold out today",
   "menu.unavailable": "Unavailable",
   "hours.exception": "Special hours",
   "book.heading": "Book a table",
