@@ -1,4 +1,5 @@
 ---
+import { dayAndMonth, upcomingExceptions } from "../content/hours";
 import { localized } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
@@ -7,6 +8,8 @@ const hours = Astro.locals.content.hours;
 const locale = getLocale(Astro.url);
 const siteName = localized(settings.name, locale);
 const tagline = localized(settings.tagline, locale);
+// The next few special days, so a holiday closure is visible on every page.
+const specialDays = upcomingExceptions(hours, Astro.locals.today.date).slice(0, 3);
 
 const dayKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 const dayNamesShort: Record<string, Record<string, string>> = {
@@ -88,6 +91,21 @@ const socialNames: Record<string, string> = {
             );
           })}
         </dl>
+        {specialDays.length > 0 && (
+          <div class="mt-5 pt-4 text-sm" style="border-top: 1px solid rgba(255,255,255,0.12);">
+            <p class="font-medium mb-2" style="color: var(--color-hero-text);">{t(locale, "hours.exception")}</p>
+            <ul class="space-y-1.5" style="color: var(--color-hero-muted);">
+              {specialDays.map((e) => (
+                <li>
+                  <span style="color: var(--color-hero-text);">{dayAndMonth(e.date, locale)}</span>
+                  {" – "}
+                  {localized(e.note, locale)}
+                  {e.hours ? ` (${e.hours.open}–${e.hours.close})` : ` (${t(locale, "hours.closed")})`}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <!-- Column 3: Contact + Social -->

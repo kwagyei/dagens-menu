@@ -1,4 +1,5 @@
 ---
+import { dayAndMonth, upcomingExceptions } from "../content/hours";
 import type { OpeningHours } from "../content/load";
 import { getLocale, t } from "../i18n";
 
@@ -8,6 +9,7 @@ interface Props {
 
 const { hours } = Astro.props;
 const locale = getLocale(Astro.url);
+const specialDays = upcomingExceptions(hours, Astro.locals.today.date);
 
 const dayKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 const dayNames: Record<string, Record<string, string>> = {
@@ -37,13 +39,13 @@ const dayNames: Record<string, Record<string, string>> = {
   </tbody>
 </table>
 
-{hours.exceptions.length > 0 && (
+{specialDays.length > 0 && (
   <div class="mt-5 pt-4" style={`border-top: 1px solid var(--color-border);`}>
     <h3 class="font-heading font-bold text-sm mb-2">{t(locale, "hours.exception")}</h3>
     <ul class="text-sm space-y-1.5" style="color: var(--color-text-muted);">
-      {hours.exceptions.map((exc) => (
+      {specialDays.map((exc) => (
         <li>
-          <span class="font-medium" style="color: var(--color-text);">{exc.date}</span>
+          <time class="font-medium" style="color: var(--color-text);" datetime={exc.date}>{dayAndMonth(exc.date, locale)}</time>
           {" – "}
           {locale === "en" ? exc.note.en : exc.note.sv}
           {exc.hours ? ` (${exc.hours.open}–${exc.hours.close})` : ` (${t(locale, "hours.closed")})`}

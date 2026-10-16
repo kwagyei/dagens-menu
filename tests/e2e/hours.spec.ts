@@ -47,9 +47,9 @@ test("a special day shows on the contact page in both languages, and can be remo
   await expect(page.getByRole("status")).toHaveText("Tillagt.");
 
   await page.goto("/contact/");
-  await expect(page.locator("main li", { hasText: date })).toContainText("Personalfest");
+  await expect(page.locator("main li", { has: page.locator(`time[datetime="${date}"]`) })).toContainText("Personalfest");
   await page.goto("/en/contact/");
-  await expect(page.locator("main li", { hasText: date })).toContainText("Staff party");
+  await expect(page.locator("main li", { has: page.locator(`time[datetime="${date}"]`) })).toContainText("Staff party");
 
   await page.goto("/admin/hours/");
   await page.locator("#exceptions li", { hasText: "Personalfest" }).getByRole("button", { name: /Ta bort/ }).click();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hoursOn, restaurantDay } from "./hours";
+import { dayAndMonth, hoursOn, restaurantDay, upcomingExceptions } from "./hours";
 import type { OpeningHours } from "./load";
 
 const hours: OpeningHours = {
@@ -64,5 +64,23 @@ describe("hoursOn", () => {
     // Invalid per the schema, but the badge must still not throw on it.
     const partial = { weekly: {}, exceptions: [] } as unknown as OpeningHours;
     expect(hoursOn(partial, new Date("2026-10-20T10:00:00Z"))).toBeNull();
+  });
+});
+
+describe("upcomingExceptions", () => {
+  it("keeps today and later, earliest first", () => {
+    const reversed = { ...hours, exceptions: [...hours.exceptions].reverse() };
+    expect(upcomingExceptions(reversed, "2026-12-01").map((e) => e.date)).toEqual(["2026-12-24", "2026-12-31"]);
+    expect(upcomingExceptions(hours, "2026-12-24").map((e) => e.date)).toEqual(["2026-12-24", "2026-12-31"]);
+    expect(upcomingExceptions(hours, "2026-12-25").map((e) => e.date)).toEqual(["2026-12-31"]);
+    expect(upcomingExceptions(hours, "2027-01-01")).toEqual([]);
+  });
+});
+
+describe("dayAndMonth", () => {
+  it("names the day the way guests say it, whatever the server's time zone", () => {
+    expect(dayAndMonth("2026-12-24", "sv")).toBe("24 december");
+    expect(dayAndMonth("2026-12-24", "en")).toBe("24 December");
+    expect(dayAndMonth("2027-01-01", "sv")).toBe("1 januari");
   });
 });

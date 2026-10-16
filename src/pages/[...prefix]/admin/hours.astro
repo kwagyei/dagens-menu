@@ -4,6 +4,7 @@
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { type ExceptionFormValues, type FieldErrors, parseExceptionForm, parseHoursForm, type WeeklyFormValues } from "../../../admin/forms";
 import { adminPage } from "../../../admin/page";
+import { restaurantDay } from "../../../content/hours";
 import { WEEKDAYS } from "../../../content/vocabulary";
 import { addException, adminHours, removeException, saveWeeklyHours } from "../../../db/hours";
 import { t } from "../../../i18n";
@@ -16,6 +17,8 @@ if (page instanceof Response) return page;
 const { locale, repo } = page;
 const here = page.path("/hours/");
 const current = await adminHours(repo);
+// Past special days no longer apply: the list shows today and later.
+const upcoming = current.exceptions.filter((e) => e.date >= restaurantDay(repo.now).date);
 
 let weekly: WeeklyFormValues = {
   days: Object.fromEntries(
@@ -56,6 +59,8 @@ if (Astro.request.method === "POST") {
   } else if (action === "remove-exception") {
     const result = await removeException(repo, String(form.get("date") ?? ""));
     return Astro.redirect(`${here}?done=${result.ok ? "deleted" : "not-found"}#exceptions`, 303);
+  } else {
+    return Astro.redirect(`${here}?done=expired`, 303);
   }
   Astro.response.status = 422;
 }
@@ -102,9 +107,9 @@ const dateText = (iso: string) =>
     <section class="admin-card p-4 space-y-4" id="exceptions" aria-labelledby="exceptions-title">
       <h2 class="text-xl font-semibold" id="exceptions-title">{t(locale, "admin.hours.exceptions")}</h2>
       <p class="text-sm admin-muted">{t(locale, "admin.hours.exceptionsLead")}</p>
-      {current.exceptions.length === 0 && <p class="admin-muted">{t(locale, "admin.hours.noExceptions")}</p>}
+      {upcoming.length === 0 && <p class="admin-muted">{t(locale, "admin.hours.noExceptions")}</p>}
       <ul class="space-y-2">
-        {current.exceptions.map((e) => (
+        {upcoming.map((e) => (
           <li class="flex items-center justify-between gap-3 py-2 border-b" style="border-color: var(--color-border);">
             <div>
               <p class="font-medium">{dateText(e.date)}</p>
