@@ -8,10 +8,10 @@ export default defineConfig({
     fsModuleCache: false,
     projects: [
       {
-        // Pure TypeScript: schema, parser, helpers, content files, the OAuth worker.
+        // Pure TypeScript: schema, parser, helpers, request pipeline, content files.
         test: {
           name: "node",
-          include: ["src/**/*.test.ts", "tests/**/*.test.ts", "workers/**/*.test.ts"],
+          include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
           exclude: ["tests/db/**", "**/node_modules/**"],
         },
       },

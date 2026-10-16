@@ -1,6 +1,0 @@
-name = "decap-oauth"
-main = "src/index.ts"
-compatibility_date = "2024-09-01"
-
-[vars]
-ALLOWED_ORIGINS = "https://dagens-menu-bistro.pages.dev,https://dagens-menu-westafrican.pages.dev"
