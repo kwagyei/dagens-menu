@@ -81,13 +81,16 @@ the colours and fonts from `sites/<SITE>/theme.json`.
   hand-written query still can't store a negative price or a one-language name.
   `tests/db/` runs in the Workers runtime against a local D1 and breaks each constraint
   with raw SQL.
-- **Every content write is one transaction.** The change, a site-wide `content_version`
-  bump and an audit entry are written together, or nothing is. An edit made from a stale
+- **Every content write is one transaction.** The change and its audit entry are written
+  together, or nothing is. Triggers on every content table bump the site's
+  `content_version` inside the same transaction, so pages and caches can't miss an edit,
+  whichever code path made it. An edit made from a stale
   form is a conflict, not a silent overwrite. Every query is scoped to the Worker's own
   site, so one restaurant's ids don't exist for another.
 - **The JSON round-trips losslessly.** `npm run seed` loads a demo's JSON into D1, and the
   export reads it back in the same shape. A test checks that both demos come back exactly
   as they went in.
+  `npm run db:migrate:local` then `npm run seed -- --site bistro` sets up a local database.
 - **"Open today" is worked out in the browser.** A static page is built once. If the
   build picked "today", the badge would show the hours for the day of the last deploy.
   The page carries the weekly hours and a small script picks today's in

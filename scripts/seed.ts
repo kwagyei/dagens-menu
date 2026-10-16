@@ -1,16 +1,18 @@
 /**
  * Load a site's JSON content into D1 (ADR-011 plan M2.4).
  *
- *   npm run seed -- --site bistro [--reset] [--remote] [--database dagens-menu] [--config wrangler.jsonc]
+ *   npm run db:migrate:local                      # once, and after new migrations
+ *   npm run seed -- --site bistro [--reset]       # local database (d1.local.jsonc)
+ *   npm run seed -- --site bistro --remote --config <deployed config> [--reset]
  *
  * Validates the content with the schema, registers the curated images by hashing the real
  * files under public/, and refuses to touch a site that already has content unless --reset
- * is given (demos only: it replaces the content but keeps owners and the audit log).
- * Local by default; --remote writes to the real database.
+ * is given. --reset replaces the content but keeps owners and the audit log; on the remote
+ * database it is allowed only for the demo sites, so a typo can't wipe a client's menu.
  */
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
@@ -24,7 +26,7 @@ const { values } = parseArgs({
     reset: { type: "boolean", default: false },
     remote: { type: "boolean", default: false },
     database: { type: "string", default: "dagens-menu" },
-    config: { type: "string", default: "wrangler.jsonc" },
+    config: { type: "string", default: "d1.local.jsonc" },
   },
 });
 
@@ -37,6 +39,16 @@ const site = values.site;
 if (!site || !/^[a-z0-9-]+$/.test(site)) fail("--site <id> is required, e.g. --site bistro");
 const target = values.remote ? "--remote" : "--local";
 const root = resolve(import.meta.dirname, "..");
+
+/** Sites whose content is sample data and may be replaced on the real database. */
+const DEMO_SITES = ["bistro", "westafrican"];
+if (values.remote && values.reset && !DEMO_SITES.includes(site)) {
+  fail(`--remote --reset is only allowed for the demo sites (${DEMO_SITES.join(", ")}); restore a client from Time Travel instead`);
+}
+if (!existsSync(resolve(root, values.config!))) fail(`wrangler config ${values.config} not found`);
+if (values.remote) {
+  console.warn("seed: note: a remote import makes the database unavailable to every site while it runs (seconds); prefer off-peak hours.");
+}
 
 function wrangler(args: string[]): string {
   return execFileSync("npx", ["wrangler", "d1", "execute", values.database!, target, "--config", values.config!, ...args], {
@@ -60,7 +72,12 @@ const resolveImage: ImageResolver = (path) => {
   return { id: createHash("sha256").update(bytes).digest("hex"), mime: isJpeg ? "image/jpeg" : "image/webp" };
 };
 
-const { content: full } = await new JsonContentSource(site).load({ now: new Date() });
+let full;
+try {
+  ({ content: full } = await new JsonContentSource(site).load({ now: new Date() }));
+} catch (error) {
+  fail((error as Error).message);
+}
 const { theme: _theme, ...content } = full;
 
 let existing: number;
@@ -72,12 +89,19 @@ try {
 }
 if (existing > 0 && !values.reset) fail(`site "${site}" already has content in the ${target.slice(2)} database; pass --reset to replace it`);
 
-const statements = [...(values.reset ? resetStatements(site) : []), ...seedStatements(site, content, resolveImage)];
+let statements;
+try {
+  statements = [...(values.reset ? resetStatements(site) : []), ...seedStatements(site, content, resolveImage)];
+} catch (error) {
+  fail((error as Error).message);
+}
 const dir = mkdtempSync(join(tmpdir(), "seed-"));
 const file = join(dir, `${site}.sql`);
 try {
   writeFileSync(file, renderSql(statements));
   wrangler(["--file", file, "-y"]);
+} catch (error) {
+  fail(`wrangler could not apply the seed; nothing was changed.\n${(error as { stderr?: string }).stderr ?? error}`);
 } finally {
   rmSync(dir, { recursive: true, force: true });
 }

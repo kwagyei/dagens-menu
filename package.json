@@ -21,6 +21,7 @@
     "test:db": "vitest run --project db",
     "test:watch": "vitest",
     "check:consent": "node scripts/check-no-third-party.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply dagens-menu --local --config d1.local.jsonc",
     "seed": "tsx scripts/seed.ts",
     "deploy:bistro": "SITE=bistro npm run build && npx wrangler pages deploy dist --project-name dagens-menu-bistro",
     "deploy:westafrican": "SITE=westafrican npm run build && npx wrangler pages deploy dist --project-name dagens-menu-westafrican",
