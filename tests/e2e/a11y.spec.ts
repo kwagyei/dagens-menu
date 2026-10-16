@@ -42,7 +42,9 @@ test("forms in their error state", async ({ page }) => {
   await expectNoViolations(page, "new dish, rejected");
 
   await page.goto("/admin/hours/");
+  // Open, with no opening time: an error on any site, whatever its Sunday is.
   await page.getByRole("group", { name: "Söndag" }).getByLabel("Stängt").uncheck();
+  await page.getByRole("group", { name: "Söndag" }).getByLabel("Öppnar").fill("");
   await page.getByRole("button", { name: "Spara öppettiderna" }).click();
   await expect(page.locator("#weekly-errors")).toBeVisible();
   await expectNoViolations(page, "weekly hours, rejected");
