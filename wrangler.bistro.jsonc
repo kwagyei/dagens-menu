@@ -1,0 +1,20 @@
+// The bistro demo's Worker (ADR-011). The Astro adapter fills in main and assets at build time.
+// SITE_ID must equal the SITE the build was made for: the theme and curated images are built
+// in, the content comes from D1 for this site id.
+{
+  "name": "dagens-menu-bistro",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": { "SITE_ID": "bistro" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dagens-menu",
+      // The production database. Local development (wrangler dev, astro dev) uses a local
+      // copy in .wrangler/state instead; seed it with npm run seed.
+      "database_id": "df3dcc91-ea36-4834-ae85-6ebc1ba12b2e",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true }
+}

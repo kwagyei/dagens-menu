@@ -10,7 +10,6 @@
     "dev": "SITE=bistro astro dev",
     "dev:bistro": "SITE=bistro astro dev",
     "dev:westafrican": "SITE=westafrican astro dev",
-    "prebuild": "node scripts/generate-admin-config.mjs",
     "build": "astro build",
     "build:bistro": "SITE=bistro npm run build",
     "build:westafrican": "SITE=westafrican npm run build",
@@ -23,11 +22,10 @@
     "check:consent": "node scripts/check-no-third-party.mjs",
     "db:migrate:local": "wrangler d1 migrations apply dagens-menu --local --config d1.local.jsonc",
     "seed": "tsx scripts/seed.ts",
-    "deploy:bistro": "SITE=bistro npm run build && npx wrangler pages deploy dist --project-name dagens-menu-bistro",
-    "deploy:westafrican": "SITE=westafrican npm run build && npx wrangler pages deploy dist --project-name dagens-menu-westafrican",
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "14.4.0",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.8",
     "tailwindcss": "^4.3.3",

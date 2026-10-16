@@ -50,7 +50,7 @@ const siteName = localized(settings.name, locale);
           ))}
         </div>
       ) : (
-        <p style="color: var(--color-hero-muted);">{t(locale, "gallery.alt.missing")}</p>
+        <p class="text-lg" style="color: var(--color-hero-muted);">{t(locale, "gallery.empty")}</p>
       )}
     </div>
   </section>

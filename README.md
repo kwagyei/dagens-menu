@@ -3,13 +3,17 @@
 [![CI](https://github.com/kwagyei/dagens-menu/actions/workflows/ci.yml/badge.svg)](https://github.com/kwagyei/dagens-menu/actions/workflows/ci.yml)
 
 A bilingual (Swedish/English) website template for small restaurants. One Astro codebase
-becomes a new restaurant's site by copying a content folder and a theme file. No code
-changes. The owner edits the menu, opening hours and photos in a CMS.
+becomes a new restaurant's site from a content seed and a theme file. No code changes.
+Pages render on Cloudflare Workers from a D1 database, so an owner's edit is live on the
+next page load.
 
 **Live demos**, built from the same code with different content:
 
-- **Bistro Norden**, a Scandinavian bistro in Stockholm: https://dagens-menu-bistro.pages.dev
-- **Chez Abena**, a West African kitchen in Göteborg: https://dagens-menu-westafrican.pages.dev
+- **Bistro Norden**, a Scandinavian bistro in Stockholm: https://dagens-menu-bistro.kwabenasasuboakye.workers.dev
+- **Chez Abena**, a West African kitchen in Göteborg: https://dagens-menu-westafrican.kwabenasasuboakye.workers.dev
+
+The earlier static versions on Cloudflare Pages (`dagens-menu-bistro.pages.dev`, `-westafrican`)
+stay up until the move is complete, then redirect here.
 
 ## The problem
 
@@ -31,7 +35,7 @@ date themselves.
   embeds load only after consent.
 - The privacy page is generated from the site settings, so it only describes services
   the site actually uses.
-- Decap CMS at `/admin/`, behind a small GitHub OAuth worker on Cloudflare Workers.
+- An owner admin at `/admin/` with passkey sign-in, built on the same D1 data (in progress).
 
 ## Running it
 
@@ -39,14 +43,17 @@ Requires Node 22.18+ (the build imports TypeScript directly, which Node supports
 
 ```sh
 npm install
-npm run dev:bistro        # or dev:westafrican
-npm test                  # unit + content validation
-npm run check             # type check (astro check)
-npm run build:bistro      # static output in dist/
+npm run db:migrate:local              # a local D1 database (.wrangler/state)
+npm run seed -- --site bistro         # load a demo's content into it
+npm run dev:bistro                    # or dev:westafrican (seed it first)
+npm test                              # unit, content, and database tests in workerd
+npm run check                         # type check (astro check)
+SITE=bistro npm run build             # the bistro's Worker, in dist/
 ```
 
-`SITE` selects the restaurant: content comes from `sites/<SITE>/content/*.json` and
-the colours and fonts from `sites/<SITE>/theme.json`.
+`SITE` selects the restaurant at build time: its theme (`sites/<SITE>/theme.json`) and
+curated photos. Its content comes from D1 at request time; `sites/<SITE>/content/*.json`
+is the seed data the demos are loaded from.
 
 ## Design decisions
 
@@ -68,8 +75,8 @@ the colours and fonts from `sites/<SITE>/theme.json`.
   - no unknown fields
 
   Invalid content fails the build with the field and the reason. It also fails CI, and
-  `tests/schema-parity.test.ts` proves each rule rejects a bad value. The admin that
-  replaces Decap will validate saves through the same schema, so a rule exists once.
+  `tests/schema-parity.test.ts` proves each rule rejects a bad value. The admin's save path
+  validates through the same schema, so a rule exists once.
 - **Pages never read content directly.** Middleware loads the site's content through a
   `ContentSource` into `Astro.locals.content`. Today that source is the JSON files. Moving
   to a database means writing a new source, not touching every template.
@@ -91,33 +98,33 @@ the colours and fonts from `sites/<SITE>/theme.json`.
   export reads it back in the same shape. A test checks that both demos come back exactly
   as they went in.
   `npm run db:migrate:local` then `npm run seed -- --site bistro` sets up a local database.
-- **"Open today" is worked out in the browser.** A static page is built once. If the
-  build picked "today", the badge would show the hours for the day of the last deploy.
-  The page carries the weekly hours and a small script picks today's in
-  Europe/Stockholm time, so a visitor abroad still sees the restaurant's day. Without
-  JavaScript, the badge links to the full opening hours.
+- **"Open today" is worked out on the server, per request.** Today's hours, holiday
+  exceptions and sold-out dishes are computed for every request in Europe/Stockholm time,
+  so they're right without JavaScript and roll over at midnight. The page's ETag includes
+  the restaurant's date and the content version, so a browser's cached copy is reused until
+  either changes.
 - **Nothing third-party loads before consent.** It's not left to code review. CI scans
   every built page for external scripts, styles, images and frames
   (`scripts/check-no-third-party.mjs`).
-- **The global CSP allows `unsafe-eval`.** Decap needs it to parse its config. Cloudflare
-  Pages stacks path-specific headers rather than replacing them, so it can't be scoped
-  to `/admin/` only. The site already needs `unsafe-inline` for Astro's inline scripts,
-  so this adds little extra exposure.
+- **Strict headers on every page.** The Worker sets the CSP and security headers itself,
+  because `public/_headers` only reaches static files. Pages may load only their own
+  origin; the one allowance is `'unsafe-inline'` for the scripts Astro inlines. The page's
+  ETag combines the build, the site, the path, the content version and the restaurant's
+  date, so unchanged pages come back as 304s.
+- **If the database is unreachable, the site still answers.** Each Worker keeps the last
+  good content in memory and serves it, marked stale, when D1 fails or takes longer than
+  1.5 s. With nothing held, visitors get a page with the restaurant's phone number,
+  email and address (bundled at build time) and a 503, never an outdated menu.
 
 ## Known limitations
 
-- **CMS edits don't deploy by themselves.** Decap commits to `main`, but the Pages
-  projects are deployed with `wrangler` from a local build and have no git connection.
-  Decap is being replaced by a database-backed admin that renders edits immediately
-  (Cloudflare Workers + D1, passkey sign-in). This README describes the current static
-  version until that ships.
-- **Adding a dish in Decap needs a hand-typed id.** Each dish has a stable 12-character id
-  (lowercase letters and digits). Decap can't generate one, so the CMS form asks for it and
-  validates it. The admin that replaces Decap generates ids itself.
+- **The owner admin isn't built yet.** Content is changed with the seed CLI or SQL for
+  now; the passkey admin is next (ADR-011 M4–M5). The earlier Decap CMS is removed,
+  because it saved to git, which the Workers no longer read.
+- **Deploys are run by hand.** An automatic deploy on merge to `main` needs a Cloudflare
+  API token in the repository's secrets.
 - **Images are served as uploaded JPEGs.** Astro's image pipeline (AVIF/WebP, responsive
   sizes) isn't used yet, which costs page weight on mobile.
-- **Decap CMS loads from unpkg on `/admin/`.** That page is for the owner only, but it
-  depends on a third-party CDN.
 - **Lighthouse performance is 75–88 on mobile, below the 95 target.** Measured 2026-10-16:
   3 runs each on `/` and `/menu/` of the bistro demo. The cause is the photos:
   Largest Contentful Paint is about 3.7–4.2 s, while the server responds in about 50 ms.

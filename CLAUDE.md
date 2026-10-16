@@ -10,8 +10,8 @@ Project notes: ~/Vault/Projects/dagens-menu/
 - Tailwind CSS 4 (via @tailwindcss/vite)
 - TypeScript (strict), Zod for the content schema
 - Vitest for tests, `astro check` for types
-- Decap CMS (live; being replaced by a D1-backed admin, see ADR-011 in the project notes)
-- Cloudflare Pages (hosting; moving to Workers + D1 under ADR-011)
+- Content in Cloudflare D1; owner admin with passkeys in progress (ADR-011 in the project notes)
+- Cloudflare Workers, one per site (`wrangler.<site>.jsonc`); the old Pages demos stay up until cutover
 
 ## Commands
 
@@ -26,7 +26,7 @@ npm test                 # vitest: unit, content schema, parity, worker tests
 npm run check            # astro check, fails on warnings
 npm run check:consent    # after a build: no third-party requests on load
 npm run test:db          # database tests in workerd with a local D1 (migrations/)
-npm run db:migrate:local # apply migrations/ to the local D1 (d1.local.jsonc)
+npm run db:migrate:local # apply migrations/ to the local D1 (d1.local.jsonc); again after a database_id change
 npm run seed -- --site bistro [--reset]   # load a demo's JSON into the local D1
 ```
 

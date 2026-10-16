@@ -1128,3 +1128,9 @@ a {
   background-color: color-mix(in srgb, var(--color-hero-bg) 85%, transparent);
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 }
+
+/* Owner-typed names can be one long word (or a pasted URL): let it wrap rather than push the
+   page wider than a phone screen. */
+h1, h2, h3, .menu-price-badge, .hours-badge, p, li {
+  overflow-wrap: anywhere;
+}

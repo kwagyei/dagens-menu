@@ -1,15 +1,20 @@
 ---
-import { formatPrice, localized } from "../content/load";
+import { formatPrice, localized, type MenuItem } from "../content/load";
 import { getLocale, t } from "../i18n";
 
 const menu = Astro.locals.content.menu;
 const locale = getLocale(Astro.url);
+const soldOutToday = new Set(Astro.locals.today.soldOut);
+/** On the menu and not sold out today. */
+const onSale = (item: MenuItem) => item.available && !soldOutToday.has(item.id);
+// A category with no dishes has nothing to show (an owner may be building it up).
+const categories = menu.categories.filter((category) => category.items.length > 0);
 ---
 
 <!-- Category jump-links — bold pills -->
 <nav class="category-nav mb-0" aria-label={locale === "sv" ? "Menykategorier" : "Menu categories"} style="background-color: var(--color-hero-bg); padding: 1.25rem 0;">
   <div class="section-container flex flex-wrap justify-center gap-3">
-    {menu.categories.map((category) => (
+    {categories.map((category) => (
       <a href={`#cat-${category.id}`} class="category-pill">
         {localized(category.name, locale)}
       </a>
@@ -18,10 +23,10 @@ const locale = getLocale(Astro.url);
 </nav>
 
 <!-- Menu categories — alternating dark / gold-tinted sections -->
-{menu.categories.map((category, catIndex) => {
+{categories.map((category, catIndex) => {
   const isGold = catIndex % 2 === 1;
   const catName = localized(category.name, locale);
-  const featuredItem = category.items.find(item => item.image && item.available);
+  const featuredItem = category.items.find(item => item.image && onSale(item));
   const regularItems = category.items.filter(item => item !== featuredItem);
 
   return (
@@ -83,7 +88,7 @@ const locale = getLocale(Astro.url);
         <!-- Regular items list -->
         <div class="space-y-0">
           {regularItems.map((item) => (
-            <div class:list={["menu-item-row group", { "opacity-40": !item.available }]}>
+            <div class:list={["menu-item-row group", { "opacity-40": !onSale(item) }]}>
               <div class="menu-item-row-header">
                 <h3 class="font-display text-lg md:text-xl lg:text-2xl" style={`color: ${isGold ? 'var(--color-primary)' : 'var(--color-hero-text)'};`}>
                   {localized(item.name, locale)}
@@ -113,9 +118,9 @@ const locale = getLocale(Astro.url);
                 </div>
               )}
 
-              {!item.available && (
+              {!onSale(item) && (
                 <p class="mt-2 text-xs font-medium italic" style={`color: ${isGold ? 'var(--color-text-muted)' : 'var(--color-hero-muted)'};`}>
-                  {t(locale, "menu.unavailable")}
+                  {t(locale, item.available ? "menu.soldOutToday" : "menu.unavailable")}
                 </p>
               )}
             </div>
@@ -124,7 +129,7 @@ const locale = getLocale(Astro.url);
       </div>
 
       <!-- SVG wave divider between sections -->
-      {catIndex < menu.categories.length - 1 && (
+      {catIndex < categories.length - 1 && (
         <svg class="menu-section-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true">
           <path
             d={catIndex % 2 === 0

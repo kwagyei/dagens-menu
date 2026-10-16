@@ -1,6 +1,6 @@
-// Local development database for the seed CLI and `npm run db:migrate:local`. The id is a
-// placeholder: local D1 lives in .wrangler/state. The deployed Workers get their own config
-// with the real database id (ADR-011 M3).
+// Local development database for the seed CLI and `npm run db:migrate:local`. It names the
+// production database's id so that local tools and `wrangler dev` share one local copy in
+// .wrangler/state; nothing here touches the real database unless --remote is passed.
 {
   "name": "dagens-menu-local",
   "compatibility_date": "2026-10-01",
@@ -8,7 +8,7 @@
     {
       "binding": "DB",
       "database_name": "dagens-menu",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "df3dcc91-ea36-4834-ae85-6ebc1ba12b2e",
       "migrations_dir": "migrations"
     }
   ]
