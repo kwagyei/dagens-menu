@@ -19,7 +19,7 @@ Project notes: ~/Vault/Projects/dagens-menu/
 npm run dev              # dev server (default: bistro)
 npm run dev:bistro       # dev server for bistro demo
 npm run dev:westafrican  # dev server for West African demo
-npm run build            # production build
+npm run build            # production build; needs SITE=bistro or SITE=westafrican
 npm run build:bistro     # build bistro
 npm run build:westafrican # build westafrican
 npm test                 # vitest: unit, content schema, parity, worker tests
