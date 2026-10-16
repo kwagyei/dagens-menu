@@ -61,6 +61,25 @@ describe("guardAdminRequest: rate limiting", () => {
     expect(await guardAdminRequest(req("/admin/"), "bistro", l)).toBeNull();
   });
 
+  it("leaves ordinary admin writes unlimited (a dozen sold-out taps in a minute is normal)", async () => {
+    const l = limiter(0);
+    expect(await guardAdminRequest(req("/admin/security/", { method: "POST", headers: { Origin: site } }), "bistro", l)).toBeNull();
+    expect(await guardAdminRequest(req("/admin/logout", { method: "POST", headers: { Origin: site } }), "bistro", l)).toBeNull();
+  });
+
+  it("limits a percent-encoded path the same as the plain one", async () => {
+    const l = limiter(0);
+    expect((await guardAdminRequest(req("/%61dmin/invite/abc"), "bistro", l))?.status).toBe(429);
+    expect((await guardAdminRequest(req("/en/%61dmin/api/login-options", { method: "POST", headers: { Origin: site } }), "bistro", l))?.status).toBe(429);
+  });
+
+  it("sends its refusals with the admin's security headers", async () => {
+    const res = await guardAdminRequest(req("/admin/logout", { method: "POST", headers: { Origin: "https://evil.example" } }), "bistro", undefined);
+    expect(res?.headers.get("Cache-Control")).toBe("no-store");
+    expect(res?.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res?.headers.get("Content-Security-Policy")).toContain("script-src 'self'");
+  });
+
   it("doesn't run the limiter for a refused cross-site request", async () => {
     const l = limiter(10);
     const spy = vi.spyOn(l, "limit");

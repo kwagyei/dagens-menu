@@ -9,7 +9,7 @@ import { getSession, readCookie, SESSION_COOKIE } from "./auth/sessions";
 import { bundledSettings, bundledTheme } from "./content/bundled";
 import { D1ContentSource } from "./content/d1-source";
 import { handlePage } from "./server/handler";
-import { routeClass } from "./server/http";
+import { decodedPath, routeClass, securityHeaders } from "./server/http";
 
 declare const __BUILD_SITE__: string;
 declare const __BUILD_ID__: string;
@@ -28,6 +28,15 @@ function source(site: string): D1ContentSource {
 export const onRequest = defineMiddleware(async (context, next) => {
   const admin = routeClass(context.url.pathname) === "admin";
   if (admin) {
+    // Without a signing secret the admin can't work safely: refuse all of it, cleanly.
+    if (!env.SESSION_SECRET || env.SESSION_SECRET.length < 32) {
+      console.error("admin: SESSION_SECRET is not set (32+ characters); the admin is unavailable.");
+      const api = /\/admin\/api\//.test(decodedPath(context.url.pathname));
+      return new Response(api ? JSON.stringify({ error: "not-configured" }) : "The admin is not configured.", {
+        status: 503,
+        headers: { ...securityHeaders("admin"), "Content-Type": api ? "application/json" : "text/plain; charset=utf-8" },
+      });
+    }
     const refused = await guardAdminRequest(context.request, __BUILD_SITE__, env.AUTH_LIMITER);
     if (refused) return refused;
   }

@@ -6,13 +6,26 @@
 
 export type RouteClass = "public" | "admin";
 
+/**
+ * The path as the router sees it: percent-decoded, so /%61dmin/ can't reach the admin while
+ * being classed as a public page. A path that doesn't decode is left as it is.
+ */
+export function decodedPath(pathname: string): string {
+  try {
+    return decodeURIComponent(pathname);
+  } catch {
+    return pathname;
+  }
+}
+
 export function routeClass(pathname: string): RouteClass {
-  return pathname === "/admin" || pathname.startsWith("/admin/") || pathname.startsWith("/en/admin") ? "admin" : "public";
+  const path = decodedPath(pathname);
+  return /^\/(en\/)?admin(\/|$)/.test(path) ? "admin" : "public";
 }
 
 // Pages load nothing from another origin (the consent check enforces it); the inline
 // scripts Astro emits need 'unsafe-inline'.
-const CSP = [
+const PUBLIC_CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
@@ -26,9 +39,25 @@ const CSP = [
   "frame-ancestors 'none'",
 ].join("; ");
 
+// The admin runs only its own bundled script and inline styles (the theme's colours): no
+// inline scripts, no frames, nothing from elsewhere (ADR-011 §9).
+const ADMIN_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "connect-src 'self'",
+  "font-src 'self'",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 export function securityHeaders(route: RouteClass): Record<string, string> {
   return {
-    "Content-Security-Policy": CSP,
+    "Content-Security-Policy": route === "admin" ? ADMIN_CSP : PUBLIC_CSP,
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
