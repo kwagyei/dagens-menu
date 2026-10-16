@@ -6,7 +6,7 @@
       "items": [
         {
           "name": { "sv": "Dagens soppa", "en": "Soup of the day" },
-          "description": { "sv": "Serveras med nybakat surdegsbrod och smor", "en": "Served with freshly baked sourdough bread and butter" },
+          "description": { "sv": "Serveras med nybakat surdegsbröd och smör", "en": "Served with freshly baked sourdough bread and butter" },
           "price": 14500,
           "tags": ["vegetarian"],
           "allergens": ["gluten", "milk"],
@@ -14,7 +14,7 @@
         },
         {
           "name": { "sv": "Lunchsallad med gravad lax", "en": "Lunch salad with cured salmon" },
-          "description": { "sv": "Blandade blad, dill, hovmastarsas och citron", "en": "Mixed greens, dill, mustard-dill sauce and lemon" },
+          "description": { "sv": "Blandade blad, dill, hovmästarsås och citron", "en": "Mixed greens, dill, mustard-dill sauce and lemon" },
           "price": 15500,
           "tags": [],
           "allergens": ["fish", "mustard", "eggs"],
@@ -22,7 +22,7 @@
         },
         {
           "name": { "sv": "Kroppkakor med lingon", "en": "Potato dumplings with lingonberries" },
-          "description": { "sv": "Fyllda med flask och lok, serverade med smor och graddfil", "en": "Filled with pork and onion, served with butter and sour cream" },
+          "description": { "sv": "Fyllda med fläsk och lök, serverade med smör och gräddfil", "en": "Filled with pork and onion, served with butter and sour cream" },
           "price": 16500,
           "tags": [],
           "allergens": ["gluten", "milk", "eggs"],
@@ -32,11 +32,11 @@
     },
     {
       "id": "starters",
-      "name": { "sv": "Forratter", "en": "Starters" },
+      "name": { "sv": "Förrätter", "en": "Starters" },
       "items": [
         {
           "name": { "sv": "Toast Skagen", "en": "Skagen toast" },
-          "description": { "sv": "Handskalde rakor, majosas, dill och rostad brioche", "en": "Hand-peeled shrimp, mayo, dill and toasted brioche" },
+          "description": { "sv": "Handskalade räkor, majonnäs, dill och rostad brioche", "en": "Hand-peeled shrimp, mayo, dill and toasted brioche" },
           "price": 13500,
           "tags": [],
           "allergens": ["crustaceans", "gluten", "eggs"],
@@ -44,8 +44,8 @@
           "image": "/images/bistro/toast-skagen.jpg"
         },
         {
-          "name": { "sv": "Rodbetscarpaccio", "en": "Beetroot carpaccio" },
-          "description": { "sv": "Med chevre, valnotter, honung och ruccola", "en": "With goat cheese, walnuts, honey and rocket" },
+          "name": { "sv": "Rödbetscarpaccio", "en": "Beetroot carpaccio" },
+          "description": { "sv": "Med chèvre, valnötter, honung och ruccola", "en": "With goat cheese, walnuts, honey and rocket" },
           "price": 12500,
           "tags": ["vegetarian"],
           "allergens": ["milk", "nuts"],
@@ -55,19 +55,19 @@
     },
     {
       "id": "mains",
-      "name": { "sv": "Varmratter", "en": "Mains" },
+      "name": { "sv": "Varmrätter", "en": "Mains" },
       "items": [
         {
-          "name": { "sv": "Pannbiff med lok", "en": "Pan-fried beef patty with onions" },
-          "description": { "sv": "Med graddsas, lingon och pressgurka", "en": "With cream sauce, lingonberries and pickled cucumber" },
+          "name": { "sv": "Pannbiff med lök", "en": "Pan-fried beef patty with onions" },
+          "description": { "sv": "Med gräddsås, lingon och pressgurka", "en": "With cream sauce, lingonberries and pickled cucumber" },
           "price": 18900,
           "tags": [],
           "allergens": ["gluten", "milk", "eggs"],
           "available": true
         },
         {
-          "name": { "sv": "Stekt stramming", "en": "Fried Baltic herring" },
-          "description": { "sv": "Med potatispure, brynt smor och persilja", "en": "With mashed potatoes, browned butter and parsley" },
+          "name": { "sv": "Stekt strömming", "en": "Fried Baltic herring" },
+          "description": { "sv": "Med potatispuré, brynt smör och persilja", "en": "With mashed potatoes, browned butter and parsley" },
           "price": 17500,
           "tags": [],
           "allergens": ["fish", "gluten", "milk"],
@@ -75,7 +75,7 @@
         },
         {
           "name": { "sv": "Svamprisotto", "en": "Wild mushroom risotto" },
-          "description": { "sv": "Kantareller, karl-johan, parmesan och timjan", "en": "Chanterelles, porcini, parmesan and thyme" },
+          "description": { "sv": "Kantareller, karljohan, parmesan och timjan", "en": "Chanterelles, porcini, parmesan and thyme" },
           "price": 19500,
           "tags": ["vegetarian"],
           "allergens": ["milk"],
@@ -84,7 +84,7 @@
         },
         {
           "name": { "sv": "Gravad laxfilé", "en": "Cured salmon fillet" },
-          "description": { "sv": "Med dillstuvad potatis och citronsmor", "en": "With dill-creamed potatoes and lemon butter" },
+          "description": { "sv": "Med dillstuvad potatis och citronsmör", "en": "With dill-creamed potatoes and lemon butter" },
           "price": 22500,
           "tags": [],
           "allergens": ["fish", "milk"],
@@ -94,11 +94,11 @@
     },
     {
       "id": "desserts",
-      "name": { "sv": "Efterratter", "en": "Desserts" },
+      "name": { "sv": "Efterrätter", "en": "Desserts" },
       "items": [
         {
           "name": { "sv": "Chokladfondant", "en": "Chocolate fondant" },
-          "description": { "sv": "Med vaniljglass och hallonsas", "en": "With vanilla ice cream and raspberry coulis" },
+          "description": { "sv": "Med vaniljglass och hallonsås", "en": "With vanilla ice cream and raspberry coulis" },
           "price": 11500,
           "tags": [],
           "allergens": ["milk", "eggs", "gluten"],
@@ -107,7 +107,7 @@
         },
         {
           "name": { "sv": "Rabarberpaj", "en": "Rhubarb crumble" },
-          "description": { "sv": "Med vaniljsas", "en": "With vanilla custard" },
+          "description": { "sv": "Med vaniljsås", "en": "With vanilla custard" },
           "price": 9500,
           "tags": ["vegetarian"],
           "allergens": ["milk", "eggs", "gluten"],
@@ -121,7 +121,7 @@
       "items": [
         {
           "name": { "sv": "Husets lemonad", "en": "House lemonade" },
-          "description": { "sv": "Fladerblom och citron", "en": "Elderflower and lemon" },
+          "description": { "sv": "Fläderblom och citron", "en": "Elderflower and lemon" },
           "price": 6500,
           "tags": ["vegan"],
           "allergens": [],
@@ -129,7 +129,7 @@
         },
         {
           "name": { "sv": "Lingondricka", "en": "Lingonberry drink" },
-          "description": { "sv": "Hemgjord, latt kolsyrad", "en": "Homemade, lightly sparkling" },
+          "description": { "sv": "Hemgjord, lätt kolsyrad", "en": "Homemade, lightly sparkling" },
           "price": 5500,
           "tags": ["vegan"],
           "allergens": [],

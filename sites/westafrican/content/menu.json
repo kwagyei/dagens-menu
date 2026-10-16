@@ -2,11 +2,11 @@
   "categories": [
     {
       "id": "starters",
-      "name": { "sv": "Forratter", "en": "Starters" },
+      "name": { "sv": "Förrätter", "en": "Starters" },
       "items": [
         {
           "name": { "sv": "Kelewele", "en": "Kelewele" },
-          "description": { "sv": "Kryddigt stekt plantain med ingefara och chili", "en": "Spiced fried plantain with ginger and chilli" },
+          "description": { "sv": "Kryddig stekt plantain med ingefära och chili", "en": "Spiced fried plantain with ginger and chilli" },
           "price": 8500,
           "tags": ["vegan", "gluten-free", "spicy"],
           "allergens": [],
@@ -15,7 +15,7 @@
         },
         {
           "name": { "sv": "Suya-spett", "en": "Suya skewers" },
-          "description": { "sv": "Grillat nötkott med jordnötskrydda och lok", "en": "Grilled beef with peanut spice and onion" },
+          "description": { "sv": "Grillat nötkött med jordnötskrydda och lök", "en": "Grilled beef with peanut spice and onion" },
           "price": 11500,
           "tags": ["spicy", "gluten-free"],
           "allergens": ["peanuts"],
@@ -23,7 +23,7 @@
         },
         {
           "name": { "sv": "Akara", "en": "Akara" },
-          "description": { "sv": "Friterade bonbullar med chilisas", "en": "Black-eyed pea fritters with chilli sauce" },
+          "description": { "sv": "Friterade bönbullar med chilisås", "en": "Black-eyed pea fritters with chilli sauce" },
           "price": 9500,
           "tags": ["vegan"],
           "allergens": [],
@@ -33,11 +33,11 @@
     },
     {
       "id": "mains",
-      "name": { "sv": "Varmratter", "en": "Mains" },
+      "name": { "sv": "Varmrätter", "en": "Mains" },
       "items": [
         {
-          "name": { "sv": "Jollof ris", "en": "Jollof rice" },
-          "description": { "sv": "Kryddigt tomatstokt ris med grillad kyckling och stekt plantain", "en": "Spiced tomato rice with grilled chicken and fried plantain" },
+          "name": { "sv": "Jollofris", "en": "Jollof rice" },
+          "description": { "sv": "Kryddigt ris kokt i tomatsås, med grillad kyckling och stekt plantain", "en": "Spiced tomato rice with grilled chicken and fried plantain" },
           "price": 17500,
           "tags": ["spicy"],
           "allergens": [],
@@ -46,7 +46,7 @@
         },
         {
           "name": { "sv": "Egusi-soppa", "en": "Egusi soup" },
-          "description": { "sv": "Pumpafrösoppa med bladgrönsaker, getköt och fufu", "en": "Melon seed soup with leafy greens, goat meat and fufu" },
+          "description": { "sv": "Pumpafrösoppa med bladgrönsaker, getkött och fufu", "en": "Melon seed soup with leafy greens, goat meat and fufu" },
           "price": 18500,
           "tags": ["spicy", "gluten-free"],
           "allergens": [],
@@ -62,14 +62,14 @@
         },
         {
           "name": { "sv": "Waakye", "en": "Waakye" },
-          "description": { "sv": "Ris och bonor med shitostew, spaghetti och stekt plantain", "en": "Rice and beans with shito stew, spaghetti and fried plantain" },
+          "description": { "sv": "Ris och bönor med shito, tomatgryta, spaghetti och stekt plantain", "en": "Rice and beans with shito stew, spaghetti and fried plantain" },
           "price": 16500,
           "tags": ["spicy"],
           "allergens": ["gluten"],
           "available": true
         },
         {
-          "name": { "sv": "Groundnut soup", "en": "Groundnut soup" },
+          "name": { "sv": "Jordnötssoppa", "en": "Groundnut soup" },
           "description": { "sv": "Krämig jordnötssoppa med kyckling och ris", "en": "Creamy peanut soup with chicken, served with rice" },
           "price": 17500,
           "tags": [],
@@ -80,7 +80,7 @@
     },
     {
       "id": "desserts",
-      "name": { "sv": "Efterratter", "en": "Desserts" },
+      "name": { "sv": "Efterrätter", "en": "Desserts" },
       "items": [
         {
           "name": { "sv": "Puff-puff", "en": "Puff-puff" },
@@ -107,7 +107,7 @@
       "items": [
         {
           "name": { "sv": "Sobolo", "en": "Sobolo" },
-          "description": { "sv": "Hibiskusdryck med ingefara och kryddnejlika", "en": "Hibiscus drink with ginger and cloves" },
+          "description": { "sv": "Hibiskusdryck med ingefära och kryddnejlika", "en": "Hibiscus drink with ginger and cloves" },
           "price": 6500,
           "tags": ["vegan"],
           "allergens": [],
