@@ -1,0 +1,63 @@
+---
+// The admin's own layout: plain, fast and phone-first, in the site's colours, with nothing
+// from the public site (no consent banner, no JSON-LD, never indexed).
+import "../styles/global.css";
+import { localized } from "../content/load";
+import { getLocale, t } from "../i18n";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const locale = getLocale(Astro.url);
+const content = Astro.locals.content;
+const siteName = localized(content.settings.name, locale);
+const theme = content.theme;
+const otherLocale = locale === "sv" ? "en" : "sv";
+const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} | {siteName} {t(locale, "admin.title")}</title>
+    <style
+      define:vars={{
+        "color-primary": theme.colors.primary,
+        "color-bg": theme.colors.background,
+        "color-surface": theme.colors.surface,
+        "color-text": theme.colors.text,
+        "color-text-muted": theme.colors.textMuted,
+        "color-border": theme.colors.border,
+        "color-hero-bg": theme.colors.heroBg,
+        "color-hero-text": theme.colors.heroText,
+        radius: theme.cornerRadius,
+      }}
+    >
+      body { background: var(--color-bg); color: var(--color-text); font-family: system-ui, -apple-system, sans-serif; }
+      .admin-bar { background: var(--color-hero-bg); color: var(--color-hero-text); }
+      .admin-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); }
+      .admin-button { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: 0 1.25rem; border-radius: var(--radius); background: var(--color-primary); color: #fff; font-weight: 600; font-size: 1.0625rem; border: 0; cursor: pointer; }
+      .admin-button[disabled] { opacity: 0.6; cursor: progress; }
+      .admin-button-quiet { background: transparent; color: var(--color-text); border: 1px solid var(--color-border); }
+      .admin-muted { color: var(--color-text-muted); }
+      .admin-message { border-left: 4px solid var(--color-primary); padding: 0.75rem 1rem; background: var(--color-surface); }
+      a { color: inherit; }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <header class="admin-bar">
+      <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <span class="font-semibold">{siteName} · {t(locale, "admin.title")}</span>
+        <a href={otherPath} hreflang={otherLocale} lang={otherLocale} class="text-sm underline">{otherLocale.toUpperCase()}</a>
+      </div>
+    </header>
+    <main class="max-w-2xl mx-auto px-4 py-8">
+      <slot />
+    </main>
+  </body>
+</html>

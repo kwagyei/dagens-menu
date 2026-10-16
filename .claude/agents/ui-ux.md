@@ -10,6 +10,7 @@ tools:
   - Glob
   - WebFetch
   - WebSearch
+model: opus
 ---
 
 # UI/UX Designer — dagens-menu

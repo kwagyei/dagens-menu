@@ -35,7 +35,8 @@ date themselves.
   embeds load only after consent.
 - The privacy page is generated from the site settings, so it only describes services
   the site actually uses.
-- An owner admin at `/admin/` with passkey sign-in, built on the same D1 data (in progress).
+- An owner admin at `/admin/`, signed into with a passkey (Face ID, fingerprint or device PIN),
+  no password. Owners are invited by the operator; editing the menu arrives next.
 
 ## Running it
 
@@ -47,6 +48,7 @@ npm run db:migrate:local              # a local D1 database (.wrangler/state)
 npm run seed -- --site bistro         # load a demo's content into it
 npm run dev:bistro                    # or dev:westafrican (seed it first)
 npm test                              # unit, content, and database tests in workerd
+npm run test:e2e                      # admin sign-in end to end (Playwright)
 npm run check                         # type check (astro check)
 SITE=bistro npm run build             # the bistro's Worker, in dist/
 ```
@@ -111,6 +113,20 @@ is the seed data the demos are loaded from.
   origin; the one allowance is `'unsafe-inline'` for the scripts Astro inlines. The page's
   ETag combines the build, the site, the path, the content version and the restaurant's
   date, so unchanged pages come back as 304s.
+- **Passkeys, no passwords, no sign-up.** A password hash strong enough to matter doesn't
+  fit the Workers free plan's 10 ms of CPU, and magic links need an email domain. Passkeys
+  verify with one signature check and can't be phished. The operator issues a single-use
+  link (`npm run admin -- invite`, valid 72 hours, stored only as a hash). Each passkey is
+  bound to its site's address, so a Bistro Norden passkey can't sign in to Chez Abena.
+- **Sessions can't outlive their owner's access.** The cookie is `__Host-`, HttpOnly and
+  SameSite=Lax, and the database keeps only its hash. A session ends after 30 days, after
+  14 days unused, or the moment the operator revokes the owner. Starting a passkey
+  ceremony writes nothing: the challenge travels in a signed five-minute cookie.
+- **Admin writes are guarded:** an Origin check on every write (form or fetch) and a form
+  token tied to the session. Sign-in, enrolment and invite links are limited to 10 a minute
+  per IP; ordinary edits aren't, so an owner can mark a dozen dishes sold out in a minute.
+  Each sign-in challenge works once, even for synced passkeys that don't count signatures.
+  The admin has its own stricter CSP: no inline scripts at all.
 - **If the database is unreachable, the site still answers.** Each Worker keeps the last
   good content in memory and serves it, marked stale, when D1 fails or takes longer than
   1.5 s. With nothing held, visitors get a page with the restaurant's phone number,
@@ -118,9 +134,11 @@ is the seed data the demos are loaded from.
 
 ## Known limitations
 
-- **The owner admin isn't built yet.** Content is changed with the seed CLI or SQL for
-  now; the passkey admin is next (ADR-011 M4–M5). The earlier Decap CMS is removed,
-  because it saved to git, which the Workers no longer read.
+- **The admin can sign in but not yet edit.** Menu, hours and text editing is next
+  (ADR-011 M5); until then content changes go through the seed CLI. The earlier Decap CMS
+  is removed, because it saved to git, which the Workers no longer read.
+- **Recovering a lost passkey needs the operator.** Owners can add a second device
+  themselves, but if every passkey is lost, the operator sends a new invite.
 - **Deploys are run by hand.** An automatic deploy on merge to `main` needs a Cloudflare
   API token in the repository's secrets.
 - **Images are served as uploaded JPEGs.** Astro's image pipeline (AVIF/WebP, responsive

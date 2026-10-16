@@ -28,6 +28,8 @@ npm run check:consent    # after a build: no third-party requests on load
 npm run test:db          # database tests in workerd with a local D1 (migrations/)
 npm run db:migrate:local # apply migrations/ to the local D1 (d1.local.jsonc); again after a database_id change
 npm run seed -- --site bistro [--reset]   # load a demo's JSON into the local D1
+npm run admin -- invite --site bistro --email x@y.se  # owner invite link (also: revoke, list; --remote)
+npm run test:e2e         # Playwright: admin sign-in end to end with virtual passkeys
 ```
 
 When starting the dev server, use background mode:
@@ -57,6 +59,8 @@ Content lives in `sites/<SITE>/content/`, theme in `sites/<SITE>/theme.json`.
 - Content writes go through `src/db/repository.ts` only. Triggers bump `content_version` on
   every content change; never write it by hand. Migrations in `migrations/` are append-only
   once applied remotely: add a new file, never edit a shipped one.
+- Admin auth lives in `src/auth/`; admin pages in `src/pages/[...prefix]/admin/` serve both
+  /admin and /en/admin. Local admin needs `.dev.vars` (see `.dev.vars.example`).
 - `src/content/` holds no markup and is excluded from Tailwind's class scan (`global.css`).
 - i18n: Swedish default at `/`, English at `/en/`. UI strings in `src/i18n/`.
 - Alt text required on every image.

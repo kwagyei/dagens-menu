@@ -1,0 +1,4 @@
+# Copy to .dev.vars for `npm run dev`. Generate a secret with:
+#   node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+# Production sets it with: npx wrangler secret put SESSION_SECRET --config wrangler.<site>.jsonc
+SESSION_SECRET=replace-with-at-least-32-random-characters

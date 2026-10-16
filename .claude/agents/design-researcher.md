@@ -7,6 +7,7 @@ tools:
   - Read
   - Bash
   - Write
+model: sonnet
 ---
 
 # Design Researcher
