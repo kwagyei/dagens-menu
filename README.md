@@ -35,7 +35,7 @@ date themselves.
 
 ## Running it
 
-Requires Node 22.12+.
+Requires Node 22.18+ (the build imports TypeScript directly, which Node supports by default from 22.18).
 
 ```sh
 npm install
@@ -95,6 +95,9 @@ the colours and fonts from `sites/<SITE>/theme.json`.
   Decap is being replaced by a database-backed admin that renders edits immediately
   (Cloudflare Workers + D1, passkey sign-in). This README describes the current static
   version until that ships.
+- **Adding a dish in Decap needs a hand-typed id.** Each dish has a stable 12-character id
+  (lowercase letters and digits). Decap can't generate one, so the CMS form asks for it and
+  validates it. The admin that replaces Decap generates ids itself.
 - **Images are served as uploaded JPEGs.** Astro's image pipeline (AVIF/WebP, responsive
   sizes) isn't used yet, which costs page weight on mobile.
 - **Decap CMS loads from unpkg on `/admin/`.** That page is for the owner only, but it
