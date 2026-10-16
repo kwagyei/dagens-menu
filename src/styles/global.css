@@ -407,6 +407,12 @@ a {
   border-radius: 9999px;
 }
 
+.hours-badge-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .hours-badge::before {
   content: "";
   width: 6px;

@@ -149,19 +149,6 @@ export function resolveHighlights(menu: Menu, ids: string[]): MenuItem[] {
   return items;
 }
 
-/** Get today's opening hours */
-export function getTodayHours(hours: OpeningHours): DayHours | null {
-  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  const today = days[new Date().getDay()];
-
-  // Check exceptions first
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const exception = hours.exceptions.find((e) => e.date === todayStr);
-  if (exception) return exception.hours;
-
-  return hours.weekly[today] ?? null;
-}
-
 /**
  * Format a price in minor units (öre) as a Swedish SEK string, e.g. 14500 → "145 kr",
  * 12550 → "125,50 kr", 125000 → "1 250 kr". Spaces are non-breaking so a price never
