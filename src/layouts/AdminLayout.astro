@@ -30,6 +30,7 @@ const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathn
     <meta name="robots" content="noindex, nofollow" />
     <title>{title} | {siteName} {t(locale, "admin.title")}</title>
     <style
+      is:global
       define:vars={{
         "color-primary": theme.colors.primary,
         "color-bg": theme.colors.background,
