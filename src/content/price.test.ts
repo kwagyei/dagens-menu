@@ -41,9 +41,14 @@ describe("parseKronor rejects rather than guesses", () => {
     ["   ", "empty"],
     ["-145", "negative"],
     ["−145", "negative"],
-    ["145,505", "too-many-decimals"],
-    // "1,250" is English for 1 250 but Swedish for 1.25: ambiguous, so not accepted.
-    ["1,250", "too-many-decimals"],
+    ["kr", "empty"],
+    ["\u2010145", "negative"],
+    ["145,5055", "too-many-decimals"],
+    ["1450,505", "too-many-decimals"],
+    // "1,250" is English for 1 250 but Swedish for 1.25: ask, don't guess.
+    ["1,250", "ambiguous"],
+    ["1.250", "ambiguous"],
+    ["145,505", "ambiguous"],
     ["100 000,01", "too-large"],
     ["1 000 000", "too-large"],
     ["etthundra", "invalid"],
