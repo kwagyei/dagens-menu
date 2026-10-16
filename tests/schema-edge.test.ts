@@ -125,8 +125,9 @@ describe("size", () => {
         id: n.toString(36).padStart(12, "0"),
       }));
     });
-    expect(performance.now() - start).toBeLessThan(5000);
-  });
+    // About 2 s on a laptop; a quadratic check would take minutes. The margin is for busy CI runners.
+    expect(performance.now() - start).toBeLessThan(20_000);
+  }, 30_000);
 });
 
 describe("other formats", () => {
