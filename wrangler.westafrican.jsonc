@@ -10,9 +10,9 @@
     {
       "binding": "DB",
       "database_name": "dagens-menu",
-      // Placeholder until the production database exists (ADR-011 plan M3.7). Local
-      // development uses .wrangler/state, shared with d1.local.jsonc through this id.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // The production database. Local development (wrangler dev, astro dev) uses a local
+      // copy in .wrangler/state instead; seed it with npm run seed.
+      "database_id": "df3dcc91-ea36-4834-ae85-6ebc1ba12b2e",
       "migrations_dir": "migrations"
     }
   ],
