@@ -21,7 +21,6 @@ const currentPath = Astro.url.pathname.replace(/^\/en/, "") || "/";
 <header
   id="site-header"
   class="sticky top-0 z-50 transition-all duration-300"
-  style={`background-color: var(--color-hero-bg);`}
 >
   <nav class="section-container flex items-center justify-between py-3 md:py-4" aria-label={locale === "sv" ? "Huvudnavigering" : "Main navigation"}>
 
@@ -136,23 +135,11 @@ const currentPath = Astro.url.pathname.replace(/^\/en/, "") || "/";
     });
   }
 
+  // Frosted-glass header once the page scrolls; the styles live in global.css.
   const header = document.getElementById("site-header");
   if (header) {
-    let lastScroll = 0;
-    window.addEventListener("scroll", () => {
-      const scrollY = window.scrollY;
-      if (scrollY > 60) {
-        header.style.backdropFilter = "blur(12px)";
-        header.style.webkitBackdropFilter = "blur(12px)";
-        header.style.backgroundColor = "color-mix(in srgb, var(--color-hero-bg) 85%, transparent)";
-        header.style.boxShadow = "0 2px 20px rgba(0,0,0,0.3)";
-      } else {
-        header.style.backdropFilter = "none";
-        header.style.webkitBackdropFilter = "none";
-        header.style.backgroundColor = "var(--color-hero-bg)";
-        header.style.boxShadow = "none";
-      }
-      lastScroll = scrollY;
-    }, { passive: true });
+    const update = () => header.toggleAttribute("data-scrolled", window.scrollY > 60);
+    window.addEventListener("scroll", update, { passive: true });
+    update();
   }
 </script>

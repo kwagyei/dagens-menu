@@ -1106,3 +1106,14 @@ a {
   border-left: 4px solid var(--color-accent);
   padding-left: 1.5rem;
 }
+
+/* Header: solid on load, frosted glass once scrolled (toggled in Header.astro) */
+#site-header {
+  background-color: var(--color-hero-bg);
+}
+#site-header[data-scrolled] {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  background-color: color-mix(in srgb, var(--color-hero-bg) 85%, transparent);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}

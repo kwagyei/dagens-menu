@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import MenuList from "../components/MenuList.astro";
-import { getMenu, getSettings, getPages, localized, formatPrice } from "../content/load";
+import { getMenu, getSettings, getPages, localized } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
 const locale = getLocale(Astro.url);
