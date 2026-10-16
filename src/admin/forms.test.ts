@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { kronorText, parseCategoryForm, parseExceptionForm, parseHoursForm, parseItemForm, rowVersionOf } from "./forms";
+import { kronorText, parseCategoryForm, parseExceptionForm, parseHoursForm, parseItemForm, parsePageTextsForm, parseSettingsForm, rowVersionOf } from "./forms";
 
 const form = (entries: Record<string, string | string[]>) => {
   const data = new FormData();
@@ -122,5 +122,95 @@ describe("parseExceptionForm", () => {
     expect(parseExceptionForm(form({ date: "2026-12-31", exception_open: "18:00", exception_close: "02:00", note_sv: "Nyår", note_en: "New Year" }), "en").exception?.hours).toEqual({ open: "18:00", close: "02:00" });
     const bad = parseExceptionForm(form({ date: "", note_sv: "Nyår" }), "en");
     expect(Object.keys(bad.errors)).toEqual(["date", "hours", "note_en"]);
+  });
+});
+
+const settings = {
+  name_sv: "Bistro Norden",
+  name_en: "Bistro Norden",
+  tagline_sv: "Husmanskost",
+  tagline_en: "Home cooking",
+  cuisine_sv: "Svensk",
+  cuisine_en: "Swedish",
+  address: "Storgatan 1, Stockholm",
+  phone: " 08-123 456 78 ",
+  email: "info@bistro.se",
+  social_instagram: " https://instagram.com/bistronorden ",
+  social_facebook: "",
+};
+
+describe("parseSettingsForm", () => {
+  it("turns a filled-in form into settings, trimming contact details and dropping empty links", () => {
+    const parsed = parseSettingsForm(form(settings), "sv");
+    expect(parsed.errors).toEqual({});
+    expect(parsed.settings).toMatchObject({ phone: "08-123 456 78", email: "info@bistro.se", socialLinks: { instagram: "https://instagram.com/bistronorden" } });
+    expect(parsed.settings?.name).toEqual({ sv: "Bistro Norden", en: "Bistro Norden" });
+  });
+
+  it("rejects a non-https link, a bad phone and a bad email, in the owner's language, keeping the input", () => {
+    const parsed = parseSettingsForm(form({ ...settings, social_tiktok: "http://tiktok.com/@x", phone: "08-12", email: "info@" }), "en");
+    expect(parsed.settings).toBeNull();
+    expect(parsed.errors).toEqual({
+      phone: "Enter a phone number with at least seven digits, for example 08-123 456 78.",
+      email: "Enter an email address, for example info@restaurant.se.",
+      social_tiktok: "The link must start with https://.",
+    });
+    expect(parsed.values.social.tiktok).toBe("http://tiktok.com/@x");
+  });
+
+  it("rejects javascript: and other schemes as links", () => {
+    for (const url of ["javascript:alert(1)", "instagram.com/x", "https://", "ftp://x.se"]) {
+      expect(parseSettingsForm(form({ ...settings, social_instagram: url }), "sv").errors.social_instagram).toBe("Länken måste börja med https://.");
+    }
+  });
+
+  it("keeps links to networks the form doesn't offer, and lets the form remove the ones it does", () => {
+    const stored = { instagram: "https://instagram.com/old", mastodon: "https://mastodon.social/@bistro" };
+    const parsed = parseSettingsForm(form({ ...settings, social_instagram: "" }), "sv", stored);
+    expect(parsed.settings?.socialLinks).toEqual({ mastodon: "https://mastodon.social/@bistro" });
+  });
+
+  it("requires every text and caps its length", () => {
+    const parsed = parseSettingsForm(form({ ...settings, name_en: " ", cuisine_sv: "x".repeat(81) }), "sv");
+    expect(parsed.errors).toEqual({ name_en: "Fyll i det här fältet.", cuisine_sv: "Högst 80 tecken." });
+  });
+});
+
+const texts = {
+  home_tagline_sv: "Mat från trakten",
+  home_tagline_en: "Local food",
+  pull_quote_sv: "",
+  pull_quote_en: "",
+  about_story_sv: "Vi öppnade 2019.",
+  about_story_en: "We opened in 2019.",
+  about_chef_sv: "Anna lagar maten.",
+  about_chef_en: "Anna cooks.",
+};
+
+describe("parsePageTextsForm", () => {
+  it("reads the texts, with no pull quote when both are empty", () => {
+    const parsed = parsePageTextsForm(form(texts), "sv");
+    expect(parsed.errors).toEqual({});
+    expect(parsed.texts).toEqual({
+      homeTagline: { sv: "Mat från trakten", en: "Local food" },
+      pullQuote: null,
+      aboutStory: { sv: "Vi öppnade 2019.", en: "We opened in 2019." },
+      aboutChef: { sv: "Anna lagar maten.", en: "Anna cooks." },
+    });
+  });
+
+  it("needs the pull quote in both languages or neither", () => {
+    const one = parsePageTextsForm(form({ ...texts, pull_quote_sv: "Bäst i stan", pull_quote_en: " ​" }), "sv");
+    expect(one.errors).toEqual({ pull_quote_en: "Fyll i citatet på båda språken, eller töm båda." });
+    expect(one.values.pull_quote_sv).toBe("Bäst i stan");
+    expect(parsePageTextsForm(form({ ...texts, pull_quote_sv: "Bäst i stan", pull_quote_en: "Best in town" }), "sv").texts?.pullQuote).toEqual({ sv: "Bäst i stan", en: "Best in town" });
+  });
+
+  it("allows long about texts up to 3000 characters, not more", () => {
+    expect(parsePageTextsForm(form({ ...texts, about_story_sv: "a".repeat(3000) }), "sv").errors).toEqual({});
+    expect(parsePageTextsForm(form({ ...texts, about_story_sv: "a".repeat(3001), home_tagline_en: "" }), "en").errors).toEqual({
+      about_story_sv: "At most 3000 characters.",
+      home_tagline_en: "Please fill in this field.",
+    });
   });
 });

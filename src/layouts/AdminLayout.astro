@@ -73,6 +73,7 @@ const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathn
           <span class="w-full text-xs opacity-80">{t(locale, "admin.home.signedInAs")} {session.email}</span>
           <a class="underline" href={adminPath("/")}>{t(locale, "admin.nav.menu")}</a>
           <a class="underline" href={adminPath("/hours/")}>{t(locale, "admin.nav.hours")}</a>
+          <a class="underline" href={adminPath("/texts/")}>{t(locale, "admin.nav.texts")}</a>
           <a class="underline" href={adminPath("/security/")}>{t(locale, "admin.security.link")}</a>
           <form method="post" action="/admin/logout" class="ml-auto">
             <input type="hidden" name="csrf" value={csrf} />

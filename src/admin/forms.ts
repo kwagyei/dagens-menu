@@ -7,10 +7,11 @@
  * The repository validates again with the content schema; these checks are the friendly
  * first line, worded for owners rather than developers.
  */
-import { cleanText, TEXT_LIMITS, visibleLength } from "../content/schema";
+import { cleanText, ownerSettingsSchema, socialLinkUrl, TEXT_LIMITS, visibleLength } from "../content/schema";
 import { parseKronor, type PriceError } from "../content/price";
-import { ALLERGENS, MENU_TAGS, WEEKDAYS, type Weekday } from "../content/vocabulary";
+import { ALLERGENS, MENU_TAGS, SOCIAL_NETWORKS, WEEKDAYS, type Weekday } from "../content/vocabulary";
 import type { MenuItemEdit } from "../db/repository";
+import type { OwnerSettings, PageTexts } from "../db/texts";
 import { t } from "../i18n";
 
 type Locale = "sv" | "en";
@@ -208,5 +209,108 @@ export function parseExceptionForm(form: FormData, locale: Locale) {
     values,
     errors,
     exception: ok ? { date: values.date, hours: parsed.hours, note: { sv: cleanText(values.note_sv), en: cleanText(values.note_en) } } : null,
+  };
+}
+
+const SETTINGS_TEXT_FIELDS = [
+  ["name_sv", TEXT_LIMITS.name],
+  ["name_en", TEXT_LIMITS.name],
+  ["tagline_sv", TEXT_LIMITS.short],
+  ["tagline_en", TEXT_LIMITS.short],
+  ["cuisine_sv", TEXT_LIMITS.name],
+  ["cuisine_en", TEXT_LIMITS.name],
+  ["address", TEXT_LIMITS.short],
+] as const;
+
+export type SettingsFormValues = Record<(typeof SETTINGS_TEXT_FIELDS)[number][0] | "phone" | "email", string> & {
+  social: Record<(typeof SOCIAL_NETWORKS)[number], string>;
+};
+
+export interface ParsedSettingsForm {
+  values: SettingsFormValues;
+  errors: FieldErrors;
+  settings: OwnerSettings | null;
+}
+
+/**
+ * The settings form. Social links have one field per network the admin offers; an empty
+ * field removes that link. `storedLinks` are the links saved now: networks among them that
+ * the form doesn't offer (set by the operator) are kept as they are.
+ */
+export function parseSettingsForm(form: FormData, locale: Locale, storedLinks: Record<string, string> = {}): ParsedSettingsForm {
+  const values = {
+    ...Object.fromEntries(SETTINGS_TEXT_FIELDS.map(([name]) => [name, field(form, name)])),
+    phone: field(form, "phone"),
+    email: field(form, "email"),
+    social: Object.fromEntries(SOCIAL_NETWORKS.map((n) => [n, field(form, `social_${n}`).trim()])),
+  } as SettingsFormValues;
+  const errors: FieldErrors = {};
+  for (const [name, max] of SETTINGS_TEXT_FIELDS) {
+    const error = textError(locale, values[name], max);
+    if (error) errors[name] = error;
+  }
+  const phone = values.phone.trim();
+  const email = values.email.trim();
+  if (!ownerSettingsSchema.shape.phone.safeParse(phone).success) errors.phone = t(locale, "admin.texts.badPhone");
+  if (!ownerSettingsSchema.shape.email.safeParse(email).success) errors.email = t(locale, "admin.texts.badEmail");
+  for (const network of SOCIAL_NETWORKS) {
+    const url = values.social[network];
+    if (url && !socialLinkUrl.safeParse(url).success) errors[`social_${network}`] = t(locale, "admin.texts.badLink");
+  }
+  if (Object.keys(errors).length > 0) return { values, errors, settings: null };
+
+  const offered = new Set<string>(SOCIAL_NETWORKS);
+  const kept = Object.entries(storedLinks).filter(([network]) => !offered.has(network));
+  const entered = SOCIAL_NETWORKS.filter((n) => values.social[n]).map((n) => [n, values.social[n]]);
+  const pair = (base: "name" | "tagline" | "cuisine") => ({ sv: cleanText(values[`${base}_sv`]), en: cleanText(values[`${base}_en`]) });
+  return {
+    values,
+    errors,
+    settings: {
+      name: pair("name"),
+      tagline: pair("tagline"),
+      cuisine: pair("cuisine"),
+      address: cleanText(values.address),
+      phone,
+      email,
+      socialLinks: Object.fromEntries([...kept, ...entered]),
+    },
+  };
+}
+
+const PAGE_TEXTS = { home_tagline: TEXT_LIMITS.short, pull_quote: TEXT_LIMITS.short, about_story: TEXT_LIMITS.long, about_chef: TEXT_LIMITS.long } as const;
+type PageTextField = keyof typeof PAGE_TEXTS;
+
+export type PageTextsFormValues = Record<`${PageTextField}_${Locale}`, string>;
+
+export interface ParsedPageTextsForm {
+  values: PageTextsFormValues;
+  errors: FieldErrors;
+  texts: PageTexts | null;
+}
+
+const isBlank = (value: string) => !/[^\s\p{Cf}]/u.test(cleanText(value));
+
+/** The page texts form. The pull quote is optional, but in both languages or neither. */
+export function parsePageTextsForm(form: FormData, locale: Locale): ParsedPageTextsForm {
+  const fields = Object.keys(PAGE_TEXTS) as PageTextField[];
+  const values = Object.fromEntries(fields.flatMap((f) => [`${f}_sv`, `${f}_en`]).map((n) => [n, field(form, n)])) as PageTextsFormValues;
+  const hasQuote = !isBlank(values.pull_quote_sv) || !isBlank(values.pull_quote_en);
+  const errors: FieldErrors = {};
+  for (const f of fields) {
+    if (f === "pull_quote" && !hasQuote) continue;
+    for (const lang of ["sv", "en"] as const) {
+      const name = `${f}_${lang}` as const;
+      const missing = f === "pull_quote" && isBlank(values[name]);
+      const error = missing ? t(locale, "admin.texts.quoteBoth") : textError(locale, values[name], PAGE_TEXTS[f]);
+      if (error) errors[name] = error;
+    }
+  }
+  if (Object.keys(errors).length > 0) return { values, errors, texts: null };
+  const pair = (f: PageTextField) => ({ sv: cleanText(values[`${f}_sv`]), en: cleanText(values[`${f}_en`]) });
+  return {
+    values,
+    errors,
+    texts: { homeTagline: pair("home_tagline"), pullQuote: hasQuote ? pair("pull_quote") : null, aboutStory: pair("about_story"), aboutChef: pair("about_chef") },
   };
 }

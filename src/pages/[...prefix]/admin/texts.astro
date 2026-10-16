@@ -1,0 +1,202 @@
+---
+// Texts (plan M5.5): the restaurant's settings and the page texts, as two forms that post
+// back here. Booking and the map are operator-only (ADR-011 §8) and are not on this page.
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import {
+  type FieldErrors,
+  type PageTextsFormValues,
+  parsePageTextsForm,
+  parseSettingsForm,
+  rowVersionOf,
+  type SettingsFormValues,
+} from "../../../admin/forms";
+import { adminPage } from "../../../admin/page";
+import { TEXT_LIMITS } from "../../../content/schema";
+import { SOCIAL_NETWORKS } from "../../../content/vocabulary";
+import { adminTexts, updatePageTexts, updateSettings } from "../../../db/texts";
+import { t } from "../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const here = page.path("/texts/");
+const stored = await adminTexts(repo);
+if (!stored) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
+
+const s = stored.settings;
+const p = stored.pages;
+let settings: SettingsFormValues = {
+  name_sv: s.name.sv,
+  name_en: s.name.en,
+  tagline_sv: s.tagline.sv,
+  tagline_en: s.tagline.en,
+  cuisine_sv: s.cuisine.sv,
+  cuisine_en: s.cuisine.en,
+  address: s.address,
+  phone: s.phone,
+  email: s.email,
+  social: Object.fromEntries(SOCIAL_NETWORKS.map((n) => [n, s.socialLinks[n] ?? ""])) as SettingsFormValues["social"],
+};
+let pages: PageTextsFormValues = {
+  home_tagline_sv: p.homeTagline.sv,
+  home_tagline_en: p.homeTagline.en,
+  pull_quote_sv: p.pullQuote?.sv ?? "",
+  pull_quote_en: p.pullQuote?.en ?? "",
+  about_story_sv: p.aboutStory.sv,
+  about_story_en: p.aboutStory.en,
+  about_chef_sv: p.aboutChef.sv,
+  about_chef_en: p.aboutChef.en,
+};
+let settingsErrors: FieldErrors = {};
+let pagesErrors: FieldErrors = {};
+let settingsVersion = s.rowVersion;
+let pagesVersion = p.rowVersion;
+let conflict: "settings" | "pages" | null = null;
+
+if (Astro.request.method === "POST") {
+  const form = await page.postedForm();
+  if (!form) return Astro.redirect(`${here}?done=expired`, 303);
+  const action = form.get("action");
+  if (action === "settings") {
+    const parsed = parseSettingsForm(form, locale, s.socialLinks);
+    settings = parsed.values;
+    settingsErrors = parsed.errors;
+    settingsVersion = rowVersionOf(form) ?? -1;
+    if (parsed.settings) {
+      const result = await updateSettings(repo, settingsVersion, parsed.settings);
+      if (result.ok) return Astro.redirect(`${here}?done=saved#settings`, 303);
+      if (result.error === "conflict") {
+        conflict = "settings";
+        settingsVersion = result.current; // saving again now overwrites, knowingly
+      } else settingsErrors = { name_sv: t(locale, "admin.error.failed") };
+    }
+  } else if (action === "pages") {
+    const parsed = parsePageTextsForm(form, locale);
+    pages = parsed.values;
+    pagesErrors = parsed.errors;
+    pagesVersion = rowVersionOf(form) ?? -1;
+    if (parsed.texts) {
+      const result = await updatePageTexts(repo, pagesVersion, parsed.texts);
+      if (result.ok) return Astro.redirect(`${here}?done=saved#pages`, 303);
+      if (result.error === "conflict") {
+        conflict = "pages";
+        pagesVersion = result.current;
+      } else pagesErrors = { home_tagline_sv: t(locale, "admin.error.failed") };
+    }
+  } else {
+    return Astro.redirect(`${here}?done=not-found`, 303);
+  }
+  Astro.response.status = conflict ? 409 : 422;
+}
+
+const done = Astro.url.searchParams.get("done");
+const message: Record<string, string> = {
+  saved: t(locale, "admin.menu.saved"),
+  "not-found": t(locale, "admin.menu.notFound"),
+  expired: t(locale, "admin.error.form"),
+};
+const networkNames: Record<(typeof SOCIAL_NETWORKS)[number], string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", twitter: "X" };
+const label = (name: string) => t(locale, `admin.texts.field.${name}` as Parameters<typeof t>[1]);
+const summaryOf = (errors: FieldErrors) => Object.entries(errors).filter(([, m]) => m) as Array<[string, string]>;
+const settingsSummary = summaryOf(settingsErrors);
+const pagesSummary = summaryOf(pagesErrors);
+---
+
+<AdminLayout title={t(locale, "admin.texts.heading")} csrf={page.csrf}>
+  <section class="space-y-8">
+    <div>
+      <h1 class="text-3xl font-bold">{t(locale, "admin.texts.heading")}</h1>
+      <p class="admin-muted mt-1">{t(locale, "admin.texts.lead")}</p>
+    </div>
+    {done && message[done] && <p class="admin-message" role="status">{message[done]}</p>}
+
+    <form method="post" class="admin-card p-4 space-y-5" id="settings" aria-labelledby="settings-title" novalidate>
+      <h2 class="text-xl font-semibold" id="settings-title">{t(locale, "admin.texts.settings")}</h2>
+      {conflict === "settings" && <p class="admin-message" role="alert">{t(locale, "admin.texts.conflict")}</p>}
+      {settingsSummary.length > 0 && (
+        <div class="admin-message" role="alert">
+          <p class="font-semibold">{t(locale, "admin.form.errorsTitle")}</p>
+          <ul class="list-disc pl-5 mt-1">
+            {settingsSummary.map(([name, m]) => <li><a href={`#${name}`}>{name.startsWith("social_") ? networkNames[name.slice(7) as keyof typeof networkNames] : label(name)}: {m}</a></li>)}
+          </ul>
+        </div>
+      )}
+      <input type="hidden" name="csrf" value={page.csrf} />
+      <input type="hidden" name="action" value="settings" />
+      <input type="hidden" name="row_version" value={settingsVersion} />
+      {([
+        ["name_sv", TEXT_LIMITS.name, "text"],
+        ["name_en", TEXT_LIMITS.name, "text"],
+        ["tagline_sv", TEXT_LIMITS.short, "text"],
+        ["tagline_en", TEXT_LIMITS.short, "text"],
+        ["cuisine_sv", TEXT_LIMITS.name, "text"],
+        ["cuisine_en", TEXT_LIMITS.name, "text"],
+        ["address", TEXT_LIMITS.short, "text"],
+        ["phone", 40, "tel"],
+        ["email", 254, "email"],
+      ] as const).map(([name, max, type]) => (
+        <div class="space-y-1">
+          <label class="font-medium block" for={name}>{label(name)}</label>
+          <input class="admin-input" type={type} id={name} name={name} value={settings[name]} maxlength={max} aria-invalid={settingsErrors[name] ? "true" : undefined} aria-describedby={settingsErrors[name] ? `${name}-error` : undefined} />
+          {settingsErrors[name] && <p class="admin-error" id={`${name}-error`}>{settingsErrors[name]}</p>}
+        </div>
+      ))}
+      <fieldset class="space-y-3" aria-describedby="social-hint">
+        <legend class="font-semibold">{t(locale, "admin.texts.social")}</legend>
+        <p class="text-sm admin-muted" id="social-hint">{t(locale, "admin.texts.socialHint")}</p>
+        {SOCIAL_NETWORKS.map((network) => {
+          const name = `social_${network}`;
+          return (
+            <div class="space-y-1">
+              <label class="font-medium block" for={name}>{networkNames[network]}</label>
+              <input class="admin-input" type="url" inputmode="url" id={name} name={name} value={settings.social[network]} placeholder="https://" aria-invalid={settingsErrors[name] ? "true" : undefined} aria-describedby={settingsErrors[name] ? `${name}-error` : undefined} />
+              {settingsErrors[name] && <p class="admin-error" id={`${name}-error`}>{settingsErrors[name]}</p>}
+            </div>
+          );
+        })}
+      </fieldset>
+      <button class="admin-button" type="submit">{t(locale, "admin.texts.saveSettings")}</button>
+    </form>
+
+    <form method="post" class="admin-card p-4 space-y-5" id="pages" aria-labelledby="pages-title" novalidate>
+      <h2 class="text-xl font-semibold" id="pages-title">{t(locale, "admin.texts.pages")}</h2>
+      {conflict === "pages" && <p class="admin-message" role="alert">{t(locale, "admin.texts.conflict")}</p>}
+      {pagesSummary.length > 0 && (
+        <div class="admin-message" role="alert">
+          <p class="font-semibold">{t(locale, "admin.form.errorsTitle")}</p>
+          <ul class="list-disc pl-5 mt-1">
+            {pagesSummary.map(([name, m]) => <li><a href={`#${name}`}>{label(name)}: {m}</a></li>)}
+          </ul>
+        </div>
+      )}
+      <input type="hidden" name="csrf" value={page.csrf} />
+      <input type="hidden" name="action" value="pages" />
+      <input type="hidden" name="row_version" value={pagesVersion} />
+      {([
+        ["home_tagline_sv", TEXT_LIMITS.short, 2],
+        ["home_tagline_en", TEXT_LIMITS.short, 2],
+        ["pull_quote_sv", TEXT_LIMITS.short, 2],
+        ["pull_quote_en", TEXT_LIMITS.short, 2],
+        ["about_story_sv", TEXT_LIMITS.long, 8],
+        ["about_story_en", TEXT_LIMITS.long, 8],
+        ["about_chef_sv", TEXT_LIMITS.long, 6],
+        ["about_chef_en", TEXT_LIMITS.long, 6],
+      ] as const).map(([name, max, rows]) => {
+        const hint = name.startsWith("pull_quote") ? `${name}-hint` : undefined;
+        const describedBy = [hint, pagesErrors[name] ? `${name}-error` : undefined].filter(Boolean).join(" ") || undefined;
+        return (
+          <div class="space-y-1">
+            <label class="font-medium block" for={name}>{label(name)}</label>
+            {hint && <p class="text-sm admin-muted" id={hint}>{t(locale, "admin.texts.quoteHint")}</p>}
+            <textarea class="admin-input" id={name} name={name} rows={rows} maxlength={max} aria-invalid={pagesErrors[name] ? "true" : undefined} aria-describedby={describedBy}>{pages[name]}</textarea>
+            {pagesErrors[name] && <p class="admin-error" id={`${name}-error`}>{pagesErrors[name]}</p>}
+          </div>
+        );
+      })}
+      <button class="admin-button" type="submit">{t(locale, "admin.texts.savePages")}</button>
+    </form>
+  </section>
+</AdminLayout>

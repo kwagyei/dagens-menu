@@ -147,35 +147,41 @@ export const hoursSchema = z.strictObject({
     .superRefine((list, ctx) => reportDuplicates(ctx, list.map((e) => e.date), (i) => [i, "date"], "exception date")),
 });
 
-export const settingsSchema = z
-  .strictObject({
-    name: localizedText(TEXT_LIMITS.name),
-    tagline: localizedText(TEXT_LIMITS.short),
-    cuisine: localizedText(TEXT_LIMITS.name),
-    address: text(TEXT_LIMITS.short),
-    phone: z
-      .string()
-      .regex(/^\+?[\d\s-]+$/, "must be a phone number")
-      .refine((p) => (p.match(/\d/g) ?? []).length >= 7, "must have at least 7 digits"),
-    email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "must be an email address"),
-    socialLinks: record(z.string().regex(/^[a-z]+$/, "must be a lowercase network name"), httpsUrl),
-    // Booking and map fields are operator-only (ADR-011 §8); checked whenever present, so a
-    // value can't sit unchecked until someone switches the mode.
-    booking: z.strictObject({
-      provider: z.enum(BOOKING_MODES),
-      embedCode: z.string().max(TEXT_LIMITS.embed).optional(),
-      bookingUrl: httpsUrl.optional(),
-    }),
-    mapEmbed: z.union([z.literal(""), httpsUrl]),
-  })
-  .superRefine((s, ctx) => {
-    if (s.booking.provider === "link" && !s.booking.bookingUrl) {
-      ctx.addIssue({ code: "custom", path: ["booking", "bookingUrl"], message: "link mode needs an https:// booking URL" });
-    }
-    if (s.booking.provider === "embed" && !s.booking.embedCode?.trim()) {
-      ctx.addIssue({ code: "custom", path: ["booking", "embedCode"], message: "embed mode needs embed code" });
-    }
-  });
+const settingsFields = z.strictObject({
+  name: localizedText(TEXT_LIMITS.name),
+  tagline: localizedText(TEXT_LIMITS.short),
+  cuisine: localizedText(TEXT_LIMITS.name),
+  address: text(TEXT_LIMITS.short),
+  phone: z
+    .string()
+    .regex(/^\+?[\d\s-]+$/, "must be a phone number")
+    .refine((p) => (p.match(/\d/g) ?? []).length >= 7, "must have at least 7 digits"),
+  email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "must be an email address"),
+  socialLinks: record(z.string().regex(/^[a-z]+$/, "must be a lowercase network name"), httpsUrl),
+  // Booking and map fields are operator-only (ADR-011 §8); checked whenever present, so a
+  // value can't sit unchecked until someone switches the mode.
+  booking: z.strictObject({
+    provider: z.enum(BOOKING_MODES),
+    embedCode: z.string().max(TEXT_LIMITS.embed).optional(),
+    bookingUrl: httpsUrl.optional(),
+  }),
+  mapEmbed: z.union([z.literal(""), httpsUrl]),
+});
+
+/** The settings an owner may edit in the admin: everything but booking and the map (ADR-011 §8). */
+export const ownerSettingsSchema = settingsFields.pick({ name: true, tagline: true, cuisine: true, address: true, phone: true, email: true, socialLinks: true });
+
+/** One social link as the admin checks it. */
+export const socialLinkUrl = httpsUrl;
+
+export const settingsSchema = settingsFields.superRefine((s, ctx) => {
+  if (s.booking.provider === "link" && !s.booking.bookingUrl) {
+    ctx.addIssue({ code: "custom", path: ["booking", "bookingUrl"], message: "link mode needs an https:// booking URL" });
+  }
+  if (s.booking.provider === "embed" && !s.booking.embedCode?.trim()) {
+    ctx.addIssue({ code: "custom", path: ["booking", "embedCode"], message: "embed mode needs embed code" });
+  }
+});
 
 export const pagesSchema = (site: string) =>
   z.strictObject({
@@ -203,6 +209,14 @@ export const pagesSchema = (site: string) =>
       kitchenImage: imagePath(site).optional(),
     }),
   });
+
+/** The page texts an owner edits in the admin; same rules as the matching fields of pagesSchema. */
+export const pageTextsSchema = z.strictObject({
+  homeTagline: localizedText(TEXT_LIMITS.short),
+  pullQuote: localizedText(TEXT_LIMITS.short).nullable(),
+  aboutStory: localizedText(TEXT_LIMITS.long),
+  aboutChef: localizedText(TEXT_LIMITS.long),
+});
 
 export const gallerySchema = (site: string) =>
   z.strictObject({
