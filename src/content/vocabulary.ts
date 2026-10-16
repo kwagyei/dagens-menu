@@ -25,3 +25,6 @@ export type Allergen = (typeof ALLERGENS)[number];
 
 export const BOOKING_MODES = ["none", "embed", "link"] as const;
 export type BookingMode = (typeof BOOKING_MODES)[number];
+
+export const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+export type Weekday = (typeof WEEKDAYS)[number];

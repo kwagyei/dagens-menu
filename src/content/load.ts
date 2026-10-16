@@ -1,26 +1,27 @@
 // Helpers for rendering content. The content itself is loaded by src/middleware.ts into
 // Astro.locals.content; its types are defined by the schema.
-export type {
-  DayHours,
-  Gallery,
-  GalleryImage,
-  LocalizedString,
-  Menu,
-  MenuCategory,
-  MenuItem,
-  OpeningHours,
-  Pages,
-  SiteSettings,
-  Theme,
-} from "./schema";
-import type { LocalizedString, Menu, MenuItem } from "./schema";
+import type { DeepReadonly } from "./readonly";
+import type * as Schema from "./schema";
+
+// Read-only views of the schema's types: what templates and render helpers receive.
+export type LocalizedString = DeepReadonly<Schema.LocalizedString>;
+export type DayHours = DeepReadonly<Schema.DayHours>;
+export type OpeningHours = DeepReadonly<Schema.OpeningHours>;
+export type MenuItem = DeepReadonly<Schema.MenuItem>;
+export type Menu = DeepReadonly<Schema.Menu>;
+export type MenuCategory = DeepReadonly<Schema.MenuCategory>;
+export type SiteSettings = DeepReadonly<Schema.SiteSettings>;
+export type Pages = DeepReadonly<Schema.Pages>;
+export type GalleryImage = DeepReadonly<Schema.GalleryImage>;
+export type Gallery = DeepReadonly<Schema.Gallery>;
+export type Theme = DeepReadonly<Schema.Theme>;
 
 /**
  * Resolve the home page's highlight ids to menu items, in the order given. Unknown ids and
  * unavailable items are skipped, so a deleted or sold-out dish quietly drops off the home
  * page instead of breaking it. Each result keeps its id, for looking up its image.
  */
-export function resolveHighlights(menu: Menu, ids: string[]): Array<{ id: string; item: MenuItem }> {
+export function resolveHighlights(menu: Menu, ids: readonly string[]): Array<{ id: string; item: MenuItem }> {
   const byId = new Map(menu.categories.flatMap((c) => c.items.map((item) => [item.id, item] as const)));
   return ids.flatMap((id) => {
     const item = byId.get(id);

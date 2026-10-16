@@ -5,13 +5,10 @@
  * Keep this module free of Node imports — it is bundled into a client script.
  */
 import type { DayHours, OpeningHours } from "./load";
+import { WEEKDAYS, type Weekday } from "./vocabulary";
 
 /** Every demo is a Swedish restaurant; "today" means today in Sweden, wherever the visitor is. */
 export const RESTAURANT_TIME_ZONE = "Europe/Stockholm";
-
-// Duplicated from schema.ts on purpose: importing the schema would bundle Zod into the page.
-const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
-type Weekday = (typeof WEEKDAYS)[number];
 
 const isWeekday = (value: string): value is Weekday => (WEEKDAYS as readonly string[]).includes(value);
 

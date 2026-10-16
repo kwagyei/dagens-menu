@@ -2,7 +2,11 @@ import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { ALLERGENS, BOOKING_MODES, MENU_TAGS } from "./content-vocabulary.mjs";
 
-const site = process.env.SITE || "bistro";
+const site = process.env.SITE;
+if (!site) {
+  console.error("SITE is not set. Run e.g. `SITE=bistro npm run build` (or npm run build:bistro).");
+  process.exit(1);
+}
 
 const config = `backend:
   name: github
