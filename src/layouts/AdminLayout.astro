@@ -59,10 +59,20 @@ const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathn
       .admin-small-button { min-height: 2.75rem; min-width: 2.75rem; padding: 0 0.75rem; border-radius: var(--radius); border: 1px solid var(--color-border); background: #fff; color: var(--color-text); font-size: 0.9375rem; cursor: pointer; }
       .admin-badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; background: var(--color-surface); border: 1px solid var(--color-border); }
       :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+      /* On the dark bar the primary colour can vanish: a light ring there. */
+      .admin-bar :focus-visible { outline-color: var(--color-hero-text); }
+      /* Time and date fields put focus on an inner segment, so the field never matches
+         :focus-visible itself: ring the whole field while anything inside it has focus. */
+      .admin-input:focus-within { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+      #admin-main:focus { outline: none; }
+      /* First stop for the keyboard: past the navigation, straight to the page. */
+      .admin-skip { position: absolute; left: 0.5rem; top: -4rem; z-index: 10; padding: 0.75rem 1rem; background: var(--color-surface); color: var(--color-text); border-radius: var(--radius); font-weight: 600; }
+      .admin-skip:focus { top: 0.5rem; }
       a { color: inherit; }
     </style>
   </head>
   <body class="min-h-screen">
+    <a href="#admin-main" class="admin-skip">{t(locale, "admin.skip")}</a>
     <header class="admin-bar">
       <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         <span class="font-semibold">{siteName} · {t(locale, "admin.title")}</span>
@@ -84,7 +94,7 @@ const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathn
         </nav>
       )}
     </header>
-    <main class="max-w-2xl mx-auto px-4 py-8">
+    <main id="admin-main" tabindex="-1" class="max-w-2xl mx-auto px-4 py-8">
       <slot />
     </main>
   </body>

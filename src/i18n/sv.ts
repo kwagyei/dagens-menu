@@ -209,6 +209,7 @@ export default {
   "admin.hours.badDate": "Välj ett datum.",
   "admin.nav.texts": "Texter",
   "admin.nav.history": "Historik",
+  "admin.skip": "Hoppa till innehållet",
   "admin.history.heading": "Historik",
   "admin.history.lead": "De senaste 50 ändringarna på webbplatsen, nyast först.",
   "admin.history.empty": "Inga ändringar ännu.",

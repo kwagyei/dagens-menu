@@ -209,6 +209,7 @@ export default {
   "admin.hours.badDate": "Choose a date.",
   "admin.nav.texts": "Texts",
   "admin.nav.history": "History",
+  "admin.skip": "Skip to content",
   "admin.history.heading": "History",
   "admin.history.lead": "The latest 50 changes to the website, newest first.",
   "admin.history.empty": "No changes yet.",
