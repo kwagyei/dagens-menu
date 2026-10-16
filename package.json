@@ -17,6 +17,8 @@
     "preview": "astro preview",
     "check": "astro check --minimumFailingSeverity warning",
     "test": "vitest run",
+    "test:node": "vitest run --project node",
+    "test:db": "vitest run --project db",
     "test:watch": "vitest",
     "check:consent": "node scripts/check-no-third-party.mjs",
     "deploy:bistro": "SITE=bistro npm run build && npx wrangler pages deploy dist --project-name dagens-menu-bistro",
@@ -31,6 +33,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@cloudflare/vitest-plugin": "1.4.2",
+    "@cloudflare/workers-types": "5.20261016.1",
     "@types/node": "^22.20.5",
     "typescript": "^6.0.3",
     "vitest": "^5.0.5",

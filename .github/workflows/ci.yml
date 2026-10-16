@@ -24,7 +24,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
-      - run: npm test
+      - run: npm run test:node
+
+  db:
+    name: Database tests (workerd + D1)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Migrations apply to an empty local D1
+        run: |
+          printf '{"name":"ci","compatibility_date":"2026-10-01","d1_databases":[{"binding":"DB","database_name":"ci","database_id":"00000000-0000-0000-0000-000000000000","migrations_dir":"migrations"}]}' > wrangler.ci.json
+          npx wrangler d1 migrations apply ci --local --config wrangler.ci.json --persist-to /tmp/d1
+      - run: npm run test:db
 
   build:
     name: Build ${{ matrix.site }}
