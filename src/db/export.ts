@@ -19,6 +19,8 @@ function compact<T extends object>(value: T): T {
 export interface ExportedSite {
   content: StoredContent;
   version: number;
+  /** Dish id → date it was marked sold out; not part of the JSON shape. */
+  soldOutOn: Record<string, string>;
 }
 
 /**
@@ -128,5 +130,6 @@ export async function exportSite(db: D1Database, site: string): Promise<Exported
       })),
     },
   };
-  return { content, version: sites.results[0].content_version as number };
+  const soldOutOn = Object.fromEntries(items.results.filter((i) => i.sold_out_on !== null).map((i) => [str(i.id), str(i.sold_out_on)]));
+  return { content, version: sites.results[0].content_version as number, soldOutOn };
 }

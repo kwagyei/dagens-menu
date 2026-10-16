@@ -1,7 +1,7 @@
 /**
  * Content from the JSON files in sites/<site>/, validated through the content schema, so
- * invalid content fails the build with its path. Uses node:fs, so only the build imports it
- * (lazily, from active-source.ts); it must never end up in a Worker bundle.
+ * invalid content is reported with its path. Uses node:fs: the seed CLI and tests use it, the
+ * Worker never imports it.
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -63,6 +63,6 @@ export class JsonContentSource implements ContentSource {
       const issues = result.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n");
       throw new Error(`Content for site "${this.site}" is invalid:\n${issues}`);
     }
-    return { content: result.data, version: hash.digest("hex").slice(0, 16), stale: false };
+    return { content: result.data, version: hash.digest("hex").slice(0, 16), stale: false, soldOutOn: {} };
   }
 }
