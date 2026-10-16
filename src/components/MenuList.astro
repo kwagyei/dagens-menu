@@ -7,12 +7,14 @@ const locale = getLocale(Astro.url);
 const soldOutToday = new Set(Astro.locals.today.soldOut);
 /** On the menu and not sold out today. */
 const onSale = (item: MenuItem) => item.available && !soldOutToday.has(item.id);
+// A category with no dishes has nothing to show (an owner may be building it up).
+const categories = menu.categories.filter((category) => category.items.length > 0);
 ---
 
 <!-- Category jump-links — bold pills -->
 <nav class="category-nav mb-0" aria-label={locale === "sv" ? "Menykategorier" : "Menu categories"} style="background-color: var(--color-hero-bg); padding: 1.25rem 0;">
   <div class="section-container flex flex-wrap justify-center gap-3">
-    {menu.categories.map((category) => (
+    {categories.map((category) => (
       <a href={`#cat-${category.id}`} class="category-pill">
         {localized(category.name, locale)}
       </a>
@@ -21,7 +23,7 @@ const onSale = (item: MenuItem) => item.available && !soldOutToday.has(item.id);
 </nav>
 
 <!-- Menu categories — alternating dark / gold-tinted sections -->
-{menu.categories.map((category, catIndex) => {
+{categories.map((category, catIndex) => {
   const isGold = catIndex % 2 === 1;
   const catName = localized(category.name, locale);
   const featuredItem = category.items.find(item => item.image && onSale(item));
@@ -127,7 +129,7 @@ const onSale = (item: MenuItem) => item.available && !soldOutToday.has(item.id);
       </div>
 
       <!-- SVG wave divider between sections -->
-      {catIndex < menu.categories.length - 1 && (
+      {catIndex < categories.length - 1 && (
         <svg class="menu-section-wave" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true">
           <path
             d={catIndex % 2 === 0

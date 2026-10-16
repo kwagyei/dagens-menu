@@ -11,12 +11,13 @@ const pages = Astro.locals.content.pages;
 const siteName = localized(settings.name, locale);
 const menuHeroImage = pages.menu?.heroImage;
 const menuTitle = t(locale, "nav.menu");
+const soldOutToday = new Set(Astro.locals.today.soldOut);
 
 const menuJsonLd = {
   "@context": "https://schema.org",
   "@type": "Menu",
   name: `${siteName} ${menuTitle}`,
-  hasMenuSection: menu.categories.map((cat) => ({
+  hasMenuSection: menu.categories.filter((cat) => cat.items.some((item) => item.available)).map((cat) => ({
     "@type": "MenuSection",
     name: localized(cat.name, locale),
     hasMenuItem: cat.items
@@ -29,6 +30,7 @@ const menuJsonLd = {
           "@type": "Offer",
           price: (item.price / 100).toFixed(2),
           priceCurrency: "SEK",
+          availability: soldOutToday.has(item.id) ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
         },
       })),
   })),
