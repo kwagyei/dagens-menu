@@ -4,13 +4,13 @@
  * and each write is one batch with its audit entry (triggers move the content version).
  */
 import { formatPrice } from "../content/load";
-import { localizedText, menuItemSchema, TEXT_LIMITS } from "../content/schema";
+import { localizedText, MAX_HIGHLIGHTS, menuItemSchema, TEXT_LIMITS } from "../content/schema";
 import { newId } from "./ids";
 import { commit, commitIf, isoSeconds, type MenuItemEdit, type RepoContext, type WriteResult } from "./repository";
 import { type Statement, stmt } from "./sql";
 
 /** At most this many dishes are featured on the home page. */
-export const MAX_FEATURED = 3;
+export const MAX_FEATURED = MAX_HIGHLIGHTS;
 
 export interface AdminItem {
   id: string;

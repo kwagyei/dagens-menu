@@ -232,7 +232,7 @@ test("every new form carries a CSRF token, and a missing or wrong one changes no
     [`/admin/menu/new/?category=${cid}`, { name_sv: "H", name_en: "H", description_sv: "x", description_en: "x", price: "100" }],
   ];
   for (const [path, body] of bodies) {
-    for (const csrf of [undefined, "", "garbage", good.slice(0, -1) + (good.endsWith("a") ? "b" : "a")]) {
+    for (const csrf of [undefined, "", "garbage", (good.startsWith("A") ? "B" : "A") + good.slice(1)]) {
       const res = await page.request.post(path, { form: csrf === undefined ? body : { ...body, csrf }, maxRedirects: 0, headers: { Origin: BASE } });
       expect([303, 302, 403], `${path} csrf=${csrf}`).toContain(res.status());
       if (res.status() === 303) expect(res.headers().location, `${path} csrf=${csrf}`).toContain("done=expired");

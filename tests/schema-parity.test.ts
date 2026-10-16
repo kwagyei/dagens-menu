@@ -59,7 +59,7 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ["duplicate item id", (c) => (c.menu.categories[1].items[0].id = firstItem(c).id), "menu.categories.1.items.0.id", "duplicate item id"],
   // Highlights exist (an unavailable one is fine: the page skips it)
   ["highlight of a missing item", (c) => (c.pages.home.highlights[0] = "zzzzzzzzzzzz"), "pages.home.highlights.0", "does not exist"],
-  ["repeated highlight", (c) => c.pages.home.highlights.push(c.pages.home.highlights[0]), "pages.home.highlights", "repeat a highlight"],
+  ["repeated highlight", (c) => (c.pages.home.highlights = [c.pages.home.highlights[0], c.pages.home.highlights[0]]), "pages.home.highlights", "repeat a highlight"],
   [
     "highlight image for an item that isn't highlighted",
     (c) => (c.pages.home.highlightImages = { ...c.pages.home.highlightImages, zzzzzzzzzzzz: "/images/bistro/x.jpg" }),
@@ -113,6 +113,7 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ["email without a domain", (c) => (c.settings.email = "hej@"), "settings.email", "email address"],
   ["phone with letters", (c) => (c.settings.phone = "ring oss"), "settings.phone", "phone number"],
   ["phone with too few digits", (c) => (c.settings.phone = "-------"), "settings.phone", "7 digits"],
+  ["more than 3 home highlights", (c) => (c.pages.home.highlights = c.menu.categories.flatMap((cat: { items: Array<{ id: string }> }) => cat.items.map((i) => i.id)).slice(0, 4)), "pages.home.highlights", "at most 3"],
   ["phone over 40 characters", (c) => (c.settings.phone = "1".repeat(41)), "settings.phone", "at most 40"],
   ["email with a bidi override", (c) => (c.settings.email = "a\u202e@b.se"), "settings.email", "email address"],
   ["email over 254 characters", (c) => (c.settings.email = `${"a".repeat(250)}@b.se`), "settings.email", "at most 254"],

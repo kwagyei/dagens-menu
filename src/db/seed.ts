@@ -61,7 +61,14 @@ export function imagePathsOf(content: StoredContent): string[] {
  * resetStatements first to replace it). The content version moves to at least the current
  * Unix time, so it never returns to a number a cache has already seen before a reset.
  */
-export function seedStatements(site: string, content: StoredContent, resolveImage: ImageResolver, now = new Date()): Statement[] {
+export function seedStatements(
+  site: string,
+  content: StoredContent,
+  resolveImage: ImageResolver,
+  now = new Date(),
+  /** The audit entry's summary; a restore names its file. */
+  summary = "Content loaded from JSON",
+): Statement[] {
   const out: Statement[] = [];
   const version = Math.floor(now.getTime() / 1000);
   out.push(
@@ -216,6 +223,6 @@ export function seedStatements(site: string, content: StoredContent, resolveImag
     );
   });
 
-  out.push(stmt("INSERT INTO audit_log (site_id, entity, action, summary) VALUES (?, 'site', 'seed', 'Content loaded from JSON')", site));
+  out.push(stmt("INSERT INTO audit_log (site_id, entity, action, summary) VALUES (?, 'site', 'seed', ?)", site, summary));
   return out;
 }

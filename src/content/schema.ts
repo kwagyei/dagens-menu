@@ -16,6 +16,9 @@ import { ALLERGENS, BOOKING_MODES, MENU_TAGS, WEEKDAYS } from "./vocabulary";
 
 export { WEEKDAYS };
 
+/** Dishes the home page features; the admin enforces it too, inside its guarded write. */
+export const MAX_HIGHLIGHTS = 3;
+
 export const TEXT_LIMITS = { name: 80, short: 300, long: 3000, embed: 5000 } as const;
 
 /** Exception dates must fall in this range; the admin narrows it to two years ahead (ADR-011 §8). */
@@ -208,7 +211,7 @@ export const pagesSchema = (site: string) =>
     home: z
       .strictObject({
         tagline: localizedText(TEXT_LIMITS.short),
-        highlights: z.array(itemId).refine(unique, "must not repeat a highlight"),
+        highlights: z.array(itemId).max(MAX_HIGHLIGHTS, `must have at most ${MAX_HIGHLIGHTS} highlights`).refine(unique, "must not repeat a highlight"),
         heroImage: imagePath(site).optional(),
         highlightImages: record(itemId, imagePath(site)).optional(),
         pullQuote: localizedText(TEXT_LIMITS.short).optional(),

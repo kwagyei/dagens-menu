@@ -4,17 +4,20 @@
  *   npm run db:migrate:local                      # once, and after new migrations
  *   npm run seed -- --site bistro [--reset]       # local database (d1.local.jsonc)
  *   npm run seed -- --site bistro --remote --config <deployed config> [--reset]
+ *   npm run seed -- --site bistro --from bistro-content-2026-10-16.json --reset   # restore an export
  *
- * Validates the content with the schema, registers the curated images by hashing the real
+ * --from loads an owner's "Export my content" file (plan M5.6) instead of sites/<site>/;
+ * the theme still comes from the repository. Validates the content with the schema, registers the curated images by hashing the real
  * files under public/, and refuses to touch a site that already has content unless --reset
  * is given. --reset replaces the content but keeps owners and the audit log; on the remote
  * database it is allowed only for the demo sites, so a typo can't wipe a client's menu.
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { parseArgs } from "node:util";
 import { JsonContentSource } from "../src/content/json-source";
+import { readExportFile } from "../src/db/export-file";
 import { type ImageResolver, resetStatements, seedStatements } from "../src/db/seed";
 import { checkTarget, type D1Target, execute, fail as failWith, query, root, targetName } from "./d1-cli";
 
@@ -25,6 +28,7 @@ const { values } = parseArgs({
     remote: { type: "boolean", default: false },
     database: { type: "string", default: "dagens-menu" },
     config: { type: "string", default: "d1.local.jsonc" },
+    from: { type: "string" },
   },
 });
 
@@ -64,14 +68,31 @@ try {
 } catch (error) {
   fail((error as Error).message);
 }
-const { theme: _theme, ...content } = full;
+const { theme, ...fromRepository } = full;
+let content = fromRepository;
+let summary: string | undefined;
+if (values.from) {
+  let text: string;
+  try {
+    text = readFileSync(values.from, "utf-8");
+  } catch {
+    fail(`can't read ${values.from}`);
+  }
+  // Booking and the map are operator-only (ADR-011 §8): they come from the repository.
+  const read = readExportFile(text, site, { theme, settings: fromRepository.settings });
+  if (!read.ok) fail(`${values.from}: ${read.error}`);
+  if (read.operatorFieldsReplaced) console.warn(`seed: the file's booking and map settings differ from sites/${site}/; keeping the repository's (operator-only).`);
+  content = read.content;
+  summary = `Restored from ${basename(values.from).replace(/[^\w.-]/g, "_").slice(0, 80)} (exported ${read.exportedAt})`;
+  console.log(`seed: restoring "${site}" from ${values.from} (exported ${read.exportedAt}).`);
+}
 
 const [{ n: existing }] = query<{ n: number }>("seed", target, `SELECT count(*) AS n FROM settings WHERE site_id = '${site}'`);
 if (existing > 0 && !values.reset) fail(`site "${site}" already has content in the ${targetName(target)} database; pass --reset to replace it`);
 
 let statements;
 try {
-  statements = [...(values.reset ? resetStatements(site) : []), ...seedStatements(site, content, resolveImage)];
+  statements = [...(values.reset ? resetStatements(site) : []), ...seedStatements(site, content, resolveImage, new Date(), summary)];
 } catch (error) {
   fail((error as Error).message);
 }
