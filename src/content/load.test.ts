@@ -40,30 +40,42 @@ describe("localized", () => {
 });
 
 describe("resolveHighlights", () => {
-  const item = (name: string): MenuItem => ({
-    name: { sv: name, en: name },
+  const item = (id: string, available = true): MenuItem => ({
+    id,
+    name: { sv: id, en: id },
     description: { sv: "", en: "" },
     price: 10000,
     tags: [],
     allergens: [],
-    available: true,
+    available,
   });
   const menu: Menu = {
     categories: [
-      { id: "mains", name: { sv: "Varmrätter", en: "Mains" }, items: [item("a"), item("b")] },
-      { id: "small-plates", name: { sv: "Smårätter", en: "Small plates" }, items: [item("c")] },
+      { id: "mains", name: { sv: "Varmrätter", en: "Mains" }, items: [item("aaaaaaaaaaaa"), item("bbbbbbbbbbbb")] },
+      { id: "desserts", name: { sv: "Efterrätter", en: "Desserts" }, items: [item("cccccccccccc", false)] },
     ],
   };
+  const resolved = (m: Menu, ids: string[]) => resolveHighlights(m, ids).map((h) => h.id);
 
-  it("resolves ids to items in the order given", () => {
-    expect(resolveHighlights(menu, ["mains-1", "mains-0"]).map((i) => i.name.en)).toEqual(["b", "a"]);
+  it("resolves ids to items in the order given, keeping each id", () => {
+    const result = resolveHighlights(menu, ["bbbbbbbbbbbb", "aaaaaaaaaaaa"]);
+    expect(result.map((h) => [h.id, h.item.id])).toEqual([
+      ["bbbbbbbbbbbb", "bbbbbbbbbbbb"],
+      ["aaaaaaaaaaaa", "aaaaaaaaaaaa"],
+    ]);
   });
 
-  it("handles category ids that themselves contain a dash", () => {
-    expect(resolveHighlights(menu, ["small-plates-0"]).map((i) => i.name.en)).toEqual(["c"]);
+  it("is unaffected by reordering items within or across categories", () => {
+    const reordered: Menu = {
+      categories: [
+        { ...menu.categories[1], items: [...menu.categories[1].items, menu.categories[0].items[0]] },
+        { ...menu.categories[0], items: [menu.categories[0].items[1]] },
+      ],
+    };
+    expect(resolved(reordered, ["aaaaaaaaaaaa", "bbbbbbbbbbbb"])).toEqual(resolved(menu, ["aaaaaaaaaaaa", "bbbbbbbbbbbb"]));
   });
 
-  it("skips ids that do not resolve instead of throwing", () => {
-    expect(resolveHighlights(menu, ["mains-9", "drinks-0", "mains", "mains-x"])).toEqual([]);
+  it("skips unknown ids and unavailable items instead of throwing", () => {
+    expect(resolved(menu, ["zzzzzzzzzzzz", "cccccccccccc", "aaaaaaaaaaaa"])).toEqual(["aaaaaaaaaaaa"]);
   });
 });

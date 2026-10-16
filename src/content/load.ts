@@ -37,6 +37,8 @@ export interface OpeningHours {
 }
 
 export interface MenuItem {
+  /** Stable id: highlights and the admin refer to items by it, never by position. */
+  id: string;
   name: LocalizedString;
   description: LocalizedString;
   price: number;
@@ -133,20 +135,17 @@ export function getTheme(): Theme {
   return loadJson<Theme>("theme.json");
 }
 
-/** Resolve highlight IDs like "lunch-0" to actual menu items */
-export function resolveHighlights(menu: Menu, ids: string[]): MenuItem[] {
-  const items: MenuItem[] = [];
-  for (const id of ids) {
-    const dashIdx = id.lastIndexOf("-");
-    if (dashIdx === -1) continue;
-    const catId = id.slice(0, dashIdx);
-    const itemIdx = parseInt(id.slice(dashIdx + 1), 10);
-    const category = menu.categories.find((c) => c.id === catId);
-    if (category && category.items[itemIdx]) {
-      items.push(category.items[itemIdx]);
-    }
-  }
-  return items;
+/**
+ * Resolve the home page's highlight ids to menu items, in the order given. Unknown ids and
+ * unavailable items are skipped, so a deleted or sold-out dish quietly drops off the home
+ * page instead of breaking it. Each result keeps its id, for looking up its image.
+ */
+export function resolveHighlights(menu: Menu, ids: string[]): Array<{ id: string; item: MenuItem }> {
+  const byId = new Map(menu.categories.flatMap((c) => c.items.map((item) => [item.id, item] as const)));
+  return ids.flatMap((id) => {
+    const item = byId.get(id);
+    return item && item.available ? [{ id, item }] : [];
+  });
 }
 
 /**

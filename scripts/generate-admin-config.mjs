@@ -157,6 +157,10 @@ collections:
                 name: items
                 widget: list
                 fields:
+                  - label: "Id (unique; home-page highlights refer to it, do not change)"
+                    name: id
+                    widget: string
+                    pattern: ["^[a-z0-9]{12}$", "12 lowercase letters or digits"]
                   - label: Name
                     name: name
                     widget: object
@@ -209,7 +213,7 @@ collections:
               - label: Highlights
                 name: highlights
                 widget: list
-                field: { label: "Item ID", name: id, widget: string }
+                field: { label: "Menu item id", name: id, widget: string, pattern: ["^[a-z0-9]{12}$", "12 lowercase letters or digits"] }
           - label: About
             name: about
             widget: object

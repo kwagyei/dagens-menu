@@ -104,13 +104,18 @@ describe.each(sites)("%s", (site) => {
       }
     });
 
-    it("resolves every home-page highlight to a menu item", () => {
-      const unresolved = pages.home.highlights.filter((id) => {
-        const dash = id.lastIndexOf("-");
-        const category = menu.categories.find((c) => c.id === id.slice(0, dash));
-        return !category?.items[Number(id.slice(dash + 1))];
-      });
-      expect(unresolved).toEqual([]);
+    it("gives every item a unique 12-character id", () => {
+      const ids = items.map(({ item }) => item.id);
+      for (const id of ids) expect(id).toMatch(/^[a-z0-9]{12}$/);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it("highlights only existing, available items, each at most once", () => {
+      const byId = new Map(items.map(({ item }) => [item.id, item]));
+      for (const id of pages.home.highlights) {
+        expect(byId.get(id)?.available, `highlight ${id}`).toBe(true);
+      }
+      expect(new Set(pages.home.highlights).size).toBe(pages.home.highlights.length);
     });
   });
 
