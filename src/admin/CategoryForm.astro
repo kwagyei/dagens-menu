@@ -1,6 +1,7 @@
 ---
 // The category form: a name in Swedish and in English.
 import { TEXT_LIMITS } from "../content/schema";
+import ErrorSummary from "./ErrorSummary.astro";
 import { type FieldErrors, inputMaxLength } from "./forms";
 import { t } from "../i18n";
 
@@ -16,18 +17,10 @@ interface Props {
 
 const { locale, csrf, values, errors, rowVersion, submitLabel, cancelHref } = Astro.props;
 const label = { name_sv: "admin.category.nameSv", name_en: "admin.category.nameEn" } as const;
-const errorList = Object.entries(errors).filter(([, m]) => m);
 ---
 
 <form method="post" class="space-y-5" novalidate>
-  {errorList.length > 0 && (
-    <div class="admin-message" role="alert">
-      <p class="font-semibold">{t(locale, "admin.form.errorsTitle")}</p>
-      <ul class="list-disc pl-5 mt-1">
-        {errorList.map(([name, message]) => <li><a href={`#${name}`}>{t(locale, label[name as keyof typeof label])}: {message}</a></li>)}
-      </ul>
-    </div>
-  )}
+  <ErrorSummary locale={locale} errors={errors} labels={{ name_sv: t(locale, label.name_sv), name_en: t(locale, label.name_en) }} />
   <input type="hidden" name="csrf" value={csrf} />
   {rowVersion !== undefined && <input type="hidden" name="row_version" value={rowVersion} />}
   {(["name_sv", "name_en"] as const).map((name) => (

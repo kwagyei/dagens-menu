@@ -2,6 +2,7 @@
 // Texts (plan M5.5): the restaurant's settings and the page texts, as two forms that post
 // back here. Booking and the map are operator-only (ADR-011 §8) and are not on this page.
 import AdminLayout from "../../../layouts/AdminLayout.astro";
+import ErrorSummary from "../../../admin/ErrorSummary.astro";
 import {
   type FieldErrors,
   inputMaxLength,
@@ -101,9 +102,6 @@ const message: Record<string, string> = {
 };
 const networkNames: Record<(typeof SOCIAL_NETWORKS)[number], string> = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok", twitter: "X" };
 const label = (name: string) => t(locale, `admin.texts.field.${name}` as Parameters<typeof t>[1]);
-const summaryOf = (errors: FieldErrors) => Object.entries(errors).filter(([, m]) => m) as Array<[string, string]>;
-const settingsSummary = summaryOf(settingsErrors);
-const pagesSummary = summaryOf(pagesErrors);
 ---
 
 <AdminLayout title={t(locale, "admin.texts.heading")} csrf={page.csrf}>
@@ -117,14 +115,7 @@ const pagesSummary = summaryOf(pagesErrors);
     <form method="post" class="admin-card p-4 space-y-5" id="settings" aria-labelledby="settings-title" novalidate>
       <h2 class="text-xl font-semibold" id="settings-title">{t(locale, "admin.texts.settings")}</h2>
       {conflict === "settings" && <p class="admin-message" role="alert">{t(locale, "admin.texts.conflict")}</p>}
-      {settingsSummary.length > 0 && (
-        <div class="admin-message" role="alert">
-          <p class="font-semibold">{t(locale, "admin.form.errorsTitle")}</p>
-          <ul class="list-disc pl-5 mt-1">
-            {settingsSummary.map(([name, m]) => <li><a href={`#${name}`}>{name.startsWith("social_") ? networkNames[name.slice(7) as keyof typeof networkNames] : label(name)}: {m}</a></li>)}
-          </ul>
-        </div>
-      )}
+      <ErrorSummary locale={locale} errors={settingsErrors} id="settings-errors" labels={Object.fromEntries(Object.keys(settingsErrors).map((name) => [name, name.startsWith("social_") ? networkNames[name.slice(7) as keyof typeof networkNames] : label(name)]))} />
       <input type="hidden" name="csrf" value={page.csrf} />
       <input type="hidden" name="action" value="settings" />
       <input type="hidden" name="row_version" value={settingsVersion} />
@@ -165,14 +156,7 @@ const pagesSummary = summaryOf(pagesErrors);
     <form method="post" class="admin-card p-4 space-y-5" id="pages" aria-labelledby="pages-title" novalidate>
       <h2 class="text-xl font-semibold" id="pages-title">{t(locale, "admin.texts.pages")}</h2>
       {conflict === "pages" && <p class="admin-message" role="alert">{t(locale, "admin.texts.conflict")}</p>}
-      {pagesSummary.length > 0 && (
-        <div class="admin-message" role="alert">
-          <p class="font-semibold">{t(locale, "admin.form.errorsTitle")}</p>
-          <ul class="list-disc pl-5 mt-1">
-            {pagesSummary.map(([name, m]) => <li><a href={`#${name}`}>{label(name)}: {m}</a></li>)}
-          </ul>
-        </div>
-      )}
+      <ErrorSummary locale={locale} errors={pagesErrors} id="pages-errors" labels={Object.fromEntries(Object.keys(pagesErrors).map((name) => [name, label(name)]))} />
       <input type="hidden" name="csrf" value={page.csrf} />
       <input type="hidden" name="action" value="pages" />
       <input type="hidden" name="row_version" value={pagesVersion} />

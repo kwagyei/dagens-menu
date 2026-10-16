@@ -2,6 +2,7 @@
 // Opening hours (plan M5.4): the normal week, and holidays or special days. Plain forms that
 // post back here; errors come back next to the day or field, with the owner's input kept.
 import AdminLayout from "../../../layouts/AdminLayout.astro";
+import ErrorSummary from "../../../admin/ErrorSummary.astro";
 import { type ExceptionFormValues, type FieldErrors, inputMaxLength, parseExceptionForm, parseHoursForm, type WeeklyFormValues } from "../../../admin/forms";
 import { adminPage } from "../../../admin/page";
 import { restaurantDay } from "../../../content/hours";
@@ -85,7 +86,7 @@ const dateText = (iso: string) =>
     <form method="post" class="admin-card p-4 space-y-4" novalidate>
       <h2 class="text-xl font-semibold">{t(locale, "admin.hours.weekly")}</h2>
       <p class="text-sm admin-muted">{t(locale, "admin.hours.afterMidnight")}</p>
-      {Object.keys(weeklyErrors).length > 0 && <p class="admin-message" role="alert">{t(locale, "admin.form.errorsTitle")}</p>}
+      <ErrorSummary locale={locale} errors={weeklyErrors} id="weekly-errors" labels={Object.fromEntries(WEEKDAYS.map((d) => [d, t(locale, `weekday.${d}`)]))} targets={Object.fromEntries(WEEKDAYS.map((d) => [d, `${d}_open`]))} />
       <input type="hidden" name="csrf" value={page.csrf} />
       <input type="hidden" name="action" value="weekly" />
       {WEEKDAYS.map((day) => (
@@ -94,9 +95,9 @@ const dateText = (iso: string) =>
           <label class="flex items-center gap-2 min-h-11"><input type="checkbox" name={`${day}_closed`} checked={weekly.days[day].closed} class="h-5 w-5" /> {t(locale, "admin.hours.closed")}</label>
           <div class="grid grid-cols-2 gap-3">
             <label class="space-y-1"><span class="text-sm block">{t(locale, "admin.hours.opens")}</span>
-              <input class="admin-input" type="time" name={`${day}_open`} value={weekly.days[day].open} aria-invalid={weeklyErrors[day] ? "true" : undefined} /></label>
+              <input class="admin-input" type="time" id={`${day}_open`} name={`${day}_open`} value={weekly.days[day].open} aria-invalid={weeklyErrors[day] ? "true" : undefined} aria-describedby={weeklyErrors[day] ? `${day}-error` : undefined} /></label>
             <label class="space-y-1"><span class="text-sm block">{t(locale, "admin.hours.closes")}</span>
-              <input class="admin-input" type="time" name={`${day}_close`} value={weekly.days[day].close} aria-invalid={weeklyErrors[day] ? "true" : undefined} /></label>
+              <input class="admin-input" type="time" name={`${day}_close`} value={weekly.days[day].close} aria-invalid={weeklyErrors[day] ? "true" : undefined} aria-describedby={weeklyErrors[day] ? `${day}-error` : undefined} /></label>
           </div>
           {weeklyErrors[day] && <p class="admin-error" id={`${day}-error`}>{weeklyErrors[day]}</p>}
         </fieldset>
@@ -127,7 +128,13 @@ const dateText = (iso: string) =>
 
       <form method="post" class="space-y-3 pt-2" novalidate>
         <h3 class="font-semibold">{t(locale, "admin.hours.addException")}</h3>
-        {Object.keys(exceptionErrors).length > 0 && <p class="admin-message" role="alert">{t(locale, "admin.form.errorsTitle")}</p>}
+        <ErrorSummary
+          locale={locale}
+          errors={exceptionErrors}
+          id="exception-errors"
+          labels={{ date: t(locale, "admin.hours.date"), hours: t(locale, "admin.hours.opens"), note_sv: t(locale, "admin.hours.noteSv"), note_en: t(locale, "admin.hours.noteEn") }}
+          targets={{ hours: "exception_open" }}
+        />
         <input type="hidden" name="csrf" value={page.csrf} />
         <input type="hidden" name="action" value="add-exception" />
         <label class="block space-y-1"><span class="font-medium block">{t(locale, "admin.hours.date")}</span>
@@ -136,11 +143,11 @@ const dateText = (iso: string) =>
         <label class="flex items-center gap-2 min-h-11"><input type="checkbox" name="closed" checked={exception.closed} class="h-5 w-5" /> {t(locale, "admin.hours.closedAllDay")}</label>
         <div class="grid grid-cols-2 gap-3">
           <label class="space-y-1"><span class="text-sm block">{t(locale, "admin.hours.opens")}</span>
-            <input class="admin-input" type="time" name="exception_open" value={exception.open} /></label>
+            <input class="admin-input" type="time" id="exception_open" name="exception_open" value={exception.open} aria-invalid={exceptionErrors.hours ? "true" : undefined} aria-describedby={exceptionErrors.hours ? "hours-error" : undefined} /></label>
           <label class="space-y-1"><span class="text-sm block">{t(locale, "admin.hours.closes")}</span>
-            <input class="admin-input" type="time" name="exception_close" value={exception.close} /></label>
+            <input class="admin-input" type="time" name="exception_close" value={exception.close} aria-invalid={exceptionErrors.hours ? "true" : undefined} aria-describedby={exceptionErrors.hours ? "hours-error" : undefined} /></label>
         </div>
-        {exceptionErrors.hours && <p class="admin-error">{exceptionErrors.hours}</p>}
+        {exceptionErrors.hours && <p class="admin-error" id="hours-error">{exceptionErrors.hours}</p>}
         {(["note_sv", "note_en"] as const).map((name) => (
           <label class="block space-y-1"><span class="font-medium block">{t(locale, name === "note_sv" ? "admin.hours.noteSv" : "admin.hours.noteEn")}</span>
             <input class="admin-input" name={name} id={name} value={exception[name]} maxlength={inputMaxLength(300)} aria-invalid={exceptionErrors[name] ? "true" : undefined} />

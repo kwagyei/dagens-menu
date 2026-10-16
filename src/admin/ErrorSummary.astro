@@ -1,0 +1,30 @@
+---
+// The list of what's wrong at the top of a rejected form (plan M5.7): announced at once
+// (role="alert"), each message a link that moves focus to its field.
+import type { FieldErrors } from "./forms";
+import { t } from "../i18n";
+
+interface Props {
+  locale: "sv" | "en";
+  errors: FieldErrors;
+  /** Field name → its visible label, already translated. */
+  labels: Record<string, string>;
+  /** Field name → the id to link to, when it isn't the field name itself. */
+  targets?: Record<string, string>;
+  id?: string;
+}
+
+const { locale, errors, labels, targets = {}, id = "error-summary" } = Astro.props;
+const list = Object.entries(errors).filter((entry): entry is [string, string] => Boolean(entry[1]));
+---
+
+{list.length > 0 && (
+  <div class="admin-message" role="alert" tabindex="-1" id={id}>
+    <p class="font-semibold">{t(locale, "admin.form.errorsTitle")}</p>
+    <ul class="list-disc pl-5 mt-1">
+      {list.map(([name, message]) => (
+        <li><a class="underline" href={`#${targets[name] ?? name}`}>{labels[name] ? `${labels[name]}: ` : ""}{message}</a></li>
+      ))}
+    </ul>
+  </div>
+)}
