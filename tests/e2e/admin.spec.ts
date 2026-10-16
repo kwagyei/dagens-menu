@@ -53,7 +53,7 @@ async function enrol(page: Page, email = freshEmail()) {
   await page.goto(link);
   await expect(page.getByText(email)).toBeVisible();
   await page.getByRole("button", { name: "Skapa passkey" }).click();
-  await expect(page.getByRole("heading", { name: "Hej!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
   return { auth, link, email };
 }
 
@@ -84,7 +84,7 @@ test("signing out and back in with the passkey", async ({ page, context }) => {
   await expect(page.getByRole("heading", { name: "Logga in" })).toBeVisible();
   expect(await sessionCookie(context)).toBeUndefined();
   await page.getByRole("button", { name: "Logga in med passkey" }).click();
-  await expect(page.getByRole("heading", { name: "Hej!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
 });
 
 test("a revoked owner's session ends at once", async ({ page }) => {
@@ -117,7 +117,7 @@ test("security: add a second device, remove the first, sign out everywhere", asy
   await expect(page.getByRole("heading", { name: "Logga in" })).toBeVisible();
   // The remaining passkey (on the second device) still signs in.
   await page.getByRole("button", { name: "Logga in med passkey" }).click();
-  await expect(page.getByRole("heading", { name: "Hej!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
 });
 
 test("the admin works in English at /en/admin/", async ({ page }) => {

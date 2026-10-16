@@ -57,7 +57,7 @@ async function enrol(page: Page, email = freshEmail(), base = BASE) {
   const link = invite(email);
   await page.goto(`${base}${link}`);
   await page.getByRole("button", { name: "Skapa passkey" }).click();
-  await expect(page.getByRole("heading", { name: "Hej!" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
   return { auth, link, email };
 }
 
@@ -101,7 +101,7 @@ test.describe("sessions", () => {
     await context.clearCookies();
     await page.goto("/admin/");
     await page.getByRole("button", { name: "Logga in med passkey" }).click();
-    await expect(page.getByRole("heading", { name: "Hej!" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
     expect(await cookieHeader(context)).not.toBe(other);
     expect(await isSignedIn(request, other)).toBe(true);
     await page.goto("/admin/security/");
