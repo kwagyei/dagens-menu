@@ -60,20 +60,14 @@ const currentPath = Astro.url.pathname.replace(/^\/en/, "") || "/";
         {altLocale === "en" ? "EN" : "SV"}
       </a>
 
-      <!-- Booking CTA (desktop) — starburst on large screens, pill on medium -->
-      <a
-        href={localePath(locale, "/book/")}
-        class="btn header-cta hidden md:inline-flex lg:hidden"
-      >
-        {t(locale, "nav.book.short" as any)}
-      </a>
-      <a
-        href={localePath(locale, "/book/")}
-        class="btn-starburst hidden lg:inline-flex"
-        style="width: 5.5rem; height: 5.5rem; font-size: 0.7rem; position: absolute; right: 1.5rem; top: 50%; transform: translateY(-50%);"
-      >
-        {t(locale, "nav.book.short" as any)}
-      </a>
+      <!-- Booking CTA from tablet width up; on phones it's in the menu. One button, no sticker:
+           an absolutely placed starburst here covered the menu button on phones. The wrapper
+           carries the visibility, because the unlayered `.btn` display beats Tailwind's `hidden`. -->
+      <div class="hidden md:block">
+        <a href={localePath(locale, "/book/")} class="btn header-cta">
+          {t(locale, "nav.book.short" as any)}
+        </a>
+      </div>
 
       <!-- Mobile hamburger -->
       <button
