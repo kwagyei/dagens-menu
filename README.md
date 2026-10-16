@@ -64,6 +64,11 @@ the colours and fonts from `sites/<SITE>/theme.json`.
   `tests/content.test.ts` checks every site's content on each pull request. The allowed
   tags and allergens live in one module, which both the CMS config and the tests import,
   so the two can't drift apart.
+- **"Open today" is worked out in the browser.** A static page is built once. If the
+  build picked "today", the badge would show the hours for the day of the last deploy.
+  The page carries the weekly hours and a small script picks today's in
+  Europe/Stockholm time, so a visitor abroad still sees the restaurant's day. Without
+  JavaScript, the badge links to the full opening hours.
 - **Nothing third-party loads before consent.** It's not left to code review. CI scans
   every built page for external scripts, styles, images and frames
   (`scripts/check-no-third-party.mjs`).
@@ -77,9 +82,6 @@ the colours and fonts from `sites/<SITE>/theme.json`.
 - **CMS edits don't deploy by themselves yet.** Decap commits to `main`, but the Pages
   projects are deployed with `wrangler` from a local build and have no git connection.
   A deploy job on `main` is the next step.
-- **"Open today" on the home page is computed at build time.** It shows the hours for the
-  day of the last deploy, not the visitor's day. Moving it to the browser in
-  Europe/Stockholm time is planned.
 - **Images are served as uploaded JPEGs.** Astro's image pipeline (AVIF/WebP, responsive
   sizes) isn't used yet, which costs page weight on mobile.
 - **Decap CMS loads from unpkg on `/admin/`.** That page is for the owner only, but it
