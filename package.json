@@ -22,10 +22,13 @@
     "check:consent": "node scripts/check-no-third-party.mjs",
     "db:migrate:local": "wrangler d1 migrations apply dagens-menu --local --config d1.local.jsonc",
     "seed": "tsx scripts/seed.ts",
+    "admin": "tsx scripts/admin.ts",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/cloudflare": "14.4.0",
+    "@simplewebauthn/browser": "14.0.0",
+    "@simplewebauthn/server": "14.0.3",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.8",
     "tailwindcss": "^4.3.3",
