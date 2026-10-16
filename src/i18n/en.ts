@@ -91,6 +91,7 @@ export default {
   "admin.security.signOutEverywhere": "Sign out everywhere",
   "admin.security.signOutEverywhereLead": "Ends every sign-in, on other devices too.",
   "admin.security.removed": "The passkey was removed.",
+  "admin.security.notRemoved": "The passkey wasn't removed: it doesn't exist, or it's your only one.",
   "admin.security.added": "The new passkey is saved.",
   "admin.back": "Back",
   "admin.error.cancelled": "Cancelled. Try again when you're ready.",

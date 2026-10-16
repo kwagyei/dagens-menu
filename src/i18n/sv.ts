@@ -91,6 +91,7 @@ export default {
   "admin.security.signOutEverywhere": "Logga ut överallt",
   "admin.security.signOutEverywhereLead": "Avslutar alla inloggningar, även på andra enheter.",
   "admin.security.removed": "Passkeyn är borttagen.",
+  "admin.security.notRemoved": "Passkeyn togs inte bort: den finns inte, eller är din enda.",
   "admin.security.added": "Den nya passkeyn är sparad.",
   "admin.back": "Tillbaka",
   "admin.error.cancelled": "Avbrutet. Försök igen när du är redo.",

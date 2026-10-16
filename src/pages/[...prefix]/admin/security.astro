@@ -18,21 +18,27 @@ const session = Astro.locals.session;
 if (!session) return Astro.redirect(localePath(locale, "/admin/"), 303);
 
 const secret = adminSecret();
-const countPasskeys = () =>
-  env.DB.prepare("SELECT count(*) AS n FROM passkeys WHERE user_id = ? AND site_id = ?").bind(session.userId, session.siteId).first<number>("n");
-
 if (Astro.request.method === "POST") {
   const form = await Astro.request.formData();
   if (!(await checkFormToken(secret, session.tokenHash, form.get("csrf")))) return Astro.redirect(`${here}?done=expired`, 303);
   const action = form.get("action");
   if (action === "remove") {
-    // Never the last one: that would lock the owner out (recovery is an operator invite).
-    if (((await countPasskeys()) ?? 0) > 1) {
-      await env.DB.batch(
-        prepare(env.DB, [stmt("DELETE FROM passkeys WHERE id = ? AND user_id = ? AND site_id = ?", String(form.get("id")), session.userId, session.siteId)]),
-      );
-    }
-    return Astro.redirect(`${here}?done=removed`, 303);
+    // One statement, so two removals at once can't both pass the check: never the last
+    // passkey, or the owner is locked out (recovery is an operator invite).
+    const [result] = await env.DB.batch(
+      prepare(env.DB, [
+        stmt(
+          `DELETE FROM passkeys WHERE id = ? AND user_id = ? AND site_id = ?
+           AND (SELECT count(*) FROM passkeys WHERE user_id = ? AND site_id = ?) > 1`,
+          String(form.get("id")),
+          session.userId,
+          session.siteId,
+          session.userId,
+          session.siteId,
+        ),
+      ]),
+    );
+    return Astro.redirect(`${here}?done=${result.meta.changes > 0 ? "removed" : "not-removed"}`, 303);
   }
   if (action === "sign-out-everywhere") {
     await env.DB.batch(prepare(env.DB, [endAllSessionsStatement(session.userId, session.siteId)]));
@@ -49,7 +55,15 @@ const { results: passkeys } = await env.DB.prepare(
 const csrf = await formToken(secret, session.tokenHash);
 const done = Astro.url.searchParams.get("done");
 const message =
-  done === "removed" ? t(locale, "admin.security.removed") : done === "added" ? t(locale, "admin.security.added") : done === "expired" ? t(locale, "admin.error.form") : "";
+  done === "removed"
+    ? t(locale, "admin.security.removed")
+    : done === "not-removed"
+      ? t(locale, "admin.security.notRemoved")
+      : done === "added"
+        ? t(locale, "admin.security.added")
+        : done === "expired"
+          ? t(locale, "admin.error.form")
+          : "";
 const when = (iso: string) =>
   new Intl.DateTimeFormat(locale === "sv" ? "sv-SE" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Stockholm" }).format(new Date(iso));
 ---
