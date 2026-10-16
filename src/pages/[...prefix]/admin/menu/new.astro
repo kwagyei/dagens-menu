@@ -18,7 +18,8 @@ const category = await repo.db
   .prepare("SELECT name_sv, name_en FROM menu_categories WHERE site_id = ? AND id = ?")
   .bind(repo.siteId, categoryId)
   .first<{ name_sv: string; name_en: string }>();
-if (!category) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
+// No category in the link (a typed URL): say how to add a dish, not that something was deleted.
+if (!category) return Astro.redirect(`${page.path("/")}?done=${categoryId ? "not-found" : "pick-category"}`, 303);
 
 let values: ItemFormValues = {
   name_sv: "",

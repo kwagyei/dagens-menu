@@ -1,5 +1,6 @@
 ---
 import { dayAndMonth, upcomingExceptions } from "../content/hours";
+import { needsConsent } from "../content/consent";
 import { localized } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
@@ -36,7 +37,7 @@ const socialNames: Record<string, string> = {
   });
 </script>
 
-<div class="wave-divider" style="background-color: var(--color-bg);" aria-hidden="true">
+<div class="wave-divider footer-wave" style="background-color: var(--color-bg);" aria-hidden="true">
   <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; background: var(--color-hero-bg); clip-path: polygon(0% 60%, 5% 55%, 10% 50%, 15% 48%, 20% 50%, 25% 55%, 30% 58%, 35% 55%, 40% 50%, 45% 48%, 50% 50%, 55% 55%, 60% 58%, 65% 55%, 70% 50%, 75% 48%, 80% 50%, 85% 55%, 90% 58%, 95% 55%, 100% 50%, 100% 100%, 0% 100%);"></div>
 </div>
 <footer class="section-dark relative overflow-hidden">
@@ -160,9 +161,11 @@ const socialNames: Record<string, string> = {
         <a href={localePath(locale, "/privacy/")} class="underline hover:opacity-100 transition-opacity" style="color: var(--color-hero-muted);">
           {t(locale, "nav.privacy")}
         </a>
-        <button id="change-consent" class="underline hover:opacity-100 cursor-pointer transition-opacity" style="color: var(--color-hero-muted); background: none; border: none; font-size: inherit;">
-          {t(locale, "consent.change")}
-        </button>
+        {needsConsent(settings) && (
+          <button id="change-consent" class="underline hover:opacity-100 cursor-pointer transition-opacity" style="color: var(--color-hero-muted); background: none; border: none; font-size: inherit;">
+            {t(locale, "consent.change")}
+          </button>
+        )}
       </p>
     </div>
   </div>

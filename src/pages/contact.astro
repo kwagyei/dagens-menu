@@ -118,7 +118,20 @@ const siteName = localized(settings.name, locale);
           {t(locale, "footer.visit" as any)}
         </h2>
       </div>
-      <MapEmbed />
+      {settings.mapEmbed ? (
+        <MapEmbed />
+      ) : (
+        <div class="space-y-4" style="color: var(--color-hero-muted);">
+          <p class="text-lg">{settings.address}</p>
+          <a
+            class="btn btn-primary-on-dark btn-sm"
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(settings.address)}`}
+            rel="noopener"
+          >
+            {t(locale, "contact.directions")}
+          </a>
+        </div>
+      )}
     </div>
   </section>
 

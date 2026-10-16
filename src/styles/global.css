@@ -1134,3 +1134,9 @@ a {
 h1, h2, h3, .menu-price-badge, .hours-badge, p, li {
   overflow-wrap: anywhere;
 }
+
+/* The footer's wave assumes a light section above it. After a dark one it would show a
+   cream stripe, so it takes the dark colour instead (the inline style is the light default). */
+main:has(> section.section-dark:last-of-type) ~ .footer-wave {
+  background-color: var(--color-hero-bg) !important;
+}

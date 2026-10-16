@@ -12,7 +12,6 @@ const siteName = localized(settings.name, locale);
 const cuisine = localized(settings.cuisine, locale);
 const today = Astro.locals.today;
 const highlights = resolveHighlights(menu, pages.home.highlights, today.soldOut);
-const highlightImages = pages.home.highlightImages ?? {};
 const pullQuote = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
 const ctaImage = pages.home.ctaImage;
 ---
@@ -98,15 +97,18 @@ const ctaImage = pages.home.ctaImage;
 
         <div class="space-y-16 md:space-y-28">
           {highlights.map(({ id, item }, i) => {
-            const imgSrc = highlightImages[id];
+            // The dish's own photo, the same one the menu shows. The separate highlightImages map
+            // had drifted from the dishes (jollof showed egusi), so it is no longer read.
+            const imgSrc = item.image;
             const isEven = i % 2 === 0;
             const tiltClass = isEven ? 'img-tilt-right' : 'img-tilt-left';
             const bleedClass = isEven ? 'bleed-left' : 'bleed-right';
             return (
               <div class={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} gap-4 md:gap-8 items-start`}>
                 {/* Image — larger than container, bleeds to edge, tilted */}
-                <div class={`w-full md:w-[55%] lg:w-[58%] ${bleedClass}`}>
-                  {imgSrc ? (
+                {/* A dish without a photo is shown as text only: an empty box looked broken. */}
+                {imgSrc && (
+                  <div class={`w-full md:w-[55%] lg:w-[58%] ${bleedClass}`}>
                     <img
                       src={imgSrc}
                       alt={localized(item.name, locale)}
@@ -114,13 +116,11 @@ const ctaImage = pages.home.ctaImage;
                       style={`border-radius: var(--radius);`}
                       loading="lazy"
                     />
-                  ) : (
-                    <div class="w-full aspect-[4/3]" style={`background: rgba(255,255,255,0.08); border-radius: var(--radius);`}></div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Text — offset vertically for asymmetry */}
-                <div class={`w-full md:w-[45%] lg:w-[42%] highlight-offset-down ${isEven ? 'md:text-left' : 'md:text-right'}`}>
+                <div class={imgSrc ? `w-full md:w-[45%] lg:w-[42%] highlight-offset-down ${isEven ? 'md:text-left' : 'md:text-right'}` : "w-full max-w-2xl"}>
                   <p class="font-display text-xs tracking-[0.2em] mb-2" style="color: var(--color-secondary);">
                     {formatPrice(item.price)}
                   </p>
