@@ -1,0 +1,54 @@
+---
+// Rename a category (plan M5.3); deleting it is a separate, confirmed step.
+import AdminLayout from "../../../../../../layouts/AdminLayout.astro";
+import CategoryForm from "../../../../../../admin/CategoryForm.astro";
+import { type FieldErrors, parseCategoryForm, rowVersionOf } from "../../../../../../admin/forms";
+import { adminPage } from "../../../../../../admin/page";
+import { renameCategory } from "../../../../../../db/menu";
+import { t } from "../../../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const id = Astro.params.id ?? "";
+const category = await repo.db
+  .prepare("SELECT name_sv, name_en, row_version FROM menu_categories WHERE site_id = ? AND id = ?")
+  .bind(repo.siteId, id)
+  .first<{ name_sv: string; name_en: string; row_version: number }>();
+if (!category) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
+
+let values = { name_sv: category.name_sv, name_en: category.name_en };
+let errors: FieldErrors = {};
+let rowVersion = category.row_version;
+let conflict = false;
+
+if (Astro.request.method === "POST") {
+  const form = await page.postedForm();
+  if (!form) return Astro.redirect(`${page.path("/")}?done=expired`, 303);
+  const parsed = parseCategoryForm(form, locale);
+  ({ values, errors } = parsed);
+  rowVersion = rowVersionOf(form) ?? -1;
+  if (parsed.name) {
+    const result = await renameCategory(repo, id, rowVersion, parsed.name);
+    if (result.ok) return Astro.redirect(`${page.path("/")}?done=saved#category-${id}`, 303);
+    if (result.error === "not-found") return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
+    if (result.error === "conflict") {
+      conflict = true;
+      rowVersion = result.current;
+    } else errors = { name_sv: t(locale, "admin.error.failed") };
+  }
+  Astro.response.status = conflict ? 409 : 422;
+}
+---
+
+<AdminLayout title={t(locale, "admin.category.editHeading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <h1 class="text-3xl font-bold">{t(locale, "admin.category.editHeading")}</h1>
+    {conflict && <p class="admin-message" role="alert">{t(locale, "admin.category.conflict")}</p>}
+    <CategoryForm locale={locale} csrf={page.csrf} values={values} errors={errors} rowVersion={rowVersion} submitLabel={t(locale, "admin.item.save")} cancelHref={`${page.path("/")}#category-${id}`} />
+    <p class="pt-4"><a class="admin-error underline" href={page.path(`/menu/category/${id}/delete/`)}>{t(locale, "admin.category.deleteHeading")}</a></p>
+  </section>
+</AdminLayout>

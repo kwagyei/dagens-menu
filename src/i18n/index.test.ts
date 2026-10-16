@@ -44,3 +44,13 @@ describe("translations", () => {
     expect(t("sv", "hours.today")).toBe("Idag");
   });
 });
+
+describe("allergen labels", () => {
+  it("names every EU-14 allergen in both languages", async () => {
+    const { ALLERGENS } = await import("../content/vocabulary");
+    for (const allergen of ALLERGENS) {
+      expect(sv[`allergen.${allergen}` as keyof typeof sv], allergen).toBeTruthy();
+      expect(en[`allergen.${allergen}` as keyof typeof en], allergen).toBeTruthy();
+    }
+  });
+});

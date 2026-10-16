@@ -112,7 +112,7 @@ const categories = menu.categories.filter((category) => category.items.length > 
                   ))}
                   {item.allergens.length > 0 && (
                     <span class="text-xs" style={`color: ${isGold ? 'var(--color-text-muted)' : 'var(--color-hero-muted)'}; opacity: 0.7;`}>
-                      {t(locale, "menu.allergens")}: {item.allergens.join(", ")}
+                      {t(locale, "menu.allergens")}: {item.allergens.map((a) => t(locale, `allergen.${a}`)).join(", ")}
                     </span>
                   )}
                 </div>

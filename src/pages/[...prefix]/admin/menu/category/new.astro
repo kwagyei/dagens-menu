@@ -1,0 +1,38 @@
+---
+// Add a category at the end of the menu (plan M5.3).
+import AdminLayout from "../../../../../layouts/AdminLayout.astro";
+import CategoryForm from "../../../../../admin/CategoryForm.astro";
+import { type FieldErrors, parseCategoryForm } from "../../../../../admin/forms";
+import { adminPage } from "../../../../../admin/page";
+import { createCategory } from "../../../../../db/menu";
+import { t } from "../../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+let values = { name_sv: "", name_en: "" };
+let errors: FieldErrors = {};
+
+if (Astro.request.method === "POST") {
+  const form = await page.postedForm();
+  if (!form) return Astro.redirect(`${page.path("/")}?done=expired`, 303);
+  const parsed = parseCategoryForm(form, locale);
+  ({ values, errors } = parsed);
+  if (parsed.name) {
+    const result = await createCategory(repo, parsed.name);
+    if (result.ok && result.id) return Astro.redirect(`${page.path("/")}?done=added#category-${result.id}`, 303);
+    errors = { name_sv: t(locale, "admin.error.failed") };
+  }
+  Astro.response.status = 422;
+}
+---
+
+<AdminLayout title={t(locale, "admin.category.newHeading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <h1 class="text-3xl font-bold">{t(locale, "admin.category.newHeading")}</h1>
+    <CategoryForm locale={locale} csrf={page.csrf} values={values} errors={errors} submitLabel={t(locale, "admin.menu.addCategory")} cancelHref={page.path("/")} />
+  </section>
+</AdminLayout>

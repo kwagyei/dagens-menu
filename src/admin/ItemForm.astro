@@ -1,0 +1,107 @@
+---
+// The dish form, for adding and editing (plan M5.2). Works without JavaScript: errors come
+// back from the server next to each field, with a summary at the top linking to them.
+import type { FieldErrors, ItemFormValues } from "./forms";
+import { TEXT_LIMITS } from "../content/schema";
+import { ALLERGENS, MENU_TAGS } from "../content/vocabulary";
+import { t } from "../i18n";
+
+interface Props {
+  locale: "sv" | "en";
+  csrf: string;
+  values: ItemFormValues;
+  errors: FieldErrors;
+  needsPriceConfirm: boolean;
+  rowVersion?: number;
+  submitLabel: string;
+  cancelHref: string;
+}
+
+const { locale, csrf, values, errors, needsPriceConfirm, rowVersion, submitLabel, cancelHref } = Astro.props;
+const label: Record<string, Parameters<typeof t>[1]> = {
+  name_sv: "admin.item.nameSv",
+  name_en: "admin.item.nameEn",
+  description_sv: "admin.item.descSv",
+  description_en: "admin.item.descEn",
+  price: "admin.item.price",
+};
+const errorList = Object.entries(errors).filter(([, message]) => message);
+const invalid = (name: string) => (errors[name] ? "true" : undefined);
+const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-error` : "", hint ?? ""].filter(Boolean).join(" ") || undefined;
+---
+
+<form method="post" class="space-y-5" novalidate>
+  {errorList.length > 0 && (
+    <div class="admin-message" role="alert" tabindex="-1" id="error-summary">
+      <p class="font-semibold">{t(locale, "admin.form.errorsTitle")}</p>
+      <ul class="list-disc pl-5 mt-1">
+        {errorList.map(([name, message]) => (
+          <li><a href={`#${name}`}>{label[name] ? `${t(locale, label[name])}: ` : ""}{message}</a></li>
+        ))}
+      </ul>
+    </div>
+  )}
+
+  <input type="hidden" name="csrf" value={csrf} />
+  {rowVersion !== undefined && <input type="hidden" name="row_version" value={rowVersion} />}
+
+  {(["name_sv", "name_en"] as const).map((name) => (
+    <div class="space-y-1">
+      <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
+      <input class="admin-input" id={name} name={name} value={values[name]} maxlength={TEXT_LIMITS.name} aria-invalid={invalid(name)} aria-describedby={describedBy(name)} />
+      {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
+    </div>
+  ))}
+
+  {(["description_sv", "description_en"] as const).map((name) => (
+    <div class="space-y-1">
+      <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
+      <textarea class="admin-input" id={name} name={name} rows="3" maxlength={TEXT_LIMITS.short} aria-invalid={invalid(name)} aria-describedby={describedBy(name)}>{values[name]}</textarea>
+      {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
+    </div>
+  ))}
+
+  <div class="space-y-1">
+    <label class="font-medium block" for="price">{t(locale, "admin.item.price")}</label>
+    <p class="text-sm admin-muted" id="price-hint">{t(locale, "admin.item.priceHint")}</p>
+    <input class="admin-input" id="price" name="price" value={values.price} inputmode="decimal" autocomplete="off" aria-invalid={invalid("price")} aria-describedby={describedBy("price", "price-hint")} />
+    {errors.price && <p class="admin-error" id="price-error">{errors.price}</p>}
+    {(needsPriceConfirm || values.confirmPrice) && (
+      <label class="flex items-center gap-2 mt-2 min-h-11"><input type="checkbox" name="confirm_price" checked={values.confirmPrice} class="h-5 w-5" /> {t(locale, "admin.price.confirmLabel")}</label>
+    )}
+  </div>
+
+  <fieldset class="space-y-2">
+    <legend class="font-medium">{t(locale, "admin.item.tags")}</legend>
+    <div class="flex flex-wrap gap-x-5 gap-y-2">
+      {MENU_TAGS.map((tag) => (
+        <label class="flex items-center gap-2 min-h-11"><input type="checkbox" name="tags" value={tag} checked={values.tags.includes(tag)} class="h-5 w-5" /> {t(locale, `menu.tag.${tag}`)}</label>
+      ))}
+    </div>
+  </fieldset>
+
+  <fieldset class="space-y-2">
+    <legend class="font-medium">{t(locale, "admin.item.allergens")}</legend>
+    <div class="grid grid-cols-2 gap-x-5 gap-y-1">
+      {ALLERGENS.map((allergen) => (
+        <label class="flex items-center gap-2 min-h-11"><input type="checkbox" name="allergens" value={allergen} checked={values.allergens.includes(allergen)} class="h-5 w-5" /> {t(locale, `allergen.${allergen}`)}</label>
+      ))}
+    </div>
+  </fieldset>
+
+  <div class="space-y-1">
+    <label class="flex items-center gap-2 font-medium"><input type="checkbox" name="available" checked={values.available} class="h-5 w-5" aria-describedby="available-hint" /> {t(locale, "admin.item.available")}</label>
+    <p class="text-sm admin-muted" id="available-hint">{t(locale, "admin.item.availableHint")}</p>
+  </div>
+
+  <div class="space-y-1">
+    <label class="flex items-center gap-2 font-medium"><input type="checkbox" name="featured" checked={values.featured} class="h-5 w-5" aria-describedby="featured-hint featured-error" /> {t(locale, "admin.item.featured")}</label>
+    <p class="text-sm admin-muted" id="featured-hint">{t(locale, "admin.item.featuredHint")}</p>
+    {errors.featured && <p class="admin-error" id="featured-error">{errors.featured}</p>}
+  </div>
+
+  <div class="flex flex-wrap gap-3 pt-2">
+    <button class="admin-button" type="submit">{submitLabel}</button>
+    <a class="admin-button admin-button-quiet" href={cancelHref}>{t(locale, "admin.item.cancel")}</a>
+  </div>
+</form>

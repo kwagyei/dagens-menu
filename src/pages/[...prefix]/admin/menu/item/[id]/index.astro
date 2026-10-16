@@ -1,0 +1,87 @@
+---
+// Edit a dish (plan M5.2). A stale form is a conflict: the owner's input is kept and saving
+// again overwrites knowingly.
+import AdminLayout from "../../../../../../layouts/AdminLayout.astro";
+import ItemForm from "../../../../../../admin/ItemForm.astro";
+import { type FieldErrors, type ItemFormValues, kronorText, parseItemForm, rowVersionOf } from "../../../../../../admin/forms";
+import { adminPage } from "../../../../../../admin/page";
+import { MAX_FEATURED, setFeatured } from "../../../../../../db/menu";
+import { getMenuItem, updateMenuItem } from "../../../../../../db/repository";
+import { t } from "../../../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const id = Astro.params.id ?? "";
+const item = await getMenuItem(repo, id);
+if (!item) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
+const isFeatured = async () =>
+  (await repo.db.prepare("SELECT 1 AS x FROM home_highlights WHERE site_id = ? AND item_id = ?").bind(repo.siteId, id).first("x")) !== null;
+
+let values: ItemFormValues = {
+  name_sv: item.name.sv,
+  name_en: item.name.en,
+  description_sv: item.description.sv,
+  description_en: item.description.en,
+  price: kronorText(item.priceOre),
+  tags: item.tags,
+  allergens: item.allergens,
+  available: item.available,
+  featured: await isFeatured(),
+  confirmPrice: false,
+};
+let errors: FieldErrors = {};
+let needsPriceConfirm = false;
+let rowVersion = item.rowVersion;
+let conflict = false;
+
+if (Astro.request.method === "POST") {
+  const form = await page.postedForm();
+  if (!form) return Astro.redirect(`${page.path("/")}?done=expired`, 303);
+  const parsed = parseItemForm(form, locale);
+  ({ values, errors, needsPriceConfirm } = parsed);
+  rowVersion = rowVersionOf(form) ?? -1;
+  const wasFeatured = await isFeatured();
+  if (parsed.edit && values.featured && !wasFeatured) {
+    const featured = await repo.db.prepare("SELECT count(*) AS n FROM home_highlights WHERE site_id = ?").bind(repo.siteId).first<number>("n");
+    if ((featured ?? 0) >= MAX_FEATURED) errors = { ...errors, featured: t(locale, "admin.item.tooManyFeatured") };
+  }
+  if (parsed.edit && Object.keys(errors).length === 0) {
+    const result = await updateMenuItem(repo, id, rowVersion, parsed.edit);
+    if (result.ok) {
+      const featured = values.featured !== wasFeatured ? await setFeatured(repo, id, values.featured) : { ok: true };
+      return Astro.redirect(`${page.path("/")}?done=${featured.ok ? "saved" : "saved-not-featured"}#item-${id}`, 303);
+    }
+    if (result.error === "not-found") return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
+    if (result.error === "conflict") {
+      conflict = true;
+      rowVersion = result.current; // saving again now overwrites, knowingly
+      Astro.response.status = 409;
+    } else {
+      errors = { ...errors, name_sv: t(locale, "admin.error.failed") };
+    }
+  }
+  if (!conflict) Astro.response.status = 422;
+}
+---
+
+<AdminLayout title={t(locale, "admin.item.editHeading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <h1 class="text-3xl font-bold">{t(locale, "admin.item.editHeading")}</h1>
+    {conflict && <p class="admin-message" role="alert">{t(locale, "admin.item.conflict")}</p>}
+    <ItemForm
+      locale={locale}
+      csrf={page.csrf}
+      values={values}
+      errors={errors}
+      needsPriceConfirm={needsPriceConfirm}
+      rowVersion={rowVersion}
+      submitLabel={t(locale, "admin.item.save")}
+      cancelHref={`${page.path("/")}#item-${id}`}
+    />
+    <p class="pt-4"><a class="admin-error underline" href={page.path(`/menu/item/${id}/delete/`)}>{t(locale, "admin.item.delete")}</a></p>
+  </section>
+</AdminLayout>
