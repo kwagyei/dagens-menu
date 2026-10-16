@@ -39,10 +39,11 @@ export function visibleLength(value: string): number {
   return count;
 }
 
-const text = (max: number) =>
+const text = (max: number, singleLine = false) =>
   z
     .string()
-    .transform(cleanText)
+    // A single-line field flattens line breaks and odd spaces: it lands in <title> and headings.
+    .transform((v) => (singleLine ? cleanText(v).replace(/\s+/g, " ") : cleanText(v)))
     .pipe(
       z
         .string()
@@ -53,10 +54,18 @@ const text = (max: number) =>
 /** A bilingual text field: both Swedish and English, both non-empty (ADR-004: no fallback). */
 export const localizedText = (max: number) => z.strictObject({ sv: text(max), en: text(max) });
 
+/** A bilingual one-line field (names, taglines): line breaks become spaces. */
+export const localizedLine = (max: number) => z.strictObject({ sv: text(max, true), en: text(max, true) });
+
 const unique = <T>(items: readonly T[]) => new Set(items).size === items.length;
 
 const itemId = z.string().regex(/^[a-z0-9]{12}$/, "must be 12 lowercase letters or digits");
-const httpsUrl = z.string().regex(/^https:\/\/[^\s"'<>/]+(\/[^\s"'<>]*)?$/, "must be an https:// URL");
+// No spaces, quotes, angle brackets, or invisible and bidi characters (\p{Cf}): an href should
+// be exactly what it looks like. 2000 characters is far beyond any real profile link.
+const httpsUrl = z
+  .string()
+  .max(2000, "must be at most 2000 characters")
+  .regex(/^https:\/\/[^\s"'<>/\p{Cf}]+(\/[^\s"'<>\p{Cf}]*)?$/u, "must be an https:// URL");
 
 /**
  * A string-keyed record. JSON.parse makes "__proto__" an own key, which z.record drops
@@ -147,35 +156,52 @@ export const hoursSchema = z.strictObject({
     .superRefine((list, ctx) => reportDuplicates(ctx, list.map((e) => e.date), (i) => [i, "date"], "exception date")),
 });
 
-export const settingsSchema = z
-  .strictObject({
-    name: localizedText(TEXT_LIMITS.name),
-    tagline: localizedText(TEXT_LIMITS.short),
-    cuisine: localizedText(TEXT_LIMITS.name),
-    address: text(TEXT_LIMITS.short),
-    phone: z
-      .string()
-      .regex(/^\+?[\d\s-]+$/, "must be a phone number")
-      .refine((p) => (p.match(/\d/g) ?? []).length >= 7, "must have at least 7 digits"),
-    email: z.string().regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "must be an email address"),
-    socialLinks: record(z.string().regex(/^[a-z]+$/, "must be a lowercase network name"), httpsUrl),
-    // Booking and map fields are operator-only (ADR-011 §8); checked whenever present, so a
-    // value can't sit unchecked until someone switches the mode.
-    booking: z.strictObject({
-      provider: z.enum(BOOKING_MODES),
-      embedCode: z.string().max(TEXT_LIMITS.embed).optional(),
-      bookingUrl: httpsUrl.optional(),
-    }),
-    mapEmbed: z.union([z.literal(""), httpsUrl]),
-  })
-  .superRefine((s, ctx) => {
-    if (s.booking.provider === "link" && !s.booking.bookingUrl) {
-      ctx.addIssue({ code: "custom", path: ["booking", "bookingUrl"], message: "link mode needs an https:// booking URL" });
-    }
-    if (s.booking.provider === "embed" && !s.booking.embedCode?.trim()) {
-      ctx.addIssue({ code: "custom", path: ["booking", "embedCode"], message: "embed mode needs embed code" });
-    }
-  });
+const settingsFields = z.strictObject({
+  name: localizedLine(TEXT_LIMITS.name),
+  tagline: localizedLine(TEXT_LIMITS.short),
+  cuisine: localizedLine(TEXT_LIMITS.name),
+  address: text(TEXT_LIMITS.short, true),
+  // Any whitespace (a pasted no-break space, a tab) becomes one plain space, so what passes
+  // here is exactly what the database's CHECK accepts: digits, spaces, hyphens, a leading +.
+  phone: z
+    .string()
+    .transform((p) => p.replace(/\s+/g, " ").trim())
+    .pipe(
+      z
+        .string()
+        .max(40, "must be at most 40 characters")
+        .regex(/^\+?[0-9 -]+$/, "must be a phone number")
+        .refine((p) => (p.match(/\d/g) ?? []).length >= 7, "must have at least 7 digits"),
+    ),
+  email: z
+    .string()
+    .max(254, "must be at most 254 characters")
+    .regex(/^[^\s@\p{Cf}]+@[^\s@\p{Cf}]+\.[^\s@\p{Cf}]+$/u, "must be an email address"),
+  socialLinks: record(z.string().regex(/^[a-z]+$/, "must be a lowercase network name"), httpsUrl),
+  // Booking and map fields are operator-only (ADR-011 §8); checked whenever present, so a
+  // value can't sit unchecked until someone switches the mode.
+  booking: z.strictObject({
+    provider: z.enum(BOOKING_MODES),
+    embedCode: z.string().max(TEXT_LIMITS.embed).optional(),
+    bookingUrl: httpsUrl.optional(),
+  }),
+  mapEmbed: z.union([z.literal(""), httpsUrl]),
+});
+
+/** The settings an owner may edit in the admin: everything but booking and the map (ADR-011 §8). */
+export const ownerSettingsSchema = settingsFields.pick({ name: true, tagline: true, cuisine: true, address: true, phone: true, email: true, socialLinks: true });
+
+/** One social link as the admin checks it. */
+export const socialLinkUrl = httpsUrl;
+
+export const settingsSchema = settingsFields.superRefine((s, ctx) => {
+  if (s.booking.provider === "link" && !s.booking.bookingUrl) {
+    ctx.addIssue({ code: "custom", path: ["booking", "bookingUrl"], message: "link mode needs an https:// booking URL" });
+  }
+  if (s.booking.provider === "embed" && !s.booking.embedCode?.trim()) {
+    ctx.addIssue({ code: "custom", path: ["booking", "embedCode"], message: "embed mode needs embed code" });
+  }
+});
 
 export const pagesSchema = (site: string) =>
   z.strictObject({
@@ -203,6 +229,14 @@ export const pagesSchema = (site: string) =>
       kitchenImage: imagePath(site).optional(),
     }),
   });
+
+/** The page texts an owner edits in the admin; same rules as the matching fields of pagesSchema. */
+export const pageTextsSchema = z.strictObject({
+  homeTagline: localizedText(TEXT_LIMITS.short),
+  pullQuote: localizedText(TEXT_LIMITS.short).nullable(),
+  aboutStory: localizedText(TEXT_LIMITS.long),
+  aboutChef: localizedText(TEXT_LIMITS.long),
+});
 
 export const gallerySchema = (site: string) =>
   z.strictObject({

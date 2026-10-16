@@ -28,3 +28,8 @@ export type BookingMode = (typeof BOOKING_MODES)[number];
 
 export const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 export type Weekday = (typeof WEEKDAYS)[number];
+
+// The networks the admin offers a link field for. The footer names them; other lowercase
+// network names in the content are kept and shown as written.
+export const SOCIAL_NETWORKS = ["instagram", "facebook", "tiktok", "twitter"] as const;
+export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number];

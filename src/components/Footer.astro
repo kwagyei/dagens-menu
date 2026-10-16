@@ -25,6 +25,7 @@ const dayNamesShort: Record<string, Record<string, string>> = {
 const socialNames: Record<string, string> = {
   instagram: "Instagram",
   facebook: "Facebook",
+  tiktok: "TikTok",
   twitter: "X",
 };
 ---
@@ -141,7 +142,7 @@ const socialNames: Record<string, string> = {
                   class="footer-social-badge"
                   style="font-size: 0.9375rem; padding: 0.625rem 1.25rem;"
                 >
-                  {socialNames[platform] || platform}
+                  {Object.hasOwn(socialNames, platform) ? socialNames[platform] : platform}
                 </a>
               ))}
             </div>
