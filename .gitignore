@@ -29,3 +29,6 @@ pnpm-debug.log*
 .dev.vars*
 !.dev.vars.example
 !.env.example
+
+# generated at prebuild from SITE (scripts/generate-admin-config.mjs)
+public/admin/config.yml

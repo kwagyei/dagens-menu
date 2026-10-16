@@ -2,7 +2,7 @@ backend:
   name: github
   repo: kwagyei/dagens-menu
   branch: main
-  base_url: https://decap-oauth.dagens-menu.workers.dev
+  base_url: https://decap-oauth.kwabenasasuboakye.workers.dev
 
 media_folder: "sites/bistro/images"
 public_folder: "/images"
@@ -27,6 +27,12 @@ collections:
             fields:
               - { label: Svenska, name: sv, widget: string }
               - { label: English, name: en, widget: string }
+          - label: Cuisine
+            name: cuisine
+            widget: object
+            fields:
+              - { label: Svenska, name: sv, widget: string }
+              - { label: English, name: en, widget: string }
           - { label: Address, name: address, widget: string }
           - { label: Phone, name: phone, widget: string }
           - { label: Email, name: email, widget: string }
@@ -43,7 +49,7 @@ collections:
               - label: Provider
                 name: provider
                 widget: select
-                options: ["none", "embed", "link"]
+                options: ["none","embed","link"]
                 default: "none"
               - { label: Embed code, name: embedCode, widget: text, required: false }
               - { label: Booking URL, name: bookingUrl, widget: string, required: false }
@@ -166,27 +172,13 @@ collections:
                     name: tags
                     widget: select
                     multiple: true
-                    options: ["vegan", "vegetarian", "gluten-free", "spicy"]
+                    options: ["vegan","vegetarian","gluten-free","spicy"]
                     required: false
                   - label: Allergens
                     name: allergens
                     widget: select
                     multiple: true
-                    options:
-                      - gluten
-                      - crustaceans
-                      - eggs
-                      - fish
-                      - peanuts
-                      - soybeans
-                      - milk
-                      - nuts
-                      - celery
-                      - mustard
-                      - sesame
-                      - sulphites
-                      - lupin
-                      - molluscs
+                    options: ["gluten","crustaceans","eggs","fish","peanuts","soybeans","milk","nuts","celery","mustard","sesame","sulphites","lupin","molluscs"]
                     required: false
                   - { label: Available, name: available, widget: boolean, default: true }
                   - { label: Image, name: image, widget: image, required: false }

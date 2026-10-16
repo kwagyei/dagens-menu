@@ -146,11 +146,21 @@ export function getTodayHours(hours: OpeningHours): DayHours | null {
   return hours.weekly[today] ?? null;
 }
 
-/** Format a price in minor units (ore) to SEK display string */
+/**
+ * Format a price in minor units (öre) as a Swedish SEK string, e.g. 14500 → "145 kr",
+ * 12550 → "125,50 kr", 125000 → "1 250 kr". Spaces are non-breaking so a price never
+ * wraps mid-number. Throws on anything but a non-negative integer, so a bad CMS edit
+ * fails the build instead of rendering "NaN kr".
+ */
 export function formatPrice(minorUnits: number): string {
-  const kr = Math.floor(minorUnits / 100);
+  if (!Number.isSafeInteger(minorUnits) || minorUnits < 0) {
+    throw new RangeError(`Price must be a non-negative integer in öre, got ${minorUnits}`);
+  }
+  const kr = Math.floor(minorUnits / 100)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
   const ore = minorUnits % 100;
-  return ore === 0 ? `${kr} kr` : `${kr},${ore.toString().padStart(2, "0")} kr`;
+  return ore === 0 ? `${kr}\u00a0kr` : `${kr},${ore.toString().padStart(2, "0")}\u00a0kr`;
 }
 
 /** Get localized string for a given locale */

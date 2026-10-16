@@ -1,5 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { ALLERGENS, BOOKING_MODES, MENU_TAGS } from "./content-vocabulary.mjs";
 
 const site = process.env.SITE || "bistro";
 
@@ -54,7 +55,7 @@ collections:
               - label: Provider
                 name: provider
                 widget: select
-                options: ["none", "embed", "link"]
+                options: ${JSON.stringify(BOOKING_MODES)}
                 default: "none"
               - { label: Embed code, name: embedCode, widget: text, required: false }
               - { label: Booking URL, name: bookingUrl, widget: string, required: false }
@@ -177,27 +178,13 @@ collections:
                     name: tags
                     widget: select
                     multiple: true
-                    options: ["vegan", "vegetarian", "gluten-free", "spicy"]
+                    options: ${JSON.stringify(MENU_TAGS)}
                     required: false
                   - label: Allergens
                     name: allergens
                     widget: select
                     multiple: true
-                    options:
-                      - gluten
-                      - crustaceans
-                      - eggs
-                      - fish
-                      - peanuts
-                      - soybeans
-                      - milk
-                      - nuts
-                      - celery
-                      - mustard
-                      - sesame
-                      - sulphites
-                      - lupin
-                      - molluscs
+                    options: ${JSON.stringify(ALLERGENS)}
                     required: false
                   - { label: Available, name: available, widget: boolean, default: true }
                   - { label: Image, name: image, widget: image, required: false }
