@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { kronorText, parseCategoryForm, parseItemForm, rowVersionOf } from "./forms";
+import { kronorText, parseCategoryForm, parseExceptionForm, parseHoursForm, parseItemForm, rowVersionOf } from "./forms";
 
 const form = (entries: Record<string, string | string[]>) => {
   const data = new FormData();
@@ -83,5 +83,44 @@ describe("helpers", () => {
     expect(rowVersionOf(form({ row_version: "3" }))).toBe(3);
     expect(rowVersionOf(form({ row_version: "3; DROP" }))).toBeNull();
     expect(rowVersionOf(form({}))).toBeNull();
+  });
+});
+
+describe("parseHoursForm", () => {
+  const week = (over: Record<string, string> = {}) => {
+    const entries: Record<string, string> = {};
+    for (const d of ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]) {
+      entries[`${d}_open`] = "11:00";
+      entries[`${d}_close`] = "22:00";
+    }
+    return form({ ...entries, sunday_closed: "on", ...over });
+  };
+
+  it("reads open days and closed days", () => {
+    const parsed = parseHoursForm(week({ friday_close: "01:00" }), "sv");
+    expect(parsed.errors).toEqual({});
+    expect(parsed.weekly?.friday).toEqual({ open: "11:00", close: "01:00" });
+    expect(parsed.weekly?.sunday).toBeNull();
+  });
+
+  it("needs both times unless the day is closed, and keeps what was typed", () => {
+    const parsed = parseHoursForm(week({ monday_close: "", tuesday_open: "9", wednesday_close: "11:00", wednesday_open: "11:00" }), "sv");
+    expect(parsed.weekly).toBeNull();
+    expect(Object.keys(parsed.errors)).toEqual(["monday", "tuesday", "wednesday"]);
+    expect(parsed.errors.wednesday).toBe("Öppnar och stänger samma tid.");
+    expect(parsed.values.days.tuesday.open).toBe("9");
+  });
+});
+
+describe("parseExceptionForm", () => {
+  it("reads a closed holiday", () => {
+    const parsed = parseExceptionForm(form({ date: "2026-12-24", closed: "on", note_sv: "Julafton", note_en: "Christmas Eve" }), "sv");
+    expect(parsed.exception).toEqual({ date: "2026-12-24", hours: null, note: { sv: "Julafton", en: "Christmas Eve" } });
+  });
+
+  it("reads special hours and names what's missing", () => {
+    expect(parseExceptionForm(form({ date: "2026-12-31", exception_open: "18:00", exception_close: "02:00", note_sv: "Nyår", note_en: "New Year" }), "en").exception?.hours).toEqual({ open: "18:00", close: "02:00" });
+    const bad = parseExceptionForm(form({ date: "", note_sv: "Nyår" }), "en");
+    expect(Object.keys(bad.errors)).toEqual(["date", "hours", "note_en"]);
   });
 });

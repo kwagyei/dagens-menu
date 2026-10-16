@@ -9,7 +9,7 @@
  */
 import { cleanText, TEXT_LIMITS, visibleLength } from "../content/schema";
 import { parseKronor, type PriceError } from "../content/price";
-import { ALLERGENS, MENU_TAGS } from "../content/vocabulary";
+import { ALLERGENS, MENU_TAGS, WEEKDAYS, type Weekday } from "../content/vocabulary";
 import type { MenuItemEdit } from "../db/repository";
 import { t } from "../i18n";
 
@@ -143,4 +143,70 @@ export function kronorText(ore: number): string {
 export function rowVersionOf(form: FormData): number | null {
   const value = field(form, "row_version");
   return /^\d{1,9}$/.test(value) ? Number(value) : null;
+}
+
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+type Hours = { open: string; close: string };
+
+/** One day's opening and closing time, or closed; an error message if neither is valid. */
+function dayHoursFrom(form: FormData, prefix: string, closedField: string, locale: Locale): { hours: Hours | null; error?: string; open: string; close: string; closed: boolean } {
+  const closed = checked(form, closedField);
+  const open = field(form, `${prefix}_open`).trim();
+  const close = field(form, `${prefix}_close`).trim();
+  if (closed) return { hours: null, open, close, closed };
+  if (!open || !close) return { hours: null, open, close, closed, error: t(locale, "admin.hours.timesRequired") };
+  if (!TIME.test(open) || !TIME.test(close)) return { hours: null, open, close, closed, error: t(locale, "admin.hours.badTime") };
+  if (open === close) return { hours: null, open, close, closed, error: t(locale, "admin.hours.sameTime") };
+  return { hours: { open, close }, open, close, closed };
+}
+
+export interface WeeklyFormValues {
+  days: Record<Weekday, { open: string; close: string; closed: boolean }>;
+}
+
+export function parseHoursForm(form: FormData, locale: Locale) {
+  const days = {} as WeeklyFormValues["days"];
+  const weekly = {} as Record<Weekday, Hours | null>;
+  const errors: FieldErrors = {};
+  for (const day of WEEKDAYS) {
+    const parsed = dayHoursFrom(form, day, `${day}_closed`, locale);
+    days[day] = { open: parsed.open, close: parsed.close, closed: parsed.closed };
+    weekly[day] = parsed.hours;
+    if (parsed.error) errors[day] = parsed.error;
+  }
+  return { values: { days }, errors, weekly: Object.keys(errors).length ? null : weekly };
+}
+
+export interface ExceptionFormValues {
+  date: string;
+  closed: boolean;
+  open: string;
+  close: string;
+  note_sv: string;
+  note_en: string;
+}
+
+export function parseExceptionForm(form: FormData, locale: Locale) {
+  const parsed = dayHoursFrom(form, "exception", "closed", locale);
+  const values: ExceptionFormValues = {
+    date: field(form, "date").trim(),
+    closed: parsed.closed,
+    open: parsed.open,
+    close: parsed.close,
+    note_sv: field(form, "note_sv"),
+    note_en: field(form, "note_en"),
+  };
+  const errors: FieldErrors = {};
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(values.date)) errors.date = t(locale, "admin.hours.badDate");
+  if (parsed.error) errors.hours = parsed.error;
+  for (const name of ["note_sv", "note_en"] as const) {
+    const error = textError(locale, values[name], TEXT_LIMITS.short);
+    if (error) errors[name] = error;
+  }
+  const ok = Object.keys(errors).length === 0;
+  return {
+    values,
+    errors,
+    exception: ok ? { date: values.date, hours: parsed.hours, note: { sv: cleanText(values.note_sv), en: cleanText(values.note_en) } } : null,
+  };
 }

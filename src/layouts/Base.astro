@@ -3,6 +3,7 @@ import "../styles/global.css";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import ConsentBanner from "../components/ConsentBanner.astro";
+import { upcomingExceptions } from "../content/hours";
 import { localized } from "../content/load";
 import { serializeJsonLd } from "../server/json-ld";
 import { getLocale } from "../i18n";
@@ -36,6 +37,8 @@ for (const [day, h] of Object.entries(hours.weekly)) {
   if (h) openingHours.push(`${dayMap[day]} ${h.open}-${h.close}`);
 }
 
+const specialDays = upcomingExceptions(hours, Astro.locals.today.date);
+
 const restaurantJsonLd = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
@@ -49,6 +52,16 @@ const restaurantJsonLd = {
   telephone: settings.phone,
   email: settings.email,
   openingHours,
+  // Special days from today on; a closed day is 00:00–00:00, as schema.org prescribes.
+  ...(specialDays.length > 0 && {
+    specialOpeningHoursSpecification: specialDays.map((e) => ({
+      "@type": "OpeningHoursSpecification",
+      validFrom: e.date,
+      validThrough: e.date,
+      opens: e.hours?.open ?? "00:00",
+      closes: e.hours?.close ?? "00:00",
+    })),
+  }),
   servesCuisine: localized(settings.cuisine, locale),
 };
 

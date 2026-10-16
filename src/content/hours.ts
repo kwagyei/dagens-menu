@@ -37,3 +37,13 @@ export function hoursOn(hours: OpeningHours, now: Date, timeZone = RESTAURANT_TI
   if (exception) return exception.hours;
   return hours.weekly[weekday] ?? null;
 }
+
+/** Special days from `today` (YYYY-MM-DD) on, earliest first: past ones stop showing at midnight. */
+export function upcomingExceptions(hours: OpeningHours, today: string): OpeningHours["exceptions"] {
+  return hours.exceptions.filter((e) => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** A date as owners and guests say it: "24 december" / "24 December". */
+export function dayAndMonth(date: string, locale: "sv" | "en"): string {
+  return new Intl.DateTimeFormat(locale === "sv" ? "sv-SE" : "en-GB", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
+}
