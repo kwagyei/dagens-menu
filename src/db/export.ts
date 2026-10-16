@@ -32,13 +32,13 @@ export async function exportSite(db: D1Database, site: string): Promise<Exported
     q("SELECT content_version FROM sites WHERE id = ?"),
     q("SELECT * FROM settings WHERE site_id = ?"),
     q("SELECT id, path FROM images WHERE site_id = ?"),
-    q("SELECT * FROM menu_categories WHERE site_id = ? ORDER BY position"),
-    q("SELECT * FROM menu_items WHERE site_id = ? ORDER BY position"),
-    q("SELECT * FROM home_highlights WHERE site_id = ? ORDER BY position"),
+    q("SELECT * FROM menu_categories WHERE site_id = ? ORDER BY position, id"),
+    q("SELECT * FROM menu_items WHERE site_id = ? ORDER BY position, id"),
+    q("SELECT * FROM home_highlights WHERE site_id = ? ORDER BY position, item_id"),
     q("SELECT * FROM weekly_hours WHERE site_id = ? ORDER BY weekday"),
     q("SELECT * FROM hours_exceptions WHERE site_id = ? ORDER BY date"),
     q("SELECT * FROM page_content WHERE site_id = ?"),
-    q("SELECT * FROM gallery_images WHERE site_id = ? ORDER BY position"),
+    q("SELECT * FROM gallery_images WHERE site_id = ? ORDER BY position, id"),
   ]);
   const s = settings.results[0];
   const p = pages.results[0];
