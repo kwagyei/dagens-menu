@@ -80,7 +80,7 @@ describe("menu_items rejects", () => {
     expect(await db.prepare("SELECT count(*) AS n FROM home_highlights").first("n")).toBe(0);
   });
 
-  it("restricts: an image in use can't be deleted", async () => {
+  it("protects: an image in use can't be deleted", async () => {
     await db.prepare("UPDATE menu_items SET image_id = ? WHERE id = ?").bind(IMG, ITEM).run();
     expect(await rejected("DELETE FROM images WHERE id = ?", IMG)).toMatch(/FOREIGN KEY/);
   });

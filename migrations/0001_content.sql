@@ -99,8 +99,11 @@ CREATE TABLE menu_items (
   updated_by TEXT,
   PRIMARY KEY (site_id, id),
   FOREIGN KEY (site_id, category_id) REFERENCES menu_categories (site_id, id) ON DELETE CASCADE,
-  -- RESTRICT, not SET NULL: SET NULL would also null site_id in this composite key.
-  FOREIGN KEY (site_id, image_id) REFERENCES images (site_id, id) ON DELETE RESTRICT
+  -- Image references use the default NO ACTION, which SQLite checks at the end of each
+  -- statement rather than row by row (as RESTRICT would): deleting an image in use still
+  -- fails, but deleting a whole site cascades through images and the rows using them.
+  -- (Deferred checks crash local D1 on violation; SET NULL would also null site_id.)
+  FOREIGN KEY (site_id, image_id) REFERENCES images (site_id, id)
 ) STRICT;
 
 CREATE TABLE home_highlights (
@@ -110,7 +113,7 @@ CREATE TABLE home_highlights (
   image_id TEXT,
   PRIMARY KEY (site_id, item_id),
   FOREIGN KEY (site_id, item_id) REFERENCES menu_items (site_id, id) ON DELETE CASCADE,
-  FOREIGN KEY (site_id, image_id) REFERENCES images (site_id, id) ON DELETE RESTRICT
+  FOREIGN KEY (site_id, image_id) REFERENCES images (site_id, id)
 ) STRICT;
 
 -- Exactly seven rows per site; weekday 0 = Monday ... 6 = Sunday. NULL times mean closed.
@@ -159,22 +162,22 @@ CREATE TABLE page_content (
   -- A pull quote is optional, but never in only one language.
   CHECK ((pull_quote_sv IS NULL) = (pull_quote_en IS NULL)),
   CHECK (pull_quote_sv IS NULL OR (length(trim(pull_quote_sv)) > 0 AND length(trim(pull_quote_en)) > 0)),
-  FOREIGN KEY (site_id, hero_image_id) REFERENCES images (site_id, id) ON DELETE RESTRICT,
-  FOREIGN KEY (site_id, cta_image_id) REFERENCES images (site_id, id) ON DELETE RESTRICT,
-  FOREIGN KEY (site_id, menu_hero_image_id) REFERENCES images (site_id, id) ON DELETE RESTRICT,
-  FOREIGN KEY (site_id, story_image_id) REFERENCES images (site_id, id) ON DELETE RESTRICT,
-  FOREIGN KEY (site_id, kitchen_image_id) REFERENCES images (site_id, id) ON DELETE RESTRICT
+  FOREIGN KEY (site_id, hero_image_id) REFERENCES images (site_id, id),
+  FOREIGN KEY (site_id, cta_image_id) REFERENCES images (site_id, id),
+  FOREIGN KEY (site_id, menu_hero_image_id) REFERENCES images (site_id, id),
+  FOREIGN KEY (site_id, story_image_id) REFERENCES images (site_id, id),
+  FOREIGN KEY (site_id, kitchen_image_id) REFERENCES images (site_id, id)
 ) STRICT;
 
 CREATE TABLE gallery_images (
-  site_id TEXT NOT NULL,
+  site_id TEXT NOT NULL REFERENCES sites (id) ON DELETE CASCADE,
   id TEXT NOT NULL CHECK (length(id) = 12 AND id NOT GLOB '*[^a-z0-9]*'),
   image_id TEXT NOT NULL,
   alt_sv TEXT NOT NULL CHECK (length(trim(alt_sv)) > 0),
   alt_en TEXT NOT NULL CHECK (length(trim(alt_en)) > 0),
   position INTEGER NOT NULL CHECK (position >= 0),
   PRIMARY KEY (site_id, id),
-  FOREIGN KEY (site_id, image_id) REFERENCES images (site_id, id) ON DELETE RESTRICT
+  FOREIGN KEY (site_id, image_id) REFERENCES images (site_id, id)
 ) STRICT;
 
 -- Who changed what. Replaces "git blame" for content; kept 180 days.
