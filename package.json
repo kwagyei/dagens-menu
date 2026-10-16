@@ -21,6 +21,7 @@
     "test:db": "vitest run --project db",
     "test:watch": "vitest",
     "check:consent": "node scripts/check-no-third-party.mjs",
+    "seed": "tsx scripts/seed.ts",
     "deploy:bistro": "SITE=bistro npm run build && npx wrangler pages deploy dist --project-name dagens-menu-bistro",
     "deploy:westafrican": "SITE=westafrican npm run build && npx wrangler pages deploy dist --project-name dagens-menu-westafrican",
     "astro": "astro"
@@ -36,6 +37,7 @@
     "@cloudflare/vitest-plugin": "1.4.2",
     "@cloudflare/workers-types": "5.20261016.1",
     "@types/node": "^22.20.5",
+    "tsx": "4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^5.0.5",
     "wrangler": "^4.151.0"
