@@ -1,7 +1,6 @@
 /** Plan M5.1–M5.3: adding, featuring, reordering and deleting dishes and categories. */
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
-import gallery from "../../sites/bistro/content/gallery.json";
 import hours from "../../sites/bistro/content/hours.json";
 import menu from "../../sites/bistro/content/menu.json";
 import pages from "../../sites/bistro/content/pages.json";

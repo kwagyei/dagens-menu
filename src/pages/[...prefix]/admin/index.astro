@@ -1,33 +1,145 @@
 ---
-// Signed out: sign in with a passkey. Signed in: the admin's home (editing arrives in M5).
+// Signed out: sign in with a passkey. Signed in: the whole menu (plan M5.1), with the
+// sold-out toggle and up/down on every dish. Quick actions post back here and land on the
+// same dish (post/redirect/get).
 import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { adminPage } from "../../../admin/page";
+import { restaurantDay } from "../../../content/hours";
+import { formatPrice } from "../../../content/load";
+import { adminMenu, type Direction, moveCategory, moveMenuItem } from "../../../db/menu";
+import { setSoldOut } from "../../../db/repository";
 import { getLocale, localePath, t } from "../../../i18n";
-import { adminSecret } from "../../../admin/context";
-import { formToken } from "../../../auth/guard";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
 
 const locale = getLocale(Astro.url);
-const session = Astro.locals.session;
-const csrf = session ? await formToken(adminSecret(), session.tokenHash) : "";
 const home = localePath(locale, "/admin/");
+
+let page = null;
+let menu: Awaited<ReturnType<typeof adminMenu>> = [];
+let today = "";
+if (Astro.locals.session) {
+  const found = await adminPage(Astro);
+  if (found instanceof Response) return found;
+  page = found;
+
+  if (Astro.request.method === "POST") {
+    const form = await page.postedForm();
+    if (!form) return Astro.redirect(`${home}?done=expired`, 303);
+    const id = String(form.get("id") ?? "");
+    const direction: Direction = form.get("direction") === "up" ? "up" : "down";
+    const action = form.get("action");
+    const result =
+      action === "sold-out"
+        ? await setSoldOut(page.repo, id, form.get("value") === "1")
+        : action === "move-item"
+          ? await moveMenuItem(page.repo, id, direction)
+          : action === "move-category"
+            ? await moveCategory(page.repo, id, direction)
+            : { ok: false as const, error: "not-found" as const };
+    const anchor = action === "move-category" ? `category-${id}` : `item-${id}`;
+    return Astro.redirect(result.ok ? `${home}#${anchor}` : `${home}?done=not-found`, 303);
+  }
+
+  menu = await adminMenu(page.repo);
+  today = restaurantDay(page.repo.now).date;
+}
+
+const done = Astro.url.searchParams.get("done");
+const message: Record<string, string> = {
+  saved: t(locale, "admin.menu.saved"),
+  added: t(locale, "admin.menu.added"),
+  deleted: t(locale, "admin.menu.deleted"),
+  "not-found": t(locale, "admin.menu.notFound"),
+  expired: t(locale, "admin.error.form"),
+};
 ---
 
-<AdminLayout title={session ? t(locale, "admin.home.heading") : t(locale, "admin.signIn.heading")}>
-  {session ? (
+<AdminLayout title={page ? t(locale, "admin.menu.heading") : t(locale, "admin.signIn.heading")} csrf={page?.csrf}>
+  {page ? (
     <section class="space-y-6">
-      <h1 class="text-3xl font-bold">{t(locale, "admin.home.heading")}</h1>
-      <p class="admin-muted">{t(locale, "admin.home.signedInAs")} <strong>{session.email}</strong></p>
-      <p>{t(locale, "admin.home.next")}</p>
-      <div class="flex flex-wrap gap-3">
-        <a class="admin-button admin-button-quiet" href={localePath(locale, "/admin/security/")}>{t(locale, "admin.security.link")}</a>
-        <form method="post" action="/admin/logout">
-          <input type="hidden" name="csrf" value={csrf} />
-          <input type="hidden" name="next" value={home} />
-          <button class="admin-button admin-button-quiet" type="submit">{t(locale, "admin.signOut")}</button>
-        </form>
+      <div>
+        <h1 class="text-3xl font-bold">{t(locale, "admin.menu.heading")}</h1>
+        <p class="admin-muted mt-1">{t(locale, "admin.menu.lead")}</p>
       </div>
+      {done && message[done] && <p class="admin-message" role="status">{message[done]}</p>}
+
+      {menu.map((category, ci) => (
+        <section class="admin-card p-4 space-y-3" id={`category-${category.id}`} aria-labelledby={`category-title-${category.id}`}>
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-xl font-semibold" id={`category-title-${category.id}`}>{category.name[locale]}</h2>
+            <div class="flex flex-wrap gap-2">
+              {(["up", "down"] as const).map((dir) => (
+                <form method="post">
+                  <input type="hidden" name="csrf" value={page.csrf} />
+                  <input type="hidden" name="action" value="move-category" />
+                  <input type="hidden" name="id" value={category.id} />
+                  <input type="hidden" name="direction" value={dir} />
+                  <button
+                    class="admin-small-button"
+                    type="submit"
+                    disabled={(dir === "up" && ci === 0) || (dir === "down" && ci === menu.length - 1)}
+                    aria-label={`${t(locale, dir === "up" ? "admin.menu.up" : "admin.menu.down")}: ${category.name[locale]}`}
+                  >{dir === "up" ? "↑" : "↓"}</button>
+                </form>
+              ))}
+              <a class="admin-small-button inline-flex items-center" href={page.path(`/menu/category/${category.id}/`)}>{t(locale, "admin.menu.renameCategory")}</a>
+            </div>
+          </div>
+
+          {category.items.length === 0 && <p class="admin-muted">{t(locale, "admin.menu.empty")}</p>}
+          <ul class="divide-y" style="border-color: var(--color-border);">
+            {category.items.map((item, ii) => {
+              const soldOut = item.soldOutOn === today;
+              return (
+                <li class="py-3 space-y-2" id={`item-${item.id}`}>
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="font-semibold">{item.name[locale]}</p>
+                      <p class="admin-muted">{formatPrice(item.priceOre)}</p>
+                      <p class="flex flex-wrap gap-1.5 mt-1">
+                        {soldOut && <span class="admin-badge">{t(locale, "admin.menu.isSoldOut")}</span>}
+                        {!item.available && <span class="admin-badge">{t(locale, "admin.menu.offMenu")}</span>}
+                        {item.featured && <span class="admin-badge">★ {t(locale, "admin.menu.featured")}</span>}
+                      </p>
+                    </div>
+                    <a class="admin-small-button inline-flex items-center shrink-0" href={page.path(`/menu/item/${item.id}/`)}>{t(locale, "admin.menu.edit")}</a>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <form method="post">
+                      <input type="hidden" name="csrf" value={page.csrf} />
+                      <input type="hidden" name="action" value="sold-out" />
+                      <input type="hidden" name="id" value={item.id} />
+                      <input type="hidden" name="value" value={soldOut ? "0" : "1"} />
+                      <button class="admin-button" type="submit" aria-pressed={soldOut ? "true" : "false"}>
+                        {soldOut ? t(locale, "admin.menu.backOnSale") : t(locale, "admin.menu.soldOut")}
+                      </button>
+                    </form>
+                    {(["up", "down"] as const).map((dir) => (
+                      <form method="post">
+                        <input type="hidden" name="csrf" value={page.csrf} />
+                        <input type="hidden" name="action" value="move-item" />
+                        <input type="hidden" name="id" value={item.id} />
+                        <input type="hidden" name="direction" value={dir} />
+                        <button
+                          class="admin-small-button"
+                          type="submit"
+                          disabled={(dir === "up" && ii === 0) || (dir === "down" && ii === category.items.length - 1)}
+                          aria-label={`${t(locale, dir === "up" ? "admin.menu.up" : "admin.menu.down")}: ${item.name[locale]}`}
+                        >{dir === "up" ? "↑" : "↓"}</button>
+                      </form>
+                    ))}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <a class="admin-button admin-button-quiet" href={page.path(`/menu/new/?category=${category.id}`)}>+ {t(locale, "admin.menu.addDish")}</a>
+        </section>
+      ))}
+
+      <a class="admin-button" href={page.path("/menu/category/new/")}>+ {t(locale, "admin.menu.addCategory")}</a>
     </section>
   ) : (
     <section class="space-y-6">

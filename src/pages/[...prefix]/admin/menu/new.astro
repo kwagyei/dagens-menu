@@ -1,0 +1,76 @@
+---
+// Add a dish to a category (plan M5.3).
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import ItemForm from "../../../../admin/ItemForm.astro";
+import { type FieldErrors, type ItemFormValues, parseItemForm } from "../../../../admin/forms";
+import { adminPage } from "../../../../admin/page";
+import { createMenuItem, MAX_FEATURED, setFeatured } from "../../../../db/menu";
+import { t } from "../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const categoryId = Astro.url.searchParams.get("category") ?? "";
+const category = await repo.db
+  .prepare("SELECT name_sv, name_en FROM menu_categories WHERE site_id = ? AND id = ?")
+  .bind(repo.siteId, categoryId)
+  .first<{ name_sv: string; name_en: string }>();
+if (!category) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
+
+let values: ItemFormValues = {
+  name_sv: "",
+  name_en: "",
+  description_sv: "",
+  description_en: "",
+  price: "",
+  tags: [],
+  allergens: [],
+  available: true,
+  featured: false,
+  confirmPrice: false,
+};
+let errors: FieldErrors = {};
+let needsPriceConfirm = false;
+
+if (Astro.request.method === "POST") {
+  const form = await page.postedForm();
+  if (!form) return Astro.redirect(`${page.path("/")}?done=expired`, 303);
+  const parsed = parseItemForm(form, locale);
+  ({ values, errors, needsPriceConfirm } = parsed);
+  if (parsed.edit && values.featured) {
+    const featured = await repo.db.prepare("SELECT count(*) AS n FROM home_highlights WHERE site_id = ?").bind(repo.siteId).first<number>("n");
+    if ((featured ?? 0) >= MAX_FEATURED) errors = { ...errors, featured: t(locale, "admin.item.tooManyFeatured") };
+  }
+  if (parsed.edit && Object.keys(errors).length === 0) {
+    const result = await createMenuItem(repo, categoryId, parsed.edit);
+    if (result.ok && result.id) {
+      if (values.featured) await setFeatured(repo, result.id, true);
+      return Astro.redirect(`${page.path("/")}?done=added#item-${result.id}`, 303);
+    }
+    if (!result.ok && result.error === "not-found") return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
+    errors = { ...errors, name_sv: t(locale, "admin.error.failed") };
+  }
+  Astro.response.status = 422;
+}
+---
+
+<AdminLayout title={t(locale, "admin.item.newHeading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <div>
+      <h1 class="text-3xl font-bold">{t(locale, "admin.item.newHeading")}</h1>
+      <p class="admin-muted mt-1">{locale === "sv" ? category.name_sv : category.name_en}</p>
+    </div>
+    <ItemForm
+      locale={locale}
+      csrf={page.csrf}
+      values={values}
+      errors={errors}
+      needsPriceConfirm={needsPriceConfirm}
+      submitLabel={t(locale, "admin.menu.addDish")}
+      cancelHref={`${page.path("/")}#category-${categoryId}`}
+    />
+  </section>
+</AdminLayout>

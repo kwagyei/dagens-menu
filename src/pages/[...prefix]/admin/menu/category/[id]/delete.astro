@@ -1,0 +1,39 @@
+---
+// Delete a category and its dishes, after confirming (plan M5.3).
+import AdminLayout from "../../../../../../layouts/AdminLayout.astro";
+import { adminPage } from "../../../../../../admin/page";
+import { deleteCategory } from "../../../../../../db/menu";
+import { t } from "../../../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const id = Astro.params.id ?? "";
+
+if (Astro.request.method === "POST") {
+  if (!(await page.postedForm())) return Astro.redirect(`${page.path("/")}?done=expired`, 303);
+  const result = await deleteCategory(repo, id);
+  return Astro.redirect(`${page.path("/")}?done=${result.ok ? "deleted" : "not-found"}`, 303);
+}
+
+const category = await repo.db
+  .prepare("SELECT name_sv, name_en, (SELECT count(*) FROM menu_items WHERE site_id = ? AND category_id = ?) AS dishes FROM menu_categories WHERE site_id = ? AND id = ?")
+  .bind(repo.siteId, id, repo.siteId, id)
+  .first<{ name_sv: string; name_en: string; dishes: number }>();
+if (!category) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
+---
+
+<AdminLayout title={t(locale, "admin.category.deleteHeading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <h1 class="text-3xl font-bold">{t(locale, "admin.category.deleteHeading")}: {locale === "sv" ? category.name_sv : category.name_en}</h1>
+    <p>{t(locale, "admin.category.deleteLead").replace("{n}", String(category.dishes))}</p>
+    <form method="post" class="flex flex-wrap gap-3">
+      <input type="hidden" name="csrf" value={page.csrf} />
+      <button class="admin-button" type="submit">{t(locale, "admin.category.deleteConfirm")}</button>
+      <a class="admin-button admin-button-quiet" href={page.path(`/menu/category/${id}/`)}>{t(locale, "admin.item.cancel")}</a>
+    </form>
+  </section>
+</AdminLayout>
