@@ -11,27 +11,25 @@ const locale = getLocale(Astro.url);
   aria-label={t(locale, "consent.title")}
 >
   <div
-    class="mx-auto max-w-2xl m-4 p-6 shadow-lg"
-    style={`background-color: var(--color-surface); border: 1px solid var(--color-text-muted); border-radius: var(--radius);`}
+    class="mx-auto max-w-2xl m-4 p-6 shadow-xl"
+    style={`background-color: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius);`}
   >
-    <h2 class="font-bold mb-2" style="font-family: var(--font-heading);">
+    <h2 class="font-heading font-bold text-lg mb-2" style="color: var(--color-primary);">
       {t(locale, "consent.title")}
     </h2>
-    <p class="text-sm mb-4" style="color: var(--color-text-muted);">
+    <p class="text-sm mb-5" style="color: var(--color-text-muted);">
       {t(locale, "consent.message")}
     </p>
     <div class="flex gap-3">
       <button
         id="consent-accept"
-        class="flex-1 px-4 py-2 text-sm font-bold"
-        style={`background-color: var(--color-primary); color: var(--color-surface); border-radius: var(--radius);`}
+        class="btn btn-primary flex-1"
       >
         {t(locale, "consent.accept")}
       </button>
       <button
         id="consent-decline"
-        class="flex-1 px-4 py-2 text-sm font-bold"
-        style={`border: 2px solid var(--color-primary); color: var(--color-primary); background: transparent; border-radius: var(--radius);`}
+        class="btn btn-secondary flex-1"
       >
         {t(locale, "consent.decline")}
       </button>

@@ -53,4 +53,12 @@ export default {
   "hours.exception": "Special hours",
   "book.heading": "Book a table",
   "book.intro": "Choose a date and time for your reservation.",
+  "cta.visit": "Ready to visit?",
+  "cta.booknow": "Book your table",
+  "footer.follow": "Follow us",
+  "footer.visit": "Visit us",
+  "about.cta": "Come taste for yourself",
+  "menu.cta": "Like what you see?",
+  "nav.book.short": "Book",
+  "home.quote.attribution": "— The Kitchen",
 } as const;

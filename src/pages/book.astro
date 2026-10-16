@@ -1,18 +1,160 @@
 ---
 import Base from "../layouts/Base.astro";
 import BookingWidget from "../components/BookingWidget.astro";
+import { getSettings, getPages, localized } from "../content/load";
 import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
+const settings = getSettings();
+const pages = getPages();
+const siteName = localized(settings.name, locale);
+const heroImage = pages.about.kitchenImage ?? pages.about.storyImage;
 ---
 
 <Base title={t(locale, "book.heading")}>
-  <h1 class="text-3xl font-bold mb-4" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-    {t(locale, "book.heading")}
-  </h1>
-  <p class="mb-8" style="color: var(--color-text-muted);">
-    {t(locale, "book.intro")}
-  </p>
 
-  <BookingWidget />
+  <!-- Hero — dramatic dark with food photo duotone background -->
+  <section class="book-hero section-dark relative overflow-hidden">
+    {heroImage && (
+      <img
+        src={heroImage}
+        alt=""
+        class="absolute inset-0 w-full h-full object-cover book-hero-img"
+        loading="eager"
+      />
+    )}
+    <div class="absolute inset-0 book-duotone"></div>
+
+    <div class="section-container relative py-20 md:py-28" style="z-index: 2;">
+      <p class="font-display text-base tracking-widest mb-4" style="color: var(--color-hero-muted);">
+        {siteName}
+      </p>
+      <p class="text-base md:text-lg font-heading max-w-md" style="color: var(--color-hero-muted);">
+        {t(locale, "book.intro")}
+      </p>
+    </div>
+
+    <!-- Massive title at bottom -->
+    <div class="book-title-wrap relative" style="z-index: 2;">
+      <h1 class="book-title font-display">
+        {t(locale, "book.heading")}
+      </h1>
+    </div>
+  </section>
+
+  <!-- Booking section — light, split layout on desktop -->
+  <section style="background-color: var(--color-bg);">
+    <div class="section-container py-14 md:py-20 lg:py-24">
+      <div class="book-layout">
+        <!-- Booking widget -->
+        <div class="book-widget-col">
+          <BookingWidget />
+        </div>
+
+        <!-- Atmosphere photo (desktop only) -->
+        {pages.about.storyImage && (
+          <div class="book-photo-col hidden lg:block">
+            <div class="book-photo-wrap">
+              <img
+                src={pages.about.storyImage}
+                alt={siteName}
+                class="w-full h-full object-cover"
+                loading="lazy"
+                style={`border-radius: var(--radius);`}
+              />
+              <div class="book-photo-caption font-display">
+                {siteName}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
 </Base>
+
+<style>
+  /* Hero with duotone background photo */
+  .book-hero {
+    min-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .book-hero-img {
+    mix-blend-mode: luminosity;
+    opacity: 0.35;
+  }
+
+  .book-duotone {
+    background: linear-gradient(
+      180deg,
+      var(--color-hero-bg) 0%,
+      color-mix(in srgb, var(--color-hero-bg) 60%, var(--color-primary)) 50%,
+      color-mix(in srgb, var(--color-hero-bg) 80%, transparent) 100%
+    );
+    mix-blend-mode: multiply;
+    z-index: 1;
+  }
+
+  /* Title at hero bottom */
+  .book-title-wrap {
+    overflow: hidden;
+    line-height: 0;
+  }
+
+  .book-title {
+    font-size: clamp(4rem, 16vw, 14rem);
+    color: var(--color-hero-text);
+    letter-spacing: 0.02em;
+    line-height: 0.85;
+    padding-left: 1.5rem;
+    margin-bottom: -0.06em;
+    white-space: nowrap;
+  }
+
+  /* Split layout: widget + atmosphere photo */
+  .book-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 48rem;
+  }
+
+  @media (min-width: 1024px) {
+    .book-layout {
+      grid-template-columns: 1fr 1fr;
+      max-width: none;
+      gap: 3rem;
+      align-items: start;
+    }
+  }
+
+  .book-widget-col {
+    max-width: 36rem;
+  }
+
+  /* Atmosphere photo with overlay caption */
+  .book-photo-wrap {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    aspect-ratio: 3/4;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  }
+
+  .book-photo-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem 1.5rem 1.5rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+</style>

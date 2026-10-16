@@ -40,7 +40,8 @@
           "price": 13500,
           "tags": [],
           "allergens": ["crustaceans", "gluten", "eggs"],
-          "available": true
+          "available": true,
+          "image": "/images/bistro/toast-skagen.jpg"
         },
         {
           "name": { "sv": "Rodbetscarpaccio", "en": "Beetroot carpaccio" },
@@ -78,7 +79,8 @@
           "price": 19500,
           "tags": ["vegetarian"],
           "allergens": ["milk"],
-          "available": true
+          "available": true,
+          "image": "/images/bistro/gallery-mushroom-risotto.jpg"
         },
         {
           "name": { "sv": "Gravad laxfilé", "en": "Cured salmon fillet" },
@@ -100,7 +102,8 @@
           "price": 11500,
           "tags": [],
           "allergens": ["milk", "eggs", "gluten"],
-          "available": true
+          "available": true,
+          "image": "/images/bistro/chocolate-fondant.jpg"
         },
         {
           "name": { "sv": "Rabarberpaj", "en": "Rhubarb crumble" },

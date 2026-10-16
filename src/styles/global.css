@@ -1,10 +1,1119 @@
 @import "tailwindcss";
 
+/* ================================================================
+   Design System — dagens-menu
+   Bold, modern restaurant template.
+   All component styles reference CSS custom properties from the
+   theme, injected via define:vars in Base.astro.
+   ================================================================ */
+
+/* --- Web font: Bebas Neue (Apache 2.0, bundled) ------------------ */
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("/fonts/BebasNeue-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --- Reduced motion -------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* --- Base typography ------------------------------------------- */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: 1.6;
+}
+
+/* --- Display font (Bebas Neue — bold condensed uppercase) ------- */
+.font-display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 0.95;
+}
+
+/* --- Heading font (Georgia/Palatino — elegant body headings) ---- */
+.font-heading {
+  font-family: var(--font-heading);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+/* --- Links ----------------------------------------------------- */
+a {
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+/* --- Buttons --------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.btn:hover {
+  filter: brightness(0.88);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  padding: 0.875rem 2rem;
+  font-size: 0.9375rem;
+  background-color: var(--color-accent);
+  color: #fff;
+  border-radius: var(--radius);
+  letter-spacing: 0.02em;
+}
+
+.btn-primary-on-dark {
+  padding: 0.875rem 2rem;
+  font-size: 0.9375rem;
+  background-color: var(--color-secondary);
+  color: #1a1a1a;
+  border-radius: var(--radius);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.btn-primary-on-dark:focus-visible {
+  outline-color: var(--color-secondary);
+}
+
+.btn-secondary {
+  padding: 0.875rem 2rem;
+  font-size: 0.9375rem;
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-primary);
+  color: var(--color-bg);
+  filter: none;
+}
+
+.btn-accent {
+  padding: 0.875rem 2rem;
+  font-size: 0.9375rem;
+  background-color: var(--color-accent);
+  color: #fff;
+  border-radius: var(--radius);
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+}
+
+.btn-nav {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8125rem;
+  background-color: var(--color-accent);
+  color: #fff;
+  border-radius: var(--radius);
+  letter-spacing: 0.02em;
+}
+
+/* Header booking CTA — eye-catching accent on dark header */
+.header-cta {
+  padding: 0.625rem 1.5rem;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background-color: var(--color-accent);
+  color: #fff;
+  border-radius: var(--radius);
+}
+
+/* --- Section containers --------------------------------------- */
+.section-container {
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .section-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-container {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* Full-width bands that break out of any container */
+.full-bleed {
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  width: 100vw;
+}
+
+/* --- Dark section (primary-colored background) ----------------- */
+.section-dark {
+  background-color: var(--color-hero-bg);
+  color: var(--color-hero-text);
+  position: relative;
+}
+
+.section-dark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: overlay;
+}
+
+.section-dark > * {
+  position: relative;
+  z-index: 1;
+}
+
+.section-dark .text-muted {
+  color: var(--color-hero-muted);
+}
+
+/* Text glow on display headings over dark sections */
+.section-dark .font-display {
+  text-shadow: 0 0 60px rgba(255, 255, 255, 0.06), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Light section (cream background) -------------------------- */
+.section-light {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* --- Alt section (slightly darker cream) ----------------------- */
+.section-alt {
+  background-color: var(--color-surface-alt);
+  color: var(--color-text);
+}
+
+/* --- Decorative dividers --------------------------------------- */
+.divider {
+  border: none;
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 3rem 0;
+  position: relative;
+}
+
+.divider-decorated {
+  border: none;
+  height: 1px;
+  background-color: var(--color-border);
+  margin: 3rem auto;
+  max-width: 20rem;
+  position: relative;
+}
+
+.divider-decorated::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background-color: var(--color-secondary);
+  border: 1px solid var(--color-border);
+}
+
+/* Squiggle divider for playful sections */
+.divider-squiggle {
+  border: none;
+  height: 16px;
+  margin: 0 auto;
+  max-width: 6rem;
+  background: none;
+  position: relative;
+}
+
+.divider-squiggle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-secondary) 0px,
+    var(--color-secondary) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  transform: translateY(-50%);
+}
+
+.menu-item-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.menu-item-header::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.25);
+  margin-bottom: 0.2em;
+  min-width: 2rem;
+}
+
+.menu-item-price {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+  order: 1;
+}
+
+/* Dark section menu price */
+.section-dark .menu-item-price {
+  color: var(--color-secondary);
+}
+
+.section-dark .menu-item {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+.menu-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  border-radius: 9999px;
+  line-height: 1.4;
+}
+
+.menu-tag-spicy {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* --- Category navigation pills --------------------------------- */
+.category-nav {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0.25rem 0;
+}
+
+.category-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.category-pill {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--color-hero-text);
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.category-pill:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-hero-bg);
+  border-color: var(--color-secondary);
+}
+
+/* --- Card component -------------------------------------------- */
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* --- Hours badge ----------------------------------------------- */
+.hours-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-hero-text);
+  background-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+
+.hours-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-secondary);
+  flex-shrink: 0;
+}
+
+/* --- Gallery item shapes --------------------------------------- */
+/* When corner radius is >= 0.5rem (Chez Abena), gallery items
+   get more rounded corners for a warmer, more organic feel */
+
+/* --- Gallery grid ---------------------------------------------- */
+.gallery-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+/* --- Skip link ------------------------------------------------- */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.5rem 1rem;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+/* --- Focus visible --------------------------------------------- */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* --- Scroll margin for anchor links ---------------------------- */
+[id^="cat-"] {
+  scroll-margin-top: 6rem;
+}
+
+/* --- Footer social links --------------------------------------- */
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--color-hero-text);
+  opacity: 0.8;
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: opacity 0.15s ease;
+}
+
+.social-link:hover {
+  opacity: 1;
+}
+
+/* --- Nav link hover underline ---------------------------------- */
+.nav-link {
+  position: relative;
+  text-decoration: none;
+  color: var(--color-hero-text);
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: color 0.15s ease;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background-color: var(--color-secondary);
+  transition: width 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--color-secondary);
+}
+
+.nav-link:hover::after {
+  width: 100%;
+}
+
+.nav-link-active {
+  color: var(--color-secondary);
+}
+
+.nav-link-active::after {
+  width: 100%;
+}
+
+/* --- Prose styling --------------------------------------------- */
+.prose-themed p {
+  margin-bottom: 1.25em;
+  line-height: 1.7;
+}
+
+.prose-themed p:last-child {
+  margin-bottom: 0;
+}
+
+/* --- Section rhythm bands --------------------------------------- */
+.section-band-alt {
+  background-color: var(--color-surface-alt);
+}
+
+.section-band-tinted {
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-bg));
+}
+
+.section-gallery-wrap {
+  background-color: var(--color-hero-bg);
+}
+
+/* Menu category alternating background — dark-section variant */
+.menu-category-band {
+  background-color: rgba(255, 255, 255, 0.04);
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-top: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 640px) {
+  .menu-category-band {
+    margin-left: -2rem;
+    margin-right: -2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Lifted card — floats above its background with shadow depth */
+.card-lifted {
+  background-color: var(--color-bg);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--color-border);
+}
+
+/* --- CTA band (dark accent) ------------------------------------ */
+.cta-band {
+  background-color: var(--color-hero-bg);
+  color: var(--color-hero-text);
+}
+
+/* --- Hero section ---------------------------------------------- */
+.hero-gradient {
+  background: linear-gradient(
+    160deg,
+    var(--color-hero-bg) 0%,
+    color-mix(in srgb, var(--color-hero-bg) 85%, var(--color-primary)) 100%
+  );
+}
+
+/* --- Highlight card (circular image crop) ---------------------- */
+.highlight-card {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.highlight-card-img {
+  width: 10rem;
+  height: 10rem;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 1.25rem;
+  border: 3px solid var(--color-secondary);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+@media (min-width: 640px) {
+  .highlight-card-img {
+    width: 12rem;
+    height: 12rem;
+  }
+}
+
+/* --- Ghost text watermark -------------------------------------- */
+.ghost-text {
+  position: absolute;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 0.85;
+  color: rgba(255, 255, 255, 0.04);
+  font-size: clamp(6rem, 15vw, 14rem);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+/* --- Food photo shadows (dramatic on dark backgrounds) --------- */
+.shadow-food {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.shadow-food:hover {
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: scale(1.02);
+}
+
+/* --- Starburst badge CTA --------------------------------------- */
+.btn-starburst {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  width: 7rem;
+  height: 7rem;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  text-align: center;
+  text-decoration: none;
+  color: #1a1a1a;
+  background-color: var(--color-secondary);
+  border: none;
+  cursor: pointer;
+  clip-path: polygon(
+    50% 0%, 63% 10%, 78% 2%, 82% 18%, 98% 22%, 90% 37%,
+    100% 50%, 90% 63%, 98% 78%, 82% 82%, 78% 98%, 63% 90%,
+    50% 100%, 37% 90%, 22% 98%, 18% 82%, 2% 78%, 10% 63%,
+    0% 50%, 10% 37%, 2% 22%, 18% 18%, 22% 2%, 37% 10%
+  );
+  transition: transform 0.3s ease, background-color 0.2s ease;
+}
+
+.btn-starburst:hover {
+  transform: scale(1.08) rotate(6deg);
+  background-color: var(--color-accent);
+  color: #fff;
+}
+
+@media (min-width: 640px) {
+  .btn-starburst {
+    width: 8rem;
+    height: 8rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* --- Enhanced gallery hover ------------------------------------ */
+.gallery-item {
+  overflow: hidden;
+  border-radius: var(--radius);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.gallery-item:hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  border-color: var(--color-secondary);
+}
+
+/* --- Enhanced menu item hover ---------------------------------- */
+.menu-item {
+  padding: 1.25rem 0;
+  padding-left: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s ease, border-left-color 0.2s ease, padding-left 0.2s ease;
+}
+
+.menu-item:hover {
+  border-left-color: var(--color-secondary);
+  padding-left: 1.25rem;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+/* --- Footer decorative top border ------------------------------ */
+.footer-top-border {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-secondary) 15%,
+    var(--color-accent) 50%,
+    var(--color-secondary) 85%,
+    transparent 100%
+  );
+}
+
+/* Footer contact links */
+.footer-link {
+  color: var(--color-hero-text);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding-bottom: 1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.footer-link:hover {
+  color: var(--color-secondary);
+  border-color: var(--color-secondary);
+}
+
+/* Footer social badges — pill-shaped with border */
+.footer-social-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-hero-text);
+  background-color: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.footer-social-badge:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-hero-bg);
+  border-color: var(--color-secondary);
+}
+
+/* --- Image overlay gradient ------------------------------------ */
+.img-overlay-gradient {
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+/* Dark section variant — subtler overlay since bg is already dark */
+.img-overlay-dark {
+  background: linear-gradient(
+    to bottom,
+    var(--color-hero-bg) 0%,
+    rgba(0, 0, 0, 0.4) 30%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+/* --- Duotone hero overlay (brand-colour multiply) --------------- */
+.img-overlay-duotone {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-hero-bg);
+  mix-blend-mode: multiply;
+  opacity: 0.85;
+  z-index: 1;
+}
+
+.img-overlay-duotone-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--color-hero-bg) 100%
+  );
+  opacity: 0.6;
+  z-index: 2;
+}
+
+/* --- Viewport-filling typography -------------------------------- */
+.text-viewport {
+  font-size: clamp(4rem, 12vw, 16rem);
+  line-height: 0.85;
+}
+
+.text-viewport-sm {
+  font-size: clamp(2.5rem, 8vw, 10rem);
+  line-height: 0.9;
+}
+
+/* --- Photo tilt utilities --------------------------------------- */
+.img-tilt-left {
+  transform: rotate(-2deg);
+}
+
+.img-tilt-right {
+  transform: rotate(1.5deg);
+}
+
+/* --- Bleed utilities — images break out of container ------------ */
+.bleed-left {
+  margin-left: -1.5rem;
+}
+
+.bleed-right {
+  margin-right: -1.5rem;
+}
+
+@media (min-width: 768px) {
+  .bleed-left {
+    margin-left: -3rem;
+  }
+
+  .bleed-right {
+    margin-right: -3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bleed-left {
+    margin-left: -5rem;
+  }
+
+  .bleed-right {
+    margin-right: -5rem;
+  }
+}
+
+/* --- Overlap utility -------------------------------------------- */
+.overlap-up {
+  margin-top: -4rem;
+  position: relative;
+  z-index: 2;
+}
+
+@media (min-width: 768px) {
+  .overlap-up {
+    margin-top: -6rem;
+  }
+}
+
+/* --- Gold accent section ---------------------------------------- */
+.section-gold {
+  background-color: var(--color-secondary);
+  color: var(--color-hero-bg);
+  position: relative;
+}
+
+.section-gold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: overlay;
+}
+
+.section-gold > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- SVG wave dividers ------------------------------------------ */
+.wave-divider {
+  display: block;
+  width: 100%;
+  height: auto;
+  vertical-align: bottom;
+  position: relative;
+  z-index: 3;
+}
+
+.wave-divider-flip {
+  transform: scaleY(-1);
+}
+
+/* --- Highlight broken-grid offset ------------------------------- */
+.highlight-offset-down {
+  padding-top: 2rem;
+}
+
+@media (min-width: 768px) {
+  .highlight-offset-down {
+    padding-top: 4rem;
+  }
+}
+
+/* ================================================================
+   Graphic design utilities — bold, editorial, magazine-style
+   ================================================================ */
+
+/* --- Viewport-width text --------------------------------------- */
+.text-viewport {
+  font-size: clamp(4rem, 14vw, 18rem);
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+}
+
+.text-viewport-sm {
+  font-size: clamp(3rem, 10vw, 12rem);
+  line-height: 0.85;
+}
+
+/* --- Image tilt / energy --------------------------------------- */
+.img-tilt-left { transform: rotate(-2deg); }
+.img-tilt-right { transform: rotate(1.5deg); }
+.img-tilt-left:hover, .img-tilt-right:hover { transform: rotate(0); transition: transform 0.3s ease; }
+
+/* --- Bleed utilities ------------------------------------------- */
+.bleed-left { margin-left: -2rem; }
+.bleed-right { margin-right: -2rem; }
+
+@media (min-width: 768px) {
+  .bleed-left { margin-left: -5rem; }
+  .bleed-right { margin-right: -5rem; }
+}
+
+@media (min-width: 1024px) {
+  .bleed-left { margin-left: -8rem; }
+  .bleed-right { margin-right: -8rem; }
+}
+
+/* --- Overlap utilities ----------------------------------------- */
+.overlap-up { margin-top: -4rem; position: relative; z-index: 2; }
+.overlap-up-lg { margin-top: -8rem; position: relative; z-index: 2; }
+.overlap-down { margin-bottom: -4rem; position: relative; z-index: 2; }
+
+/* --- Duotone image treatment ----------------------------------- */
+.img-duotone {
+  position: relative;
+  overflow: hidden;
+}
+
+.img-duotone::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-primary);
+  mix-blend-mode: multiply;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* --- Wavy section divider -------------------------------------- */
+.wave-divider {
+  position: relative;
+  height: 60px;
+  overflow: hidden;
+}
+
+.wave-divider::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background: var(--color-bg);
+  clip-path: polygon(
+    0% 60%, 5% 55%, 10% 50%, 15% 48%, 20% 50%, 25% 55%, 30% 58%,
+    35% 55%, 40% 50%, 45% 48%, 50% 50%, 55% 55%, 60% 58%,
+    65% 55%, 70% 50%, 75% 48%, 80% 50%, 85% 55%, 90% 58%,
+    95% 55%, 100% 50%, 100% 100%, 0% 100%
+  );
+}
+
+.wave-divider-dark::before {
+  background: var(--color-hero-bg);
+}
+
+/* --- Gold accent section --------------------------------------- */
+.section-gold {
+  background-color: var(--color-secondary);
+  color: #1a1a1a;
+}
+
+/* --- Caption overlay on hover ---------------------------------- */
+.caption-overlay {
+  position: relative;
+  overflow: hidden;
+}
+
+.caption-overlay figcaption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  color: #fff;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.caption-overlay:hover figcaption {
+  transform: translateY(0);
+}
+
+/* --- Price pill ------------------------------------------------ */
+.price-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  background-color: var(--color-secondary);
+  color: #1a1a1a;
+  border-radius: 9999px;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.04em;
+}
+
+/* --- Magazine gallery grid ------------------------------------- */
+.gallery-magazine {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 250px;
+  gap: 1rem;
+}
+
+.gallery-magazine > :nth-child(1) { grid-column: span 2; grid-row: span 2; }
+.gallery-magazine > :nth-child(4) { grid-column: span 2; }
+.gallery-magazine > :nth-child(7) { grid-row: span 2; }
+
+@media (max-width: 768px) {
+  .gallery-magazine {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 200px;
+  }
+  .gallery-magazine > :nth-child(1) { grid-column: span 2; grid-row: span 1; }
+  .gallery-magazine > :nth-child(4) { grid-column: span 1; }
+  .gallery-magazine > :nth-child(7) { grid-row: span 1; }
+}
+
+@media (max-width: 480px) {
+  .gallery-magazine {
+    grid-template-columns: 1fr;
+    grid-auto-rows: 250px;
+  }
+  .gallery-magazine > * { grid-column: span 1 !important; grid-row: span 1 !important; }
+}
+
+/* --- Diagonal clip section ------------------------------------- */
+.clip-diagonal {
+  clip-path: polygon(0 4%, 100% 0, 100% 96%, 0 100%);
+}
+
+/* --- Accent stripe --------------------------------------------- */
+.accent-stripe {
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    var(--color-secondary) 8px,
+    var(--color-secondary) 10px
+  );
+  height: 8px;
+}
+
+/* --- Pull quote ------------------------------------------------ */
+.pull-quote {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-secondary);
+  border-left: 4px solid var(--color-accent);
+  padding-left: 1.5rem;
+}
+
+/* Header: solid on load, frosted glass once scrolled (toggled in Header.astro) */
+#site-header {
+  background-color: var(--color-hero-bg);
+}
+#site-header[data-scrolled] {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  background-color: color-mix(in srgb, var(--color-hero-bg) 85%, transparent);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 }

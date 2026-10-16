@@ -10,8 +10,8 @@ const config = `backend:
   branch: main
   base_url: https://decap-oauth.kwabenasasuboakye.workers.dev
 
-media_folder: "sites/${site}/images"
-public_folder: "/images"
+media_folder: "public/images/${site}"
+public_folder: "/images/${site}"
 
 collections:
   - name: settings

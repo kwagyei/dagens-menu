@@ -26,10 +26,10 @@ const dayNames: Record<string, Record<string, string>> = {
     {dayKeys.map((day) => {
       const h = hours.weekly[day];
       return (
-        <tr class="border-b last:border-b-0" style="border-color: var(--color-bg);">
-          <td class="py-2 font-medium">{dayNames[day][locale]}</td>
-          <td class="py-2 text-right">
-            {h ? `${h.open}\u2013${h.close}` : t(locale, "hours.closed")}
+        <tr style={`border-bottom: 1px solid var(--color-border);`}>
+          <td class="py-2.5 font-medium">{dayNames[day][locale]}</td>
+          <td class="py-2.5 text-right" style={!h ? "color: var(--color-text-muted);" : ""}>
+            {h ? `${h.open}–${h.close}` : t(locale, "hours.closed")}
           </td>
         </tr>
       );
@@ -38,15 +38,15 @@ const dayNames: Record<string, Record<string, string>> = {
 </table>
 
 {hours.exceptions.length > 0 && (
-  <div class="mt-4">
-    <h3 class="font-medium text-sm mb-2">{t(locale, "hours.exception")}</h3>
-    <ul class="text-sm space-y-1">
+  <div class="mt-5 pt-4" style={`border-top: 1px solid var(--color-border);`}>
+    <h3 class="font-heading font-bold text-sm mb-2">{t(locale, "hours.exception")}</h3>
+    <ul class="text-sm space-y-1.5" style="color: var(--color-text-muted);">
       {hours.exceptions.map((exc) => (
         <li>
-          <span class="font-medium">{exc.date}</span>
-          {" \u2013 "}
+          <span class="font-medium" style="color: var(--color-text);">{exc.date}</span>
+          {" – "}
           {locale === "en" ? exc.note.en : exc.note.sv}
-          {exc.hours ? ` (${exc.hours.open}\u2013${exc.hours.close})` : ` (${t(locale, "hours.closed")})`}
+          {exc.hours ? ` (${exc.hours.open}–${exc.hours.close})` : ` (${t(locale, "hours.closed")})`}
         </li>
       ))}
     </ul>

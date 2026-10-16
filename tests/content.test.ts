@@ -5,13 +5,14 @@
  * happily save an empty English translation or a close time of "25:00". These tests run in
  * CI on every change, so a bad edit fails the pull request instead of reaching the live site.
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { ALLERGENS, BOOKING_MODES, MENU_TAGS } from "../scripts/content-vocabulary.mjs";
 import type { Gallery, Menu, OpeningHours, Pages, SiteSettings, Theme } from "../src/content/load";
 
-const sitesDir = resolve(import.meta.dirname, "..", "sites");
+const root = resolve(import.meta.dirname, "..");
+const sitesDir = resolve(root, "sites");
 const sites = readdirSync(sitesDir, { withFileTypes: true })
   .filter((d) => d.isDirectory())
   .map((d) => d.name);
@@ -22,6 +23,13 @@ const HEX_COLOUR = /^#[0-9a-f]{6}$/i;
 
 function load<T>(site: string, file: string): T {
   return JSON.parse(readFileSync(resolve(sitesDir, site, file), "utf-8")) as T;
+}
+
+/** Every string value that looks like a site image path, e.g. "/images/bistro/hero.jpg". */
+function imagePaths(value: unknown): string[] {
+  if (typeof value === "string") return value.startsWith("/images/") ? [value] : [];
+  if (value === null || typeof value !== "object") return [];
+  return Object.values(value).flatMap(imagePaths);
 }
 
 /** Every `{ sv, en }` object anywhere in a value, with a dotted path for error messages. */
@@ -60,6 +68,15 @@ describe.each(sites)("%s", (site) => {
         expect(typeof field[lang], `${path}.${lang}`).toBe("string");
         expect((field[lang] as string).trim(), `${path}.${lang}`).not.toBe("");
       }
+    }
+  });
+
+  it("references only images that exist under this site's own folder", () => {
+    const paths = imagePaths({ settings, menu, pages, gallery });
+    // Decap uploads to public/images/<site>/, so that is where every image must live.
+    for (const path of paths) {
+      expect(path, path).toMatch(new RegExp(`^/images/${site}/[^/]+$`));
+      expect(existsSync(resolve(root, "public", path.slice(1))), `${path} is missing`).toBe(true);
     }
   });
 

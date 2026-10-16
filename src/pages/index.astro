@@ -10,62 +10,224 @@ const menu = getMenu();
 const hours = getHours();
 const tagline = localized(pages.home.tagline, locale);
 const siteName = localized(settings.name, locale);
-const highlights = resolveHighlights(menu, pages.home.highlights);
+const cuisine = localized(settings.cuisine, locale);
+const highlightIds = pages.home.highlights;
+const highlights = resolveHighlights(menu, highlightIds);
+const highlightImages = pages.home.highlightImages ?? {};
 const todayHours = getTodayHours(hours);
+const pullQuote = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
+const ctaImage = pages.home.ctaImage;
 ---
 
 <Base title={siteName} description={tagline}>
-  <section class="py-12 text-center">
-    <h1 class="text-4xl md:text-5xl font-bold" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-      {siteName}
-    </h1>
-    <p class="mt-4 text-lg md:text-xl" style={`color: var(--color-text-muted);`}>
-      {tagline}
-    </p>
 
-    <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
-      {todayHours ? (
-        <p class="text-sm" style="color: var(--color-text-muted);">
-          {t(locale, "hours.today")}: {todayHours.open}&ndash;{todayHours.close}
-        </p>
-      ) : (
-        <p class="text-sm" style="color: var(--color-text-muted);">
-          {t(locale, "hours.today")}: {t(locale, "hours.closed")}
-        </p>
-      )}
-      <a
-        href={localePath(locale, "/book/")}
-        class="inline-block px-6 py-3 text-sm font-bold rounded-lg"
-        style={`background-color: var(--color-primary); color: var(--color-surface); border-radius: var(--radius);`}
-      >
-        {t(locale, "home.book")}
-      </a>
+  <!-- ============================================================
+       HERO — Duotone image + viewport-filling typography
+       ============================================================ -->
+  <section class="relative overflow-hidden min-h-[85vh] flex items-end" style="background-color: var(--color-hero-bg);">
+    {pages.home.heroImage && (
+      <img
+        src={pages.home.heroImage}
+        alt=""
+        class="absolute inset-0 w-full h-full object-cover"
+        style="z-index: 0;"
+        loading="eager"
+      />
+    )}
+    <!-- Duotone: brand-colour multiply blend -->
+    <div class="img-overlay-duotone"></div>
+    <!-- Bottom gradient fade -->
+    <div class="img-overlay-duotone-gradient"></div>
+
+    <!-- Ghost watermark — massive, fills width -->
+    <div class="absolute inset-0 flex items-center justify-center overflow-hidden" style="z-index: 1;">
+      <span class="font-display whitespace-nowrap select-none pointer-events-none" style="font-size: clamp(8rem, 20vw, 22rem); line-height: 0.8; color: rgba(255,255,255,0.04); letter-spacing: 0.05em;">
+        {cuisine}
+      </span>
+    </div>
+
+    <div class="section-container relative w-full pb-12 md:pb-16 lg:pb-20 pt-32 md:pt-40" style="z-index: 3;">
+      <!-- Cuisine label — small, tracked, uppercase -->
+      <p class="font-display text-xs sm:text-sm tracking-[0.3em] mb-4 md:mb-6" style="color: var(--color-secondary);">
+        {cuisine}
+      </p>
+
+      <!-- Restaurant name — THE visual, fills viewport width -->
+      <h1 class="font-display text-viewport mb-4 md:mb-6 -ml-1" style="color: var(--color-hero-text); letter-spacing: -0.02em;">
+        {siteName}
+      </h1>
+
+      <!-- Tagline — serif contrast -->
+      <p class="font-heading text-lg sm:text-xl md:text-2xl max-w-lg mb-8 md:mb-10" style="color: var(--color-hero-muted); font-style: italic;">
+        {tagline}
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-start gap-4">
+        <a href={localePath(locale, "/book/")} class="btn btn-primary-on-dark">
+          {t(locale, "home.book")}
+        </a>
+
+        <div class="hours-badge">
+          {todayHours ? (
+            <span>{t(locale, "hours.today")}: {todayHours.open}&ndash;{todayHours.close}</span>
+          ) : (
+            <span>{t(locale, "hours.today")}: {t(locale, "hours.closed")}</span>
+          )}
+        </div>
+      </div>
     </div>
   </section>
 
+  <!-- Wave divider: hero → highlights (dark → dark, subtle) -->
+  <div class="relative" style="background-color: var(--color-hero-bg); margin-top: -1px;">
+    <svg class="wave-divider" viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={`fill: var(--color-hero-bg);`}>
+      <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z" style="opacity: 0.15; fill: var(--color-secondary);" />
+    </svg>
+  </div>
+
+  <!-- ============================================================
+       HIGHLIGHTS — Broken grid, asymmetric, images bleed to edge
+       ============================================================ -->
   {highlights.length > 0 && (
-    <section class="py-8">
-      <h2 class="text-2xl font-bold mb-6 text-center" style={`font-family: var(--font-heading); color: var(--color-primary);`}>
-        {t(locale, "home.highlights")}
-      </h2>
-      <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {highlights.map((item) => (
-          <div class="p-6 text-center" style={`background-color: var(--color-surface); border-radius: var(--radius);`}>
-            <h3 class="font-bold text-lg">{localized(item.name, locale)}</h3>
-            <p class="mt-2 text-sm" style="color: var(--color-text-muted);">
-              {localized(item.description, locale)}
-            </p>
-            <p class="mt-3 font-bold" style="color: var(--color-primary);">
-              {formatPrice(item.price)}
-            </p>
-          </div>
-        ))}
-      </div>
-      <div class="mt-6 text-center">
-        <a href={localePath(locale, "/menu/")} class="text-sm underline" style="color: var(--color-primary);">
-          {t(locale, "nav.menu")} &rarr;
-        </a>
+    <section class="section-dark relative overflow-hidden">
+      <div class="section-container py-16 md:py-24 relative" style="z-index: 1;">
+        <div class="mb-12 md:mb-20">
+          <p class="font-display text-xs sm:text-sm tracking-[0.3em] mb-3" style="color: var(--color-secondary);">
+            {t(locale, "home.highlights")}
+          </p>
+          <h2 class="font-display text-viewport-sm" style="color: var(--color-hero-text);">
+            {t(locale, "nav.menu")}
+          </h2>
+        </div>
+
+        <div class="space-y-16 md:space-y-28">
+          {highlights.map((item, i) => {
+            const imgSrc = highlightImages[highlightIds[i]];
+            const isEven = i % 2 === 0;
+            const tiltClass = isEven ? 'img-tilt-right' : 'img-tilt-left';
+            const bleedClass = isEven ? 'bleed-left' : 'bleed-right';
+            return (
+              <div class={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} gap-4 md:gap-8 items-start`}>
+                {/* Image — larger than container, bleeds to edge, tilted */}
+                <div class={`w-full md:w-[55%] lg:w-[58%] ${bleedClass}`}>
+                  {imgSrc ? (
+                    <img
+                      src={imgSrc}
+                      alt={localized(item.name, locale)}
+                      class={`w-full aspect-[4/3] object-cover shadow-food ${tiltClass}`}
+                      style={`border-radius: var(--radius);`}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div class="w-full aspect-[4/3]" style={`background: rgba(255,255,255,0.08); border-radius: var(--radius);`}></div>
+                  )}
+                </div>
+
+                {/* Text — offset vertically for asymmetry */}
+                <div class={`w-full md:w-[45%] lg:w-[42%] highlight-offset-down ${isEven ? 'md:text-left' : 'md:text-right'}`}>
+                  <p class="font-display text-xs tracking-[0.2em] mb-2" style="color: var(--color-secondary);">
+                    {formatPrice(item.price)}
+                  </p>
+                  <h3 class="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-4" style="color: var(--color-hero-text);">
+                    {localized(item.name, locale)}
+                  </h3>
+                  <p class="font-heading text-base md:text-lg leading-relaxed" style="color: var(--color-hero-muted);">
+                    {localized(item.description, locale)}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div class="mt-12 md:mt-16">
+          <a href={localePath(locale, "/menu/")} class="btn btn-primary-on-dark">
+            {t(locale, "nav.menu")} &rarr;
+          </a>
+        </div>
       </div>
     </section>
   )}
+
+  <!-- Wave divider: highlights → gold -->
+  <div class="relative" style="margin-top: -1px;">
+    <svg class="wave-divider" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M0,0 L0,30 Q360,60 720,30 Q1080,0 1440,30 L1440,0 Z" style="fill: var(--color-hero-bg);" />
+      <path d="M0,30 Q360,60 720,30 Q1080,0 1440,30 L1440,60 L0,60 Z" style="fill: var(--color-secondary);" />
+    </svg>
+  </div>
+
+  <!-- ============================================================
+       GOLD ACCENT — Pull quote, visual landmark
+       ============================================================ -->
+  {pullQuote && (
+    <section class="section-gold">
+      <div class="section-container py-16 md:py-24 lg:py-32 text-center">
+        <blockquote class="max-w-3xl mx-auto">
+          <p class="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-snug" style="font-style: italic; color: var(--color-hero-bg);">
+            &ldquo;{pullQuote}&rdquo;
+          </p>
+          <footer class="mt-6 md:mt-8">
+            <span class="font-display text-sm tracking-[0.2em]" style="color: var(--color-hero-bg); opacity: 0.7;">
+              {t(locale, "home.quote.attribution")}
+            </span>
+          </footer>
+        </blockquote>
+      </div>
+    </section>
+  )}
+
+  <!-- Wave divider: gold → CTA dark -->
+  <div class="relative" style="margin-top: -1px;">
+    <svg class="wave-divider" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M0,0 L0,20 C480,60 960,0 1440,40 L1440,0 Z" style="fill: var(--color-secondary);" />
+      <path d="M0,20 C480,60 960,0 1440,40 L1440,60 L0,60 Z" style="fill: var(--color-hero-bg);" />
+    </svg>
+  </div>
+
+  <!-- ============================================================
+       CTA — Overlapping photo + starburst badge
+       ============================================================ -->
+  <section class="section-dark relative overflow-hidden">
+    <div class="section-container py-16 md:py-24 relative" style="z-index: 1;">
+      <div class="flex flex-col md:flex-row items-center gap-8 md:gap-12">
+        {/* Overlapping photo — pulls up into previous section */}
+        {ctaImage && (
+          <div class="w-full md:w-1/2 relative overlap-up">
+            <img
+              src={ctaImage}
+              alt=""
+              class="w-full aspect-[4/5] object-cover shadow-food img-tilt-left"
+              style={`border-radius: var(--radius);`}
+              loading="lazy"
+            />
+            <a
+              href={localePath(locale, "/book/")}
+              class="btn-starburst absolute -bottom-4 -right-4 md:-right-8"
+              style="z-index: 3;"
+            >
+              {t(locale, "home.book")}
+            </a>
+          </div>
+        )}
+
+        {/* CTA text */}
+        <div class={`w-full ${ctaImage ? 'md:w-1/2' : ''} ${ctaImage ? '' : 'text-center max-w-2xl mx-auto'}`}>
+          <p class="font-display text-xs tracking-[0.3em] mb-3" style="color: var(--color-secondary);">
+            {t(locale, "cta.booknow" as any)}
+          </p>
+          <h2 class="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6" style="color: var(--color-hero-text);">
+            {t(locale, "cta.visit" as any)}
+          </h2>
+          <p class="font-heading text-base md:text-lg mb-8" style="color: var(--color-hero-muted); font-style: italic;">
+            {localized(settings.tagline, locale)}
+          </p>
+          <a href={localePath(locale, "/book/")} class="btn btn-primary-on-dark">
+            {t(locale, "home.book")}
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </Base>

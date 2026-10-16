@@ -1,10 +1,29 @@
 ---
-import { getSettings, localized } from "../content/load";
+import { getSettings, getHours, localized } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
 const settings = getSettings();
+const hours = getHours();
 const locale = getLocale(Astro.url);
 const siteName = localized(settings.name, locale);
+const tagline = localized(settings.tagline, locale);
+
+const dayKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+const dayNamesShort: Record<string, Record<string, string>> = {
+  monday: { sv: "Mån", en: "Mon" },
+  tuesday: { sv: "Tis", en: "Tue" },
+  wednesday: { sv: "Ons", en: "Wed" },
+  thursday: { sv: "Tor", en: "Thu" },
+  friday: { sv: "Fre", en: "Fri" },
+  saturday: { sv: "Lör", en: "Sat" },
+  sunday: { sv: "Sön", en: "Sun" },
+};
+
+const socialNames: Record<string, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+  twitter: "X",
+};
 ---
 
 <script>
@@ -13,10 +32,119 @@ const siteName = localized(settings.name, locale);
   });
 </script>
 
-<footer class="border-t py-6 text-center text-sm" style={`border-color: var(--color-primary); color: var(--color-text-muted);`}>
-  <p>&copy; {new Date().getFullYear()} {siteName}. {t(locale, "footer.rights")}.</p>
-  <p class="mt-2 space-x-3">
-    <a href={localePath(locale, "/privacy/")} class="underline">{t(locale, "nav.privacy")}</a>
-    <button id="change-consent" class="underline">{t(locale, "consent.change")}</button>
-  </p>
+<div class="wave-divider" style="background-color: var(--color-bg);" aria-hidden="true">
+  <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; background: var(--color-hero-bg); clip-path: polygon(0% 60%, 5% 55%, 10% 50%, 15% 48%, 20% 50%, 25% 55%, 30% 58%, 35% 55%, 40% 50%, 45% 48%, 50% 50%, 55% 55%, 60% 58%, 65% 55%, 70% 50%, 75% 48%, 80% 50%, 85% 55%, 90% 58%, 95% 55%, 100% 50%, 100% 100%, 0% 100%);"></div>
+</div>
+<footer class="section-dark relative overflow-hidden">
+  <!-- Decorative top border — gradient bar -->
+  <div class="footer-top-border" aria-hidden="true"></div>
+
+  <!-- Giant ghost watermark name — luxury brand effect -->
+  <div class="ghost-text top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="font-size: clamp(6rem, 22vw, 20rem); opacity: 0.03; white-space: nowrap;">
+    {siteName}
+  </div>
+
+  <!-- Main footer content -->
+  <div class="section-container relative py-16 md:py-24" style="z-index: 1;">
+
+    <!-- Big restaurant name as visual anchor -->
+    <div class="mb-12 md:mb-16">
+      <p class="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-none" style="color: var(--color-hero-text);">
+        {siteName}
+      </p>
+      <div class="divider-squiggle mt-5 mb-0" style="margin-left: 0;"></div>
+    </div>
+
+    <div class="grid gap-10 md:gap-12 md:grid-cols-3">
+      <!-- Column 1: About + CTA -->
+      <div>
+        <p class="text-sm leading-relaxed mb-6 font-heading" style="color: var(--color-hero-muted);">
+          {tagline}
+        </p>
+        <a
+          href={localePath(locale, "/book/")}
+          class="btn btn-primary-on-dark"
+        >
+          {t(locale, "nav.book")}
+          <span aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+
+      <!-- Column 2: Opening hours -->
+      <div>
+        <h3 class="font-display text-lg tracking-widest mb-5" style="color: var(--color-secondary);">
+          {t(locale, "contact.hours")}
+        </h3>
+        <dl class="space-y-2.5 text-sm">
+          {dayKeys.map((day) => {
+            const h = hours.weekly[day];
+            return (
+              <div class="flex justify-between gap-4">
+                <dt class="font-medium" style="color: var(--color-hero-text);">{dayNamesShort[day][locale]}</dt>
+                <dd style="color: var(--color-hero-muted);">
+                  {h ? `${h.open}–${h.close}` : t(locale, "hours.closed")}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
+      </div>
+
+      <!-- Column 3: Contact + Social -->
+      <div>
+        <h3 class="font-display text-lg tracking-widest mb-5" style="color: var(--color-secondary);">
+          {t(locale, "footer.visit")}
+        </h3>
+        <address class="not-italic text-sm space-y-3" style="color: var(--color-hero-muted);">
+          <p>{settings.address}</p>
+          <p>
+            <a href={`tel:${settings.phone}`} class="footer-link">
+              {settings.phone}
+            </a>
+          </p>
+          <p>
+            <a href={`mailto:${settings.email}`} class="footer-link">
+              {settings.email}
+            </a>
+          </p>
+        </address>
+
+        {Object.keys(settings.socialLinks).length > 0 && (
+          <div class="mt-8">
+            <h3 class="font-display text-lg tracking-widest mb-4" style="color: var(--color-secondary);">
+              {t(locale, "footer.follow")}
+            </h3>
+            <div class="flex flex-wrap gap-3">
+              {Object.entries(settings.socialLinks).map(([platform, url]) => (
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="footer-social-badge"
+                  style="font-size: 0.9375rem; padding: 0.625rem 1.25rem;"
+                >
+                  {socialNames[platform] || platform}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="relative" style={`border-top: 1px solid rgba(255,255,255,0.1); z-index: 1;`}>
+    <div class="section-container py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" style="color: var(--color-hero-muted);">
+      <p>&copy; {new Date().getFullYear()} {siteName}. {t(locale, "footer.rights")}.</p>
+      <p class="flex items-center gap-4">
+        <a href={localePath(locale, "/privacy/")} class="underline hover:opacity-100 transition-opacity" style="color: var(--color-hero-muted);">
+          {t(locale, "nav.privacy")}
+        </a>
+        <button id="change-consent" class="underline hover:opacity-100 cursor-pointer transition-opacity" style="color: var(--color-hero-muted); background: none; border: none; font-size: inherit;">
+          {t(locale, "consent.change")}
+        </button>
+      </p>
+    </div>
+  </div>
 </footer>
