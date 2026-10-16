@@ -10,7 +10,6 @@
     "dev": "SITE=bistro astro dev",
     "dev:bistro": "SITE=bistro astro dev",
     "dev:westafrican": "SITE=westafrican astro dev",
-    "prebuild": "node scripts/generate-admin-config.mjs",
     "build": "astro build",
     "build:bistro": "SITE=bistro npm run build",
     "build:westafrican": "SITE=westafrican npm run build",

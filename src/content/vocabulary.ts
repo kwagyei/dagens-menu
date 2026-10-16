@@ -1,5 +1,5 @@
 // Controlled vocabularies: the values an owner can pick, and the only values the content
-// schema accepts. Shared by the schema, the tests and the Decap config generator.
+// schema accepts.
 
 export const MENU_TAGS = ["vegan", "vegetarian", "gluten-free", "spicy"] as const;
 export type MenuTag = (typeof MENU_TAGS)[number];
