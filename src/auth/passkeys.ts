@@ -17,7 +17,7 @@ import {
 import { prepare, stmt } from "../db/sql";
 import type { D1Database } from "../db/types";
 import { isoSeconds } from "../db/repository";
-import { sign, unsign } from "./crypto";
+import { fromBase64url, sign, unsign } from "./crypto";
 import { consumeInviteStatement, findInvite } from "./invites";
 import { newSession, type Session, sessionCookie } from "./sessions";
 
@@ -59,6 +59,22 @@ const expectedChallenge = (ctx: CeremonyContext, purpose: string) =>
 
 const userHandle = (userId: string) => new TextEncoder().encode(userId);
 
+/**
+ * Statements that redeem a challenge exactly once: forget expired ones, then record this one.
+ * A replay fails the primary key, which aborts the whole batch it's part of.
+ */
+const redeemChallenge = (ctx: CeremonyContext, challenge: string) => [
+  stmt("DELETE FROM used_challenges WHERE expires_at < ?", isoSeconds(ctx.now)),
+  stmt(
+    "INSERT INTO used_challenges (challenge, site_id, expires_at) VALUES (?, ?, ?)",
+    challenge,
+    ctx.site,
+    isoSeconds(new Date(ctx.now.getTime() + CHALLENGE_TTL_MS)),
+  ),
+];
+
+const isConstraintError = (error: unknown) => /UNIQUE|PRIMARY KEY|constraint/i.test(String(error));
+
 async function registeredCredentials(ctx: CeremonyContext, userId: string) {
   const { results } = await ctx.db
     .prepare("SELECT id, transports FROM passkeys WHERE user_id = ? AND site_id = ?")
@@ -83,6 +99,11 @@ async function registrationOptionsFor(ctx: CeremonyContext, userId: string, emai
 async function verifiedRegistration(ctx: CeremonyContext, purpose: string, response: unknown) {
   const challenge = await expectedChallenge(ctx, purpose);
   if (!challenge) return null;
+  const credential = await verifiedCredential(ctx, challenge, response);
+  return credential ? { credential, challenge } : null;
+}
+
+async function verifiedCredential(ctx: CeremonyContext, challenge: string, response: unknown) {
   try {
     const result = await verifyRegistrationResponse({
       response: response as Parameters<typeof verifyRegistrationResponse>[0]["response"],
@@ -118,14 +139,32 @@ export async function enrolOptions(ctx: CeremonyContext, inviteToken: string): P
 export async function enrolVerify(ctx: CeremonyContext, inviteToken: string, response: unknown): Promise<ApiResult> {
   const invite = await findInvite(ctx.db, ctx.site, inviteToken, ctx.now);
   if (!invite) return refuse(410, "invite-invalid");
-  const credential = await verifiedRegistration(ctx, `enrol:${invite.tokenHash}`, response);
-  if (!credential) return refuse(400, "verification-failed");
+  const verified = await verifiedRegistration(ctx, `enrol:${invite.tokenHash}`, response);
+  if (!verified) return refuse(400, "verification-failed");
   const session = await newSession(invite.userId, ctx.site, ctx.now, true);
-  const results = await ctx.db.batch(
-    prepare(ctx.db, [consumeInviteStatement(ctx.site, invite.tokenHash, ctx.now), passkeyInsert(ctx, invite.userId, credential, true), session.statement]),
-  );
+  let results;
+  try {
+    results = await ctx.db.batch(
+      prepare(ctx.db, [
+        consumeInviteStatement(ctx.site, invite.tokenHash, ctx.now),
+        passkeyInsert(ctx, invite.userId, verified.credential, true),
+        session.statement,
+      ]),
+    );
+  } catch (error) {
+    if (isConstraintError(error)) return refuse(409, "already-registered");
+    throw error;
+  }
   if (results[0].meta.changes !== 1 || results[2].meta.changes !== 1) return refuse(410, "invite-invalid");
   return ok({ ok: true }, [clearChallenge, sessionCookie(session.token, session.expiresAt)]);
+}
+
+function handleMatches(handle: string, userId: string): boolean {
+  try {
+    return new TextDecoder().decode(fromBase64url(handle)) === userId;
+  } catch {
+    return false;
+  }
 }
 
 /** Sign-in step 1: a challenge for any passkey of this site (discoverable, no username). */
@@ -149,6 +188,9 @@ export async function loginVerify(ctx: CeremonyContext, response: unknown): Prom
     .bind(assertion.id, ctx.site)
     .first<{ id: string; user_id: string; public_key: ArrayBuffer; counter: number; transports: string }>();
   if (!row) return refuse(401, "unknown-passkey");
+  // WebAuthn §7.2: a discoverable sign-in names its user, and it must be the passkey's owner.
+  const handle = assertion.response?.userHandle;
+  if (typeof handle !== "string" || !handleMatches(handle, row.user_id)) return refuse(401, "verification-failed");
   let newCounter: number;
   try {
     const result = await verifyAuthenticationResponse({
@@ -166,12 +208,18 @@ export async function loginVerify(ctx: CeremonyContext, response: unknown): Prom
     return refuse(401, "verification-failed");
   }
   const session = await newSession(row.user_id, ctx.site, ctx.now);
-  await ctx.db.batch(
-    prepare(ctx.db, [
-      stmt("UPDATE passkeys SET counter = ?, last_used_at = ? WHERE id = ?", newCounter, isoSeconds(ctx.now), row.id),
-      session.statement,
-    ]),
-  );
+  try {
+    await ctx.db.batch(
+      prepare(ctx.db, [
+        ...redeemChallenge(ctx, challenge),
+        stmt("UPDATE passkeys SET counter = ?, last_used_at = ? WHERE id = ?", newCounter, isoSeconds(ctx.now), row.id),
+        session.statement,
+      ]),
+    );
+  } catch (error) {
+    if (isConstraintError(error)) return refuse(401, "challenge-used");
+    throw error;
+  }
   return ok({ ok: true }, [clearChallenge, sessionCookie(session.token, session.expiresAt)]);
 }
 
@@ -181,8 +229,14 @@ export async function addPasskeyOptions(ctx: CeremonyContext, session: Session):
 }
 
 export async function addPasskeyVerify(ctx: CeremonyContext, session: Session, response: unknown): Promise<ApiResult> {
-  const credential = await verifiedRegistration(ctx, `add:${session.tokenHash}`, response);
-  if (!credential) return refuse(400, "verification-failed");
-  await ctx.db.batch(prepare(ctx.db, [passkeyInsert(ctx, session.userId, credential, false)]));
+  const verified = await verifiedRegistration(ctx, `add:${session.tokenHash}`, response);
+  if (!verified) return refuse(400, "verification-failed");
+  try {
+    await ctx.db.batch(prepare(ctx.db, [...redeemChallenge(ctx, verified.challenge), passkeyInsert(ctx, session.userId, verified.credential, false)]));
+  } catch (error) {
+    // A replayed challenge, or a passkey that is already registered.
+    if (isConstraintError(error)) return refuse(409, "already-registered");
+    throw error;
+  }
   return ok({ ok: true }, [clearChallenge]);
 }
