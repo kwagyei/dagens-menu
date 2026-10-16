@@ -73,7 +73,7 @@ beforeEach(async () => {
 });
 
 describe("updateMenuItem", () => {
-  it("saves the edit, bumps the content version once and records who changed what", async () => {
+  it("saves the edit, moves the content version on and records who changed what", async () => {
     const before = (await getMenuItem(bistro, BISTRO_ITEM))!;
     const v0 = await version("bistro");
     const result = await updateMenuItem({ ...bistro, userId: null }, BISTRO_ITEM, before.rowVersion, { ...editOf(before), priceOre: 15500 });
@@ -81,7 +81,7 @@ describe("updateMenuItem", () => {
     const after = (await getMenuItem(bistro, BISTRO_ITEM))!;
     expect(after.priceOre).toBe(15500);
     expect(after.rowVersion).toBe(before.rowVersion + 1);
-    expect(await version("bistro")).toBe(v0! + 1);
+    expect(await version("bistro")).toBeGreaterThan(v0!);
     const entry = await db.prepare("SELECT entity, entity_id, action, summary FROM audit_log WHERE action = 'update'").first();
     expect(entry).toEqual({ entity: "menu_item", entity_id: BISTRO_ITEM, action: "update", summary: `${before.name.sv}: price 145 kr → 155 kr` });
   });
@@ -157,22 +157,31 @@ describe("setSoldOut", () => {
     expect((await getMenuItem(bistro, BISTRO_ITEM))!.soldOutOn).toBe("2026-10-17");
   });
 
+  it("writes nothing when the dish is already in the state asked for", async () => {
+    await setSoldOut(bistro, BISTRO_ITEM, true);
+    const v = await version("bistro");
+    const audits = await auditCount();
+    expect(await setSoldOut(bistro, BISTRO_ITEM, true)).toEqual({ ok: true });
+    expect(await setSoldOut(bistro, "zzzzzzzzzzzz", false)).toEqual({ ok: false, error: "not-found" });
+    expect([await version("bistro"), await auditCount()]).toEqual([v, audits]);
+  });
+
   it("puts a dish back on sale", async () => {
     await setSoldOut(bistro, BISTRO_ITEM, true);
     const v = await version("bistro");
     await setSoldOut(bistro, BISTRO_ITEM, false);
     expect((await getMenuItem(bistro, BISTRO_ITEM))!.soldOutOn).toBeNull();
-    expect(await version("bistro")).toBe(v! + 1);
+    expect(await version("bistro")).toBeGreaterThan(v!);
   });
 });
 
 describe("deleteMenuItem", () => {
-  it("removes the dish and its home-page highlight, in one versioned write", async () => {
+  it("removes the dish and its home-page highlight, in one write that moves the version on", async () => {
     const v0 = await version("bistro");
     expect(await deleteMenuItem(bistro, HIGHLIGHTED)).toEqual({ ok: true });
     expect(await getMenuItem(bistro, HIGHLIGHTED)).toBeNull();
     expect(await db.prepare("SELECT count(*) AS n FROM home_highlights WHERE item_id = ?").bind(HIGHLIGHTED).first("n")).toBe(0);
-    expect(await version("bistro")).toBe(v0! + 1);
+    expect(await version("bistro")).toBeGreaterThan(v0!);
     expect(await deleteMenuItem(bistro, HIGHLIGHTED)).toEqual({ ok: false, error: "not-found" });
   });
 });

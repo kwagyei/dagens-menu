@@ -34,41 +34,41 @@ export type WriteResult =
   | { ok: false; error: "conflict"; current: number }
   | { ok: false; error: "invalid"; issues: Array<{ path: string; message: string }> };
 
-const bump = (ctx: RepoContext) => stmt("UPDATE sites SET content_version = content_version + 1 WHERE id = ?", ctx.siteId);
-const audit = (ctx: RepoContext, a: Audit) =>
-  stmt(
-    "INSERT INTO audit_log (site_id, user_id, at, entity, entity_id, action, summary) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    ctx.siteId,
-    ctx.userId,
-    ctx.now.toISOString(),
-    a.entity,
-    a.entityId,
-    a.action,
-    a.summary,
-  );
+/** ISO-8601 UTC to the second: the one timestamp format the database stores. */
+export const isoSeconds = (date: Date): string => `${date.toISOString().slice(0, 19)}Z`;
 
-/** Apply `statements` unconditionally, with the version bump and the audit entry. */
+const AUDIT_COLUMNS = "site_id, user_id, at, entity, entity_id, action, summary";
+const auditValues = (ctx: RepoContext, a: Audit) => [ctx.siteId, ctx.userId, isoSeconds(ctx.now), a.entity, a.entityId, a.action, a.summary];
+const audit = (ctx: RepoContext, a: Audit) => stmt(`INSERT INTO audit_log (${AUDIT_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`, ...auditValues(ctx, a));
+
+// content_version needs no statement here: triggers on every content table bump it in the
+// same transaction as the change (migrations/0001_content.sql).
+
+/** Apply `statements` unconditionally, with the audit entry, as one transaction. */
 export async function commit(ctx: RepoContext, statements: Statement[], entry: Audit): Promise<void> {
-  await ctx.db.batch(prepare(ctx.db, [...statements, bump(ctx), audit(ctx, entry)]));
+  await ctx.db.batch(prepare(ctx.db, [...statements, audit(ctx, entry)]));
 }
 
 /**
  * Apply one guarded statement (an UPDATE or DELETE whose WHERE clause carries the site, the
- * id and, for edits, the expected row_version). The version bump and the audit entry are
- * conditional on SQLite's changes() for the statement before them, so if the guard matched
- * no row, nothing at all is written. Returns whether the guard matched.
+ * id and, for edits, the expected row_version), with its audit entry, as one transaction.
+ * Returns whether the guard matched any row; if it matched none, nothing is written.
+ *
+ * The audit insert is conditional on SQLite's changes() for the guard, which holds when D1
+ * runs the batch on one connection, as it does locally. Should that ever not hold, a write
+ * that happened without its audit row is detected and the row is written separately, so
+ * the audit trail stays complete either way. (The content version never depends on it.)
  */
 export async function commitIf(ctx: RepoContext, guard: Statement, entry: Audit): Promise<boolean> {
-  const bumpIfChanged = stmt("UPDATE sites SET content_version = content_version + 1 WHERE id = ? AND changes() = 1", ctx.siteId);
-  const entryStmt = audit(ctx, entry);
-  const auditIfChanged = stmt(
-    `INSERT INTO audit_log (site_id, user_id, at, entity, entity_id, action, summary)
-     SELECT ?, ?, ?, ?, ?, ?, ? WHERE changes() = 1`,
-    ...entryStmt.params,
-  );
-  const [result] = await ctx.db.batch(prepare(ctx.db, [guard, bumpIfChanged, auditIfChanged]));
+  const auditIfChanged = stmt(`INSERT INTO audit_log (${AUDIT_COLUMNS}) SELECT ?, ?, ?, ?, ?, ?, ? WHERE changes() > 0`, ...auditValues(ctx, entry));
+  const [written, audited] = await ctx.db.batch(prepare(ctx.db, [guard, auditIfChanged]));
   // D1's meta.changes also counts rows removed by ON DELETE CASCADE, unlike changes().
-  return result.meta.changes > 0;
+  const changed = written.meta.changes > 0;
+  if (changed && audited.meta.changes === 0) {
+    console.warn(`audit: ${entry.entity} ${entry.entityId ?? ""} was written without its audit row; adding it separately`);
+    await ctx.db.batch(prepare(ctx.db, [audit(ctx, entry)]));
+  }
+  return changed;
 }
 
 export interface MenuItemRecord {
@@ -157,13 +157,19 @@ export async function updateMenuItem(ctx: RepoContext, id: string, expectedRowVe
       JSON.stringify(v.tags),
       JSON.stringify(v.allergens),
       v.available ? 1 : 0,
-      ctx.now.toISOString(),
+      isoSeconds(ctx.now),
       ctx.userId,
       ctx.siteId,
       id,
       expectedRowVersion,
     ),
-    { entity: "menu_item", entityId: id, action: "update", summary: describeChange(before, { ...edit, priceOre: v.price }) },
+    {
+      entity: "menu_item",
+      entityId: id,
+      action: "update",
+      // From the validated, cleaned values: what was stored, not what was typed.
+      summary: describeChange(before, { name: v.name, description: v.description, priceOre: v.price, tags: v.tags, allergens: v.allergens, available: v.available }),
+    },
   );
   if (changed) return { ok: true };
   const current = await getMenuItem(ctx, id);
@@ -176,21 +182,26 @@ export async function updateMenuItem(ctx: RepoContext, id: string, expectedRowVe
  */
 export async function setSoldOut(ctx: RepoContext, id: string, soldOut: boolean): Promise<WriteResult> {
   const today = restaurantDay(ctx.now).date;
+  const value = soldOut ? today : null;
   const item = await getMenuItem(ctx, id);
   if (!item) return { ok: false, error: "not-found" };
+  // A repeated tap (or a resubmitted form) changes nothing, so it writes nothing.
+  if (item.soldOutOn === value) return { ok: true };
   const changed = await commitIf(
     ctx,
     stmt(
-      "UPDATE menu_items SET sold_out_on = ?, updated_at = ?, updated_by = ? WHERE site_id = ? AND id = ?",
-      soldOut ? today : null,
-      ctx.now.toISOString(),
+      "UPDATE menu_items SET sold_out_on = ?, updated_at = ?, updated_by = ? WHERE site_id = ? AND id = ? AND sold_out_on IS NOT ?",
+      value,
+      isoSeconds(ctx.now),
       ctx.userId,
       ctx.siteId,
       id,
+      value,
     ),
     { entity: "menu_item", entityId: id, action: "update", summary: `${item.name.sv}: ${soldOut ? `sold out ${today}` : "back on sale"}` },
   );
-  return changed ? { ok: true } : { ok: false, error: "not-found" };
+  // Zero rows here means someone else set the same value in between: still the outcome asked for.
+  return changed || (await getMenuItem(ctx, id))?.soldOutOn === value ? { ok: true } : { ok: false, error: "not-found" };
 }
 
 /** Delete a dish; its home-page highlight goes with it (foreign key cascade). */
