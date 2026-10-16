@@ -1,0 +1,58 @@
+---
+// History (plan M5.6): the latest changes to the site and who made them, plus the owner's
+// "Export my content" download. Read-only: nothing on this page changes the site.
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { adminPage } from "../../../admin/page";
+import { RESTAURANT_TIME_ZONE } from "../../../content/hours";
+import { recentChanges } from "../../../db/audit";
+import { t } from "../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const changes = await recentChanges(repo);
+
+const when = new Intl.DateTimeFormat(locale === "sv" ? "sv-SE" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: RESTAURANT_TIME_ZONE });
+type Key = Parameters<typeof t>[1];
+// Unknown entities or actions (from a newer version) fall back to the stored words.
+const label = (key: string, fallback: string) => {
+  const text = t(locale, key as Key);
+  return text === key ? fallback : text;
+};
+---
+
+<AdminLayout title={t(locale, "admin.history.heading")} csrf={page.csrf}>
+  <section class="space-y-8">
+    <div>
+      <h1 class="text-3xl font-bold">{t(locale, "admin.history.heading")}</h1>
+      <p class="admin-muted mt-1">{t(locale, "admin.history.lead")}</p>
+    </div>
+
+    <section class="admin-card p-4 space-y-3" aria-labelledby="export-title">
+      <h2 class="text-xl font-semibold" id="export-title">{t(locale, "admin.history.export")}</h2>
+      <p class="admin-muted">{t(locale, "admin.history.exportLead")}</p>
+      <a class="admin-button" href="/admin/export" download>{t(locale, "admin.history.export")}</a>
+    </section>
+
+    {changes.length === 0 ? (
+      <p class="admin-muted">{t(locale, "admin.history.empty")}</p>
+    ) : (
+      <ol class="admin-card divide-y" style="border-color: var(--color-border);">
+        {changes.map((c) => (
+          <li class="p-4 space-y-1">
+            <p class="font-semibold">
+              {label(`admin.history.entity.${c.entity}`, c.entity)} {label(`admin.history.action.${c.action}`, c.action)}
+            </p>
+            <p class="text-sm break-words">{c.summary}</p>
+            <p class="text-sm admin-muted">
+              <time datetime={c.at}>{when.format(new Date(c.at))}</time> · {c.by ?? t(locale, "admin.history.system")}
+            </p>
+          </li>
+        ))}
+      </ol>
+    )}
+  </section>
+</AdminLayout>
