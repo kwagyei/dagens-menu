@@ -212,6 +212,7 @@ export default {
   "admin.history.heading": "Historik",
   "admin.history.lead": "De senaste 50 ändringarna på webbplatsen, nyast först.",
   "admin.history.empty": "Inga ändringar ännu.",
+  "admin.history.changes": "Senaste ändringarna",
   "admin.history.system": "Systemet",
   "admin.history.export": "Exportera mitt innehåll",
   "admin.history.exportLead": "Hämta allt innehåll (meny, öppettider, texter) som en fil att spara. Bilderna ingår inte.",

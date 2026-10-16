@@ -14,7 +14,7 @@
  */
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { parseArgs } from "node:util";
 import { JsonContentSource } from "../src/content/json-source";
 import { readExportFile } from "../src/db/export-file";
@@ -70,6 +70,7 @@ try {
 }
 const { theme, ...fromRepository } = full;
 let content = fromRepository;
+let summary: string | undefined;
 if (values.from) {
   let text: string;
   try {
@@ -77,9 +78,12 @@ if (values.from) {
   } catch {
     fail(`can't read ${values.from}`);
   }
-  const read = readExportFile(text, site, theme);
+  // Booking and the map are operator-only (ADR-011 §8): they come from the repository.
+  const read = readExportFile(text, site, { theme, settings: fromRepository.settings });
   if (!read.ok) fail(`${values.from}: ${read.error}`);
+  if (read.operatorFieldsReplaced) console.warn(`seed: the file's booking and map settings differ from sites/${site}/; keeping the repository's (operator-only).`);
   content = read.content;
+  summary = `Restored from ${basename(values.from).replace(/[^\w.-]/g, "_").slice(0, 80)} (exported ${read.exportedAt})`;
   console.log(`seed: restoring "${site}" from ${values.from} (exported ${read.exportedAt}).`);
 }
 
@@ -88,7 +92,7 @@ if (existing > 0 && !values.reset) fail(`site "${site}" already has content in t
 
 let statements;
 try {
-  statements = [...(values.reset ? resetStatements(site) : []), ...seedStatements(site, content, resolveImage)];
+  statements = [...(values.reset ? resetStatements(site) : []), ...seedStatements(site, content, resolveImage, new Date(), summary)];
 } catch (error) {
   fail((error as Error).message);
 }

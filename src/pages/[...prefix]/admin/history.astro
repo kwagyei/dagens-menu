@@ -37,10 +37,11 @@ const label = (key: string, fallback: string) => {
       <a class="admin-button" href="/admin/export" download>{t(locale, "admin.history.export")}</a>
     </section>
 
+    <h2 class="text-xl font-semibold" id="changes-title">{t(locale, "admin.history.changes")}</h2>
     {changes.length === 0 ? (
       <p class="admin-muted">{t(locale, "admin.history.empty")}</p>
     ) : (
-      <ol class="admin-card divide-y" style="border-color: var(--color-border);">
+      <ol class="admin-card divide-y" style="border-color: var(--color-border);" aria-labelledby="changes-title">
         {changes.map((c) => (
           <li class="p-4 space-y-1">
             <p class="font-semibold">

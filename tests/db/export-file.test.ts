@@ -9,7 +9,7 @@ import theme from "../../sites/bistro/theme.json";
 import type { Theme } from "../../src/content/schema";
 import { recentChanges } from "../../src/db/audit";
 import { exportSite } from "../../src/db/export";
-import { exportFile, exportFileName, readExportFile } from "../../src/db/export-file";
+import { exportFile, exportFileName, type OperatorContent, readExportFile } from "../../src/db/export-file";
 import { addException } from "../../src/db/hours";
 import { createCategory } from "../../src/db/menu";
 import type { RepoContext } from "../../src/db/repository";
@@ -22,6 +22,7 @@ const db = env.DB;
 const now = new Date("2026-10-16T08:00:00Z");
 const USER = "owner0000001";
 const bistro: RepoContext = { db, siteId: "bistro", userId: USER, now };
+const op = (t: Theme): OperatorContent => ({ theme: t, settings: settings as unknown as OperatorContent["settings"] });
 const images = () => ({ id: "0".repeat(64), mime: "image/jpeg" as const });
 
 const content = {
@@ -56,7 +57,7 @@ describe("export file", () => {
     const before = (await exportSite(db, "bistro"))!;
     const text = JSON.stringify(exportFile("bistro", before, now), null, 2);
 
-    const read = readExportFile(text, "bistro", theme as Theme);
+    const read = readExportFile(text, "bistro", op(theme as Theme));
     if (!read.ok) throw new Error(read.error);
     await db.batch(prepare(db, [...resetStatements("bistro"), ...seedStatements("bistro", read.content, images)]));
 
@@ -77,7 +78,7 @@ describe("export file", () => {
 
   it("refuses another site's file, other formats, broken JSON and invalid content", async () => {
     const good = exportFile("bistro", (await exportSite(db, "bistro"))!, now);
-    const read = (value: unknown) => readExportFile(typeof value === "string" ? value : JSON.stringify(value), "bistro", theme as Theme);
+    const read = (value: unknown) => readExportFile(typeof value === "string" ? value : JSON.stringify(value), "bistro", op(theme as Theme));
     expect(read({ ...good, site: "westafrican" })).toEqual({ ok: false, error: 'the file is for site "westafrican", not "bistro"' });
     expect(read({ ...good, format: "something-else" })).toMatchObject({ ok: false, error: "not a dagens-menu-export file" });
     expect(read({ ...good, formatVersion: 2 })).toMatchObject({ ok: false, error: expect.stringContaining("format version 2") });

@@ -212,6 +212,7 @@ export default {
   "admin.history.heading": "History",
   "admin.history.lead": "The latest 50 changes to the website, newest first.",
   "admin.history.empty": "No changes yet.",
+  "admin.history.changes": "Latest changes",
   "admin.history.system": "The system",
   "admin.history.export": "Export my content",
   "admin.history.exportLead": "Download all the content (menu, opening hours, texts) as a file to keep. Images are not included.",
