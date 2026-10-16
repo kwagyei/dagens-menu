@@ -1,10 +1,10 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getSettings, localized } from "../content/load";
+import { localized } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const settings = getSettings();
+const settings = Astro.locals.content.settings;
 const hasBooking = settings.booking.provider !== "none";
 const hasMap = !!settings.mapEmbed;
 const hasThirdParty = hasBooking || hasMap;

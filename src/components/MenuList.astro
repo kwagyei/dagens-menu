@@ -1,8 +1,8 @@
 ---
-import { getMenu, formatPrice, localized } from "../content/load";
+import { formatPrice, localized } from "../content/load";
 import { getLocale, t } from "../i18n";
 
-const menu = getMenu();
+const menu = Astro.locals.content.menu;
 const locale = getLocale(Astro.url);
 ---
 

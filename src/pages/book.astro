@@ -1,12 +1,12 @@
 ---
 import Base from "../layouts/Base.astro";
 import BookingWidget from "../components/BookingWidget.astro";
-import { getSettings, getPages, localized } from "../content/load";
+import { localized } from "../content/load";
 import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const settings = getSettings();
-const pages = getPages();
+const settings = Astro.locals.content.settings;
+const pages = Astro.locals.content.pages;
 const siteName = localized(settings.name, locale);
 const heroImage = pages.about.kitchenImage ?? pages.about.storyImage;
 ---

@@ -1,13 +1,13 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getSettings, getPages, getMenu, getHours, localized, formatPrice, resolveHighlights } from "../content/load";
+import { localized, formatPrice, resolveHighlights } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const settings = getSettings();
-const pages = getPages();
-const menu = getMenu();
-const hours = getHours();
+const settings = Astro.locals.content.settings;
+const pages = Astro.locals.content.pages;
+const menu = Astro.locals.content.menu;
+const hours = Astro.locals.content.hours;
 const tagline = localized(pages.home.tagline, locale);
 const siteName = localized(settings.name, locale);
 const cuisine = localized(settings.cuisine, locale);

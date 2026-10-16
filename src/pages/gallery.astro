@@ -1,11 +1,11 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getGallery, getSettings, localized } from "../content/load";
+import { localized } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const gallery = getGallery();
-const settings = getSettings();
+const gallery = Astro.locals.content.gallery;
+const settings = Astro.locals.content.settings;
 const siteName = localized(settings.name, locale);
 ---
 

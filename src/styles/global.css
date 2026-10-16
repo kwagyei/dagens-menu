@@ -3,6 +3,7 @@
 @source not "../../scripts";
 @source not "../../tests";
 @source not "../**/*.test.ts";
+@source not "../content";
 
 /* ================================================================
    Design System — dagens-menu

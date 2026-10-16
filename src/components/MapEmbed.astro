@@ -1,9 +1,9 @@
 ---
-import { getSettings } from "../content/load";
+
 import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const settings = getSettings();
+const settings = Astro.locals.content.settings;
 const mapUrl = settings.mapEmbed;
 ---
 
