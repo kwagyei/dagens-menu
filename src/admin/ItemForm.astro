@@ -39,7 +39,7 @@ const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-er
   {(["name_sv", "name_en"] as const).map((name) => (
     <div class="space-y-1">
       <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
-      <input class="admin-input" id={name} name={name} value={values[name]} maxlength={inputMaxLength(TEXT_LIMITS.name)} aria-invalid={invalid(name)} aria-describedby={describedBy(name)} />
+      <input class="admin-input" id={name} name={name} lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined} value={values[name]} maxlength={inputMaxLength(TEXT_LIMITS.name)} aria-invalid={invalid(name)} aria-describedby={describedBy(name)} />
       {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
     </div>
   ))}
@@ -47,7 +47,7 @@ const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-er
   {(["description_sv", "description_en"] as const).map((name) => (
     <div class="space-y-1">
       <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
-      <textarea class="admin-input" id={name} name={name} rows="3" maxlength={inputMaxLength(TEXT_LIMITS.short)} aria-invalid={invalid(name)} aria-describedby={describedBy(name)}>{values[name]}</textarea>
+      <textarea class="admin-input" id={name} name={name} lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined} rows="3" maxlength={inputMaxLength(TEXT_LIMITS.short)} aria-invalid={invalid(name)} aria-describedby={describedBy(name)}>{values[name]}</textarea>
       {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
     </div>
   ))}
@@ -73,7 +73,7 @@ const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-er
 
   <fieldset class="space-y-2">
     <legend class="font-medium">{t(locale, "admin.item.allergens")}</legend>
-    <div class="grid grid-cols-2 gap-x-5 gap-y-1">
+    <div class="grid grid-cols-1 min-[24rem]:grid-cols-2 gap-x-5 gap-y-1">
       {ALLERGENS.map((allergen) => (
         <label class="flex items-center gap-2 min-h-11"><input type="checkbox" name="allergens" value={allergen} checked={values.allergens.includes(allergen)} class="h-5 w-5" /> {t(locale, `allergen.${allergen}`)}</label>
       ))}

@@ -68,11 +68,11 @@ const when = (iso: string) =>
   new Intl.DateTimeFormat(locale === "sv" ? "sv-SE" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Stockholm" }).format(new Date(iso));
 ---
 
-<AdminLayout title={t(locale, "admin.security.heading")}>
+<AdminLayout title={t(locale, "admin.security.heading")} csrf={csrf}>
   <section class="space-y-8">
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-3xl font-bold">{t(locale, "admin.security.heading")}</h1>
-      <a class="underline" href={localePath(locale, "/admin/")}>{t(locale, "admin.back")}</a>
+      <a class="underline admin-target" href={localePath(locale, "/admin/")}>{t(locale, "admin.back")}</a>
     </div>
     {message && <p class="admin-message" role="status">{message}</p>}
 

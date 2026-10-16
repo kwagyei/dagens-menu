@@ -114,7 +114,7 @@ const label = (name: string) => t(locale, `admin.texts.field.${name}` as Paramet
 
     <form method="post" class="admin-card p-4 space-y-5" id="settings" aria-labelledby="settings-title" novalidate>
       <h2 class="text-xl font-semibold" id="settings-title">{t(locale, "admin.texts.settings")}</h2>
-      {conflict === "settings" && <p class="admin-message" role="alert">{t(locale, "admin.texts.conflict")}</p>}
+      {conflict === "settings" && <p class="admin-message" role="alert" tabindex="-1" autofocus>{t(locale, "admin.texts.conflict")}</p>}
       <ErrorSummary locale={locale} errors={settingsErrors} id="settings-errors" labels={Object.fromEntries(Object.keys(settingsErrors).map((name) => [name, name.startsWith("social_") ? networkNames[name.slice(7) as keyof typeof networkNames] : label(name)]))} />
       <input type="hidden" name="csrf" value={page.csrf} />
       <input type="hidden" name="action" value="settings" />
@@ -132,7 +132,7 @@ const label = (name: string) => t(locale, `admin.texts.field.${name}` as Paramet
       ] as const).map(([name, max, type]) => (
         <div class="space-y-1">
           <label class="font-medium block" for={name}>{label(name)}</label>
-          <input class="admin-input" type={type} id={name} name={name} value={settings[name]} maxlength={inputMaxLength(max)} aria-invalid={settingsErrors[name] ? "true" : undefined} aria-describedby={settingsErrors[name] ? `${name}-error` : undefined} />
+          <input class="admin-input" type={type} id={name} name={name} lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined} value={settings[name]} maxlength={inputMaxLength(max)} aria-invalid={settingsErrors[name] ? "true" : undefined} aria-describedby={settingsErrors[name] ? `${name}-error` : undefined} />
           {settingsErrors[name] && <p class="admin-error" id={`${name}-error`}>{settingsErrors[name]}</p>}
         </div>
       ))}
@@ -144,7 +144,7 @@ const label = (name: string) => t(locale, `admin.texts.field.${name}` as Paramet
           return (
             <div class="space-y-1">
               <label class="font-medium block" for={name}>{networkNames[network]}</label>
-              <input class="admin-input" type="url" inputmode="url" id={name} name={name} value={settings.social[network]} placeholder="https://" aria-invalid={settingsErrors[name] ? "true" : undefined} aria-describedby={settingsErrors[name] ? `${name}-error` : undefined} />
+              <input class="admin-input" type="url" inputmode="url" id={name} name={name} lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined} value={settings.social[network]} placeholder="https://" aria-invalid={settingsErrors[name] ? "true" : undefined} aria-describedby={settingsErrors[name] ? `${name}-error` : undefined} />
               {settingsErrors[name] && <p class="admin-error" id={`${name}-error`}>{settingsErrors[name]}</p>}
             </div>
           );
@@ -155,7 +155,7 @@ const label = (name: string) => t(locale, `admin.texts.field.${name}` as Paramet
 
     <form method="post" class="admin-card p-4 space-y-5" id="pages" aria-labelledby="pages-title" novalidate>
       <h2 class="text-xl font-semibold" id="pages-title">{t(locale, "admin.texts.pages")}</h2>
-      {conflict === "pages" && <p class="admin-message" role="alert">{t(locale, "admin.texts.conflict")}</p>}
+      {conflict === "pages" && <p class="admin-message" role="alert" tabindex="-1" autofocus>{t(locale, "admin.texts.conflict")}</p>}
       <ErrorSummary locale={locale} errors={pagesErrors} id="pages-errors" labels={Object.fromEntries(Object.keys(pagesErrors).map((name) => [name, label(name)]))} />
       <input type="hidden" name="csrf" value={page.csrf} />
       <input type="hidden" name="action" value="pages" />
@@ -176,7 +176,7 @@ const label = (name: string) => t(locale, `admin.texts.field.${name}` as Paramet
           <div class="space-y-1">
             <label class="font-medium block" for={name}>{label(name)}</label>
             {hint && <p class="text-sm admin-muted" id={hint}>{t(locale, "admin.texts.quoteHint")}</p>}
-            <textarea class="admin-input" id={name} name={name} rows={rows} maxlength={inputMaxLength(max)} aria-invalid={pagesErrors[name] ? "true" : undefined} aria-describedby={describedBy}>{pages[name]}</textarea>
+            <textarea class="admin-input" id={name} name={name} lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined} rows={rows} maxlength={inputMaxLength(max)} aria-invalid={pagesErrors[name] ? "true" : undefined} aria-describedby={describedBy}>{pages[name]}</textarea>
             {pagesErrors[name] && <p class="admin-error" id={`${name}-error`}>{pagesErrors[name]}</p>}
           </div>
         );

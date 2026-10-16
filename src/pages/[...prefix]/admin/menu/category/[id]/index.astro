@@ -47,8 +47,8 @@ if (Astro.request.method === "POST") {
 <AdminLayout title={t(locale, "admin.category.editHeading")} csrf={page.csrf}>
   <section class="space-y-6">
     <h1 class="text-3xl font-bold">{t(locale, "admin.category.editHeading")}</h1>
-    {conflict && <p class="admin-message" role="alert">{t(locale, "admin.category.conflict")}</p>}
+    {conflict && <p class="admin-message" role="alert" tabindex="-1" autofocus>{t(locale, "admin.category.conflict")}</p>}
     <CategoryForm locale={locale} csrf={page.csrf} values={values} errors={errors} rowVersion={rowVersion} submitLabel={t(locale, "admin.item.save")} cancelHref={`${page.path("/")}#category-${id}`} />
-    <p class="pt-4"><a class="admin-error underline" href={page.path(`/menu/category/${id}/delete/`)}>{t(locale, "admin.category.deleteHeading")}</a></p>
+    <p class="pt-4"><a class="admin-error underline admin-target" href={page.path(`/menu/category/${id}/delete/`)}>{t(locale, "admin.category.deleteHeading")}</a></p>
   </section>
 </AdminLayout>

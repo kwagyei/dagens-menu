@@ -54,9 +54,9 @@ const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathn
       .admin-muted { color: var(--color-text-muted); }
       .admin-message { border-left: 4px solid var(--color-primary); padding: 0.75rem 1rem; background: var(--color-surface); }
       .admin-error { color: #a1260d; font-weight: 600; }
-      .admin-input { width: 100%; min-height: 3rem; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius); background: #fff; color: #1a1a1a; font-size: 1rem; }
+      .admin-input { width: 100%; min-width: 0; min-height: 3rem; padding: 0.5rem 0.75rem; border: 1px solid #6b6b6b; border-radius: var(--radius); background: #fff; color: #1a1a1a; font-size: 1rem; }
       .admin-input[aria-invalid="true"] { border-color: #a1260d; border-width: 2px; }
-      .admin-small-button { min-height: 2.75rem; min-width: 2.75rem; padding: 0 0.75rem; border-radius: var(--radius); border: 1px solid var(--color-border); background: #fff; color: var(--color-text); font-size: 0.9375rem; cursor: pointer; }
+      .admin-small-button { min-height: 2.75rem; min-width: 2.75rem; padding: 0 0.75rem; border-radius: var(--radius); border: 1px solid #6b6b6b; background: #fff; color: var(--color-text); font-size: 0.9375rem; cursor: pointer; }
       .admin-badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; background: var(--color-surface); border: 1px solid var(--color-border); }
       :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
       /* On the dark bar the primary colour can vanish: a light ring there. */
@@ -68,15 +68,24 @@ const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathn
       /* First stop for the keyboard: past the navigation, straight to the page. */
       .admin-skip { position: absolute; left: 0.5rem; top: -4rem; z-index: 10; padding: 0.75rem 1rem; background: var(--color-surface); color: var(--color-text); border-radius: var(--radius); font-weight: 600; }
       .admin-skip:focus { top: 0.5rem; }
+      /* The skip link sits on the dark bar: a ring in the bar's text colour shows there. */
+      .admin-skip:focus-visible { outline-color: var(--color-hero-text); }
+      /* Every link and button the owner taps is at least 44px tall (M5.7), including the
+         navigation, language switch, sign-out, the error summary and plain text links. */
+      .admin-bar a, .admin-bar button, .admin-target { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; min-width: 2.75rem; }
+      /* Long labels wrap instead of pushing the page wider than a phone at large text sizes. */
+      .admin-button { max-width: 100%; white-space: normal; text-align: center; }
+      .admin-message li a { display: inline-block; padding: 0.625rem 0; }
+      label:has(> input[type="checkbox"]) { min-height: 2.75rem; }
       a { color: inherit; }
     </style>
   </head>
   <body class="min-h-screen">
     <a href="#admin-main" class="admin-skip">{t(locale, "admin.skip")}</a>
     <header class="admin-bar">
-      <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <span class="font-semibold">{siteName} · {t(locale, "admin.title")}</span>
-        <a href={otherPath} hreflang={otherLocale} lang={otherLocale} class="text-sm underline">{otherLocale.toUpperCase()}</a>
+      <div class="max-w-2xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <span class="font-semibold min-w-0">{siteName} · {t(locale, "admin.title")}</span>
+        <a href={otherPath} hreflang={otherLocale} lang={otherLocale} class="text-sm underline" aria-label={otherLocale === "en" ? "EN – In English" : "SV – På svenska"}>{otherLocale.toUpperCase()}</a>
       </div>
       {session && csrf && (
         <nav class="max-w-2xl mx-auto px-4 pb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm" aria-label={t(locale, "admin.title")}>

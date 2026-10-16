@@ -93,7 +93,7 @@ const dateText = (iso: string) =>
         <fieldset class="space-y-2 border-t pt-3" style="border-color: var(--color-border);" aria-describedby={weeklyErrors[day] ? `${day}-error` : undefined}>
           <legend class="font-semibold">{t(locale, `weekday.${day}`)}</legend>
           <label class="flex items-center gap-2 min-h-11"><input type="checkbox" name={`${day}_closed`} checked={weekly.days[day].closed} class="h-5 w-5" /> {t(locale, "admin.hours.closed")}</label>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 min-[24rem]:grid-cols-2 gap-3">
             <label class="space-y-1"><span class="text-sm block">{t(locale, "admin.hours.opens")}</span>
               <input class="admin-input" type="time" id={`${day}_open`} name={`${day}_open`} value={weekly.days[day].open} aria-invalid={weeklyErrors[day] ? "true" : undefined} aria-describedby={weeklyErrors[day] ? `${day}-error` : undefined} /></label>
             <label class="space-y-1"><span class="text-sm block">{t(locale, "admin.hours.closes")}</span>
@@ -141,7 +141,7 @@ const dateText = (iso: string) =>
           <input class="admin-input" type="date" name="date" id="date" value={exception.date} aria-invalid={exceptionErrors.date ? "true" : undefined} aria-describedby={exceptionErrors.date ? "date-error" : undefined} /></label>
         {exceptionErrors.date && <p class="admin-error" id="date-error">{exceptionErrors.date}</p>}
         <label class="flex items-center gap-2 min-h-11"><input type="checkbox" name="closed" checked={exception.closed} class="h-5 w-5" /> {t(locale, "admin.hours.closedAllDay")}</label>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 min-[24rem]:grid-cols-2 gap-3">
           <label class="space-y-1"><span class="text-sm block">{t(locale, "admin.hours.opens")}</span>
             <input class="admin-input" type="time" id="exception_open" name="exception_open" value={exception.open} aria-invalid={exceptionErrors.hours ? "true" : undefined} aria-describedby={exceptionErrors.hours ? "hours-error" : undefined} /></label>
           <label class="space-y-1"><span class="text-sm block">{t(locale, "admin.hours.closes")}</span>
@@ -150,8 +150,8 @@ const dateText = (iso: string) =>
         {exceptionErrors.hours && <p class="admin-error" id="hours-error">{exceptionErrors.hours}</p>}
         {(["note_sv", "note_en"] as const).map((name) => (
           <label class="block space-y-1"><span class="font-medium block">{t(locale, name === "note_sv" ? "admin.hours.noteSv" : "admin.hours.noteEn")}</span>
-            <input class="admin-input" name={name} id={name} value={exception[name]} maxlength={inputMaxLength(300)} aria-invalid={exceptionErrors[name] ? "true" : undefined} />
-            {exceptionErrors[name] && <span class="admin-error block">{exceptionErrors[name]}</span>}
+            <input class="admin-input" name={name} lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined} id={name} value={exception[name]} maxlength={inputMaxLength(300)} aria-invalid={exceptionErrors[name] ? "true" : undefined} aria-describedby={exceptionErrors[name] ? `${name}-error` : undefined} />
+            {exceptionErrors[name] && <span class="admin-error block" id={`${name}-error`}>{exceptionErrors[name]}</span>}
           </label>
         ))}
         <button class="admin-button" type="submit">{t(locale, "admin.hours.addException")}</button>
