@@ -5,6 +5,7 @@
       "name": { "sv": "Lunch", "en": "Lunch" },
       "items": [
         {
+          "id": "gmjrp0uuhyyh",
           "name": { "sv": "Dagens soppa", "en": "Soup of the day" },
           "description": { "sv": "Serveras med nybakat surdegsbröd och smör", "en": "Served with freshly baked sourdough bread and butter" },
           "price": 14500,
@@ -13,6 +14,7 @@
           "available": true
         },
         {
+          "id": "dlvd0q1ebtc5",
           "name": { "sv": "Lunchsallad med gravad lax", "en": "Lunch salad with cured salmon" },
           "description": { "sv": "Blandade blad, dill, hovmästarsås och citron", "en": "Mixed greens, dill, mustard-dill sauce and lemon" },
           "price": 15500,
@@ -21,6 +23,7 @@
           "available": true
         },
         {
+          "id": "agp76r6g49k5",
           "name": { "sv": "Kroppkakor med lingon", "en": "Potato dumplings with lingonberries" },
           "description": { "sv": "Fyllda med fläsk och lök, serverade med smör och gräddfil", "en": "Filled with pork and onion, served with butter and sour cream" },
           "price": 16500,
@@ -35,6 +38,7 @@
       "name": { "sv": "Förrätter", "en": "Starters" },
       "items": [
         {
+          "id": "1tybqb83aq88",
           "name": { "sv": "Toast Skagen", "en": "Skagen toast" },
           "description": { "sv": "Handskalade räkor, majonnäs, dill och rostad brioche", "en": "Hand-peeled shrimp, mayo, dill and toasted brioche" },
           "price": 13500,
@@ -44,6 +48,7 @@
           "image": "/images/bistro/toast-skagen.jpg"
         },
         {
+          "id": "7exio5caff58",
           "name": { "sv": "Rödbetscarpaccio", "en": "Beetroot carpaccio" },
           "description": { "sv": "Med chèvre, valnötter, honung och ruccola", "en": "With goat cheese, walnuts, honey and rocket" },
           "price": 12500,
@@ -58,6 +63,7 @@
       "name": { "sv": "Varmrätter", "en": "Mains" },
       "items": [
         {
+          "id": "12k3upowokrb",
           "name": { "sv": "Pannbiff med lök", "en": "Pan-fried beef patty with onions" },
           "description": { "sv": "Med gräddsås, lingon och pressgurka", "en": "With cream sauce, lingonberries and pickled cucumber" },
           "price": 18900,
@@ -66,6 +72,7 @@
           "available": true
         },
         {
+          "id": "ce97p1cktabi",
           "name": { "sv": "Stekt strömming", "en": "Fried Baltic herring" },
           "description": { "sv": "Med potatispuré, brynt smör och persilja", "en": "With mashed potatoes, browned butter and parsley" },
           "price": 17500,
@@ -74,6 +81,7 @@
           "available": true
         },
         {
+          "id": "e9twuiun6qcy",
           "name": { "sv": "Svamprisotto", "en": "Wild mushroom risotto" },
           "description": { "sv": "Kantareller, karljohan, parmesan och timjan", "en": "Chanterelles, porcini, parmesan and thyme" },
           "price": 19500,
@@ -83,6 +91,7 @@
           "image": "/images/bistro/gallery-mushroom-risotto.jpg"
         },
         {
+          "id": "543xi0d0v7cl",
           "name": { "sv": "Gravad laxfilé", "en": "Cured salmon fillet" },
           "description": { "sv": "Med dillstuvad potatis och citronsmör", "en": "With dill-creamed potatoes and lemon butter" },
           "price": 22500,
@@ -97,6 +106,7 @@
       "name": { "sv": "Efterrätter", "en": "Desserts" },
       "items": [
         {
+          "id": "qaf5wtg20r1f",
           "name": { "sv": "Chokladfondant", "en": "Chocolate fondant" },
           "description": { "sv": "Med vaniljglass och hallonsås", "en": "With vanilla ice cream and raspberry coulis" },
           "price": 11500,
@@ -106,6 +116,7 @@
           "image": "/images/bistro/chocolate-fondant.jpg"
         },
         {
+          "id": "hep925kx2u53",
           "name": { "sv": "Rabarberpaj", "en": "Rhubarb crumble" },
           "description": { "sv": "Med vaniljsås", "en": "With vanilla custard" },
           "price": 9500,
@@ -120,6 +131,7 @@
       "name": { "sv": "Drycker", "en": "Drinks" },
       "items": [
         {
+          "id": "nghiw8i9ylq8",
           "name": { "sv": "Husets lemonad", "en": "House lemonade" },
           "description": { "sv": "Fläderblom och citron", "en": "Elderflower and lemon" },
           "price": 6500,
@@ -128,6 +140,7 @@
           "available": true
         },
         {
+          "id": "sgokzjs2mrrd",
           "name": { "sv": "Lingondricka", "en": "Lingonberry drink" },
           "description": { "sv": "Hemgjord, lätt kolsyrad", "en": "Homemade, lightly sparkling" },
           "price": 5500,

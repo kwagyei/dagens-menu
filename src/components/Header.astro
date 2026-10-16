@@ -1,8 +1,8 @@
 ---
-import { getSettings, localized } from "../content/load";
+import { localized } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
-const settings = getSettings();
+const settings = Astro.locals.content.settings;
 const locale = getLocale(Astro.url);
 const siteName = localized(settings.name, locale);
 const altLocale = locale === "sv" ? "en" : "sv";

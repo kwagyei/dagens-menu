@@ -61,7 +61,8 @@ describe("hoursOn", () => {
   });
 
   it("treats a missing weekday as closed", () => {
-    const partial: OpeningHours = { weekly: {}, exceptions: [] };
+    // Invalid per the schema, but the badge must still not throw on it.
+    const partial = { weekly: {}, exceptions: [] } as unknown as OpeningHours;
     expect(hoursOn(partial, new Date("2026-10-20T10:00:00Z"))).toBeNull();
   });
 });

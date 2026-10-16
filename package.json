@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.18.0"
   },
   "scripts": {
-    "dev": "astro dev",
+    "dev": "SITE=bistro astro dev",
     "dev:bistro": "SITE=bistro astro dev",
     "dev:westafrican": "SITE=westafrican astro dev",
     "prebuild": "node scripts/generate-admin-config.mjs",
@@ -26,7 +26,8 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.8",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

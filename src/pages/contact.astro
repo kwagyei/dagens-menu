@@ -2,12 +2,12 @@
 import Base from "../layouts/Base.astro";
 import HoursTable from "../components/HoursTable.astro";
 import MapEmbed from "../components/MapEmbed.astro";
-import { getSettings, getHours, localized } from "../content/load";
+import { localized } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const settings = getSettings();
-const hours = getHours();
+const settings = Astro.locals.content.settings;
+const hours = Astro.locals.content.hours;
 const siteName = localized(settings.name, locale);
 ---
 

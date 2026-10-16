@@ -5,14 +5,15 @@
  * Keep this module free of Node imports — it is bundled into a client script.
  */
 import type { DayHours, OpeningHours } from "./load";
+import { WEEKDAYS, type Weekday } from "./vocabulary";
 
 /** Every demo is a Swedish restaurant; "today" means today in Sweden, wherever the visitor is. */
 export const RESTAURANT_TIME_ZONE = "Europe/Stockholm";
 
-const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+const isWeekday = (value: string): value is Weekday => (WEEKDAYS as readonly string[]).includes(value);
 
 /** The calendar date (YYYY-MM-DD) and lower-case English weekday at `now` in `timeZone`. */
-export function restaurantDay(now: Date, timeZone = RESTAURANT_TIME_ZONE): { date: string; weekday: string } {
+export function restaurantDay(now: Date, timeZone = RESTAURANT_TIME_ZONE): { date: string; weekday: Weekday } {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-US", {
       timeZone,
@@ -25,7 +26,7 @@ export function restaurantDay(now: Date, timeZone = RESTAURANT_TIME_ZONE): { dat
       .map((p) => [p.type, p.value]),
   );
   const weekday = parts.weekday.toLowerCase();
-  if (!WEEKDAYS.includes(weekday)) throw new Error(`Unexpected weekday "${parts.weekday}"`);
+  if (!isWeekday(weekday)) throw new Error(`Unexpected weekday "${parts.weekday}"`);
   return { date: `${parts.year}-${parts.month}-${parts.day}`, weekday };
 }
 

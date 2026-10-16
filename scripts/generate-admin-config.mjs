@@ -2,7 +2,11 @@ import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { ALLERGENS, BOOKING_MODES, MENU_TAGS } from "./content-vocabulary.mjs";
 
-const site = process.env.SITE || "bistro";
+const site = process.env.SITE;
+if (!site) {
+  console.error("SITE is not set. Run e.g. `SITE=bistro npm run build` (or npm run build:bistro).");
+  process.exit(1);
+}
 
 const config = `backend:
   name: github
@@ -157,6 +161,10 @@ collections:
                 name: items
                 widget: list
                 fields:
+                  - label: "Id (unique; home-page highlights refer to it, do not change)"
+                    name: id
+                    widget: string
+                    pattern: ["^[a-z0-9]{12}$", "12 lowercase letters or digits"]
                   - label: Name
                     name: name
                     widget: object
@@ -209,7 +217,7 @@ collections:
               - label: Highlights
                 name: highlights
                 widget: list
-                field: { label: "Item ID", name: id, widget: string }
+                field: { label: "Menu item id", name: id, widget: string, pattern: ["^[a-z0-9]{12}$", "12 lowercase letters or digits"] }
           - label: About
             name: about
             widget: object

@@ -1,11 +1,11 @@
 ---
-import { getSettings, getHours } from "../content/load";
+
 import HoursTable from "./HoursTable.astro";
 import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const settings = getSettings();
-const hours = getHours();
+const settings = Astro.locals.content.settings;
+const hours = Astro.locals.content.hours;
 const provider = settings.booking.provider;
 ---
 

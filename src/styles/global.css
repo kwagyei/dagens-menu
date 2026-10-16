@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Only markup produces classes: keep words in scripts and tests from becoming CSS. */
+@source not "../../scripts";
+@source not "../../tests";
+@source not "../**/*.test.ts";
+@source not "../content";
 
 /* ================================================================
    Design System — dagens-menu

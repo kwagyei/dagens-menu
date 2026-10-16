@@ -1,18 +1,17 @@
 ---
 import Base from "../layouts/Base.astro";
-import { getSettings, getPages, getMenu, getHours, localized, formatPrice, resolveHighlights } from "../content/load";
+import { localized, formatPrice, resolveHighlights } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const settings = getSettings();
-const pages = getPages();
-const menu = getMenu();
-const hours = getHours();
+const settings = Astro.locals.content.settings;
+const pages = Astro.locals.content.pages;
+const menu = Astro.locals.content.menu;
+const hours = Astro.locals.content.hours;
 const tagline = localized(pages.home.tagline, locale);
 const siteName = localized(settings.name, locale);
 const cuisine = localized(settings.cuisine, locale);
-const highlightIds = pages.home.highlights;
-const highlights = resolveHighlights(menu, highlightIds);
+const highlights = resolveHighlights(menu, pages.home.highlights);
 const highlightImages = pages.home.highlightImages ?? {};
 const pullQuote = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
 const ctaImage = pages.home.ctaImage;
@@ -104,8 +103,8 @@ const ctaImage = pages.home.ctaImage;
         </div>
 
         <div class="space-y-16 md:space-y-28">
-          {highlights.map((item, i) => {
-            const imgSrc = highlightImages[highlightIds[i]];
+          {highlights.map(({ id, item }, i) => {
+            const imgSrc = highlightImages[id];
             const isEven = i % 2 === 0;
             const tiltClass = isEven ? 'img-tilt-right' : 'img-tilt-left';
             const bleedClass = isEven ? 'bleed-left' : 'bleed-right';

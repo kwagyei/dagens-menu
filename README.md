@@ -35,7 +35,7 @@ date themselves.
 
 ## Running it
 
-Requires Node 22.12+.
+Requires Node 22.18+ (the build imports TypeScript directly, which Node supports by default from 22.18).
 
 ```sh
 npm install
@@ -59,11 +59,22 @@ the colours and fonts from `sites/<SITE>/theme.json`.
   non-negative integer. A bad edit then fails the build instead of rendering `NaN kr`.
 - **Every text field is `{ sv, en }`.** There is no fallback-to-Swedish at render time
   that would hide a missing translation. The content tests require both languages.
-- **The content is validated in CI.** Decap's own validation is shallow. It will save an
-  empty translation, an allergen spelled wrong, or a close time of `25:00`.
-  `tests/content.test.ts` checks every site's content on each pull request. The allowed
-  tags and allergens live in one module, which both the CMS config and the tests import,
-  so the two can't drift apart.
+- **One schema defines valid content.** `src/content/schema.ts` (Zod) holds every rule:
+  - both languages present
+  - prices in whole öre
+  - tags and EU-14 allergens from a shared vocabulary
+  - real dates, and 24-hour times that never open and close at the same minute
+  - length caps
+  - no unknown fields
+
+  Invalid content fails the build with the field and the reason. It also fails CI, and
+  `tests/schema-parity.test.ts` proves each rule rejects a bad value. The admin that
+  replaces Decap will validate saves through the same schema, so a rule exists once.
+- **Pages never read content directly.** Middleware loads the site's content through a
+  `ContentSource` into `Astro.locals.content`. Today that source is the JSON files. Moving
+  to a database means writing a new source, not touching every template.
+- **Dishes have stable ids.** Home-page highlights point at a dish's id, not its position,
+  so reordering the menu can't change which dish is featured.
 - **"Open today" is worked out in the browser.** A static page is built once. If the
   build picked "today", the badge would show the hours for the day of the last deploy.
   The page carries the weekly hours and a small script picks today's in
@@ -79,12 +90,19 @@ the colours and fonts from `sites/<SITE>/theme.json`.
 
 ## Known limitations
 
-- **CMS edits don't deploy by themselves yet.** Decap commits to `main`, but the Pages
+- **CMS edits don't deploy by themselves.** Decap commits to `main`, but the Pages
   projects are deployed with `wrangler` from a local build and have no git connection.
-  A deploy job on `main` is the next step.
+  Decap is being replaced by a database-backed admin that renders edits immediately
+  (Cloudflare Workers + D1, passkey sign-in). This README describes the current static
+  version until that ships.
+- **Adding a dish in Decap needs a hand-typed id.** Each dish has a stable 12-character id
+  (lowercase letters and digits). Decap can't generate one, so the CMS form asks for it and
+  validates it. The admin that replaces Decap generates ids itself.
 - **Images are served as uploaded JPEGs.** Astro's image pipeline (AVIF/WebP, responsive
   sizes) isn't used yet, which costs page weight on mobile.
 - **Decap CMS loads from unpkg on `/admin/`.** That page is for the owner only, but it
   depends on a third-party CDN.
-- **Lighthouse and the axe accessibility audit haven't been run** against the deployed
-  demos. The target is 95+ on all four Lighthouse categories on mobile.
+- **Lighthouse performance is 75–88 on mobile, below the 95 target.** Measured 2026-10-16:
+  3 runs each on `/` and `/menu/` of the bistro demo. The cause is the photos:
+  Largest Contentful Paint is about 3.7–4.2 s, while the server responds in about 50 ms.
+  Accessibility scores 93–96 and best practices 100. The axe audit hasn't been run yet.

@@ -5,6 +5,7 @@
       "name": { "sv": "Förrätter", "en": "Starters" },
       "items": [
         {
+          "id": "a9y7jwm2x2kl",
           "name": { "sv": "Kelewele", "en": "Kelewele" },
           "description": { "sv": "Kryddig stekt plantain med ingefära och chili", "en": "Spiced fried plantain with ginger and chilli" },
           "price": 8500,
@@ -14,6 +15,7 @@
           "image": "/images/westafrican/gallery-kelewele-plate.jpg"
         },
         {
+          "id": "qhbzr0ta9mxk",
           "name": { "sv": "Suya-spett", "en": "Suya skewers" },
           "description": { "sv": "Grillat nötkött med jordnötskrydda och lök", "en": "Grilled beef with peanut spice and onion" },
           "price": 11500,
@@ -22,6 +24,7 @@
           "available": true
         },
         {
+          "id": "1og59rqyhq12",
           "name": { "sv": "Akara", "en": "Akara" },
           "description": { "sv": "Friterade bönbullar med chilisås", "en": "Black-eyed pea fritters with chilli sauce" },
           "price": 9500,
@@ -36,6 +39,7 @@
       "name": { "sv": "Varmrätter", "en": "Mains" },
       "items": [
         {
+          "id": "854qfvcuovs3",
           "name": { "sv": "Jollofris", "en": "Jollof rice" },
           "description": { "sv": "Kryddigt ris kokt i tomatsås, med grillad kyckling och stekt plantain", "en": "Spiced tomato rice with grilled chicken and fried plantain" },
           "price": 17500,
@@ -45,6 +49,7 @@
           "image": "/images/westafrican/jollof-grilled-chicken.jpg"
         },
         {
+          "id": "ev01jipfxwwl",
           "name": { "sv": "Egusi-soppa", "en": "Egusi soup" },
           "description": { "sv": "Pumpafrösoppa med bladgrönsaker, getkött och fufu", "en": "Melon seed soup with leafy greens, goat meat and fufu" },
           "price": 18500,
@@ -53,6 +58,7 @@
           "available": true
         },
         {
+          "id": "12aeh1zxepu7",
           "name": { "sv": "Thieboudienne", "en": "Thieboudienne" },
           "description": { "sv": "Senegalesisk fiskgryta med ris, grönsaker och tamarind", "en": "Senegalese fish stew with rice, vegetables and tamarind" },
           "price": 19500,
@@ -61,6 +67,7 @@
           "available": true
         },
         {
+          "id": "2ujtipq7v721",
           "name": { "sv": "Waakye", "en": "Waakye" },
           "description": { "sv": "Ris och bönor med shito, tomatgryta, spaghetti och stekt plantain", "en": "Rice and beans with shito stew, spaghetti and fried plantain" },
           "price": 16500,
@@ -69,6 +76,7 @@
           "available": true
         },
         {
+          "id": "2pjpza5dq19y",
           "name": { "sv": "Jordnötssoppa", "en": "Groundnut soup" },
           "description": { "sv": "Krämig jordnötssoppa med kyckling och ris", "en": "Creamy peanut soup with chicken, served with rice" },
           "price": 17500,
@@ -83,6 +91,7 @@
       "name": { "sv": "Efterrätter", "en": "Desserts" },
       "items": [
         {
+          "id": "bgni9ft9vvbp",
           "name": { "sv": "Puff-puff", "en": "Puff-puff" },
           "description": { "sv": "Friterade degbollar med kanel och honung", "en": "Deep-fried dough balls with cinnamon and honey" },
           "price": 7500,
@@ -92,6 +101,7 @@
           "image": "/images/westafrican/gallery-puff-puff.jpg"
         },
         {
+          "id": "2iamxkixhpxn",
           "name": { "sv": "Mangoglass", "en": "Mango sorbet" },
           "description": { "sv": "Hemgjord sorbet med färsk mango och lime", "en": "Homemade sorbet with fresh mango and lime" },
           "price": 8500,
@@ -106,6 +116,7 @@
       "name": { "sv": "Drycker", "en": "Drinks" },
       "items": [
         {
+          "id": "p6celvy7zgp9",
           "name": { "sv": "Sobolo", "en": "Sobolo" },
           "description": { "sv": "Hibiskusdryck med ingefära och kryddnejlika", "en": "Hibiscus drink with ginger and cloves" },
           "price": 6500,
@@ -114,6 +125,7 @@
           "available": true
         },
         {
+          "id": "sgao2b7kmbr9",
           "name": { "sv": "Chapman", "en": "Chapman" },
           "description": { "sv": "Nigeriansk festdryck med grenadine och citrus", "en": "Nigerian celebration drink with grenadine and citrus" },
           "price": 7500,
@@ -122,6 +134,7 @@
           "available": true
         },
         {
+          "id": "o9i73wqpfu3d",
           "name": { "sv": "Ingefärsshot", "en": "Ginger shot" },
           "description": { "sv": "Färskpressad ingefära med citron och honung", "en": "Fresh-pressed ginger with lemon and honey" },
           "price": 4500,
