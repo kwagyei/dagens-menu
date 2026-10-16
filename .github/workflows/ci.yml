@@ -43,12 +43,16 @@ jobs:
       - run: npm run test:db
 
   build:
-    name: Build ${{ matrix.site }}
+    name: Build and crawl ${{ matrix.site }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        site: [bistro, westafrican]
+        include:
+          - site: bistro
+            title: Bistro Norden
+          - site: westafrican
+            title: Chez Abena
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -59,10 +63,14 @@ jobs:
       - run: npm run build
         env:
           SITE: ${{ matrix.site }}
-      - name: No third-party requests before consent
-        run: npm run check:consent
-      - name: Every page was built
+      - name: Local D1 with the site's content
         run: |
-          count=$(find dist -name index.html -not -path 'dist/admin/*' | wc -l)
-          echo "$count pages"
-          test "$count" -eq 14
+          npm run db:migrate:local
+          npm run seed -- --site ${{ matrix.site }}
+      - name: Serve the built Worker
+        run: |
+          npx wrangler dev --port 8788 --persist-to .wrangler/state > wrangler-dev.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:8788/ && exit 0; sleep 1; done
+          cat wrangler-dev.log; exit 1
+      - name: All 14 routes render, and nothing third-party loads before consent
+        run: node scripts/check-no-third-party.mjs --url http://localhost:8788 --title "${{ matrix.title }}"
