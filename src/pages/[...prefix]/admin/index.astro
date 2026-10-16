@@ -1,0 +1,55 @@
+---
+// Signed out: sign in with a passkey. Signed in: the admin's home (editing arrives in M5).
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { getLocale, localePath, t } from "../../../i18n";
+import { adminSecret } from "../../../admin/context";
+import { formToken } from "../../../auth/guard";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const locale = getLocale(Astro.url);
+const session = Astro.locals.session;
+const csrf = session ? await formToken(adminSecret(), session.tokenHash) : "";
+const home = localePath(locale, "/admin/");
+---
+
+<AdminLayout title={session ? t(locale, "admin.home.heading") : t(locale, "admin.signIn.heading")}>
+  {session ? (
+    <section class="space-y-6">
+      <h1 class="text-3xl font-bold">{t(locale, "admin.home.heading")}</h1>
+      <p class="admin-muted">{t(locale, "admin.home.signedInAs")} <strong>{session.email}</strong></p>
+      <p>{t(locale, "admin.home.next")}</p>
+      <div class="flex flex-wrap gap-3">
+        <a class="admin-button admin-button-quiet" href={localePath(locale, "/admin/security/")}>{t(locale, "admin.security.link")}</a>
+        <form method="post" action="/admin/logout">
+          <input type="hidden" name="csrf" value={csrf} />
+          <input type="hidden" name="next" value={home} />
+          <button class="admin-button admin-button-quiet" type="submit">{t(locale, "admin.signOut")}</button>
+        </form>
+      </div>
+    </section>
+  ) : (
+    <section class="space-y-6">
+      <h1 class="text-3xl font-bold">{t(locale, "admin.signIn.heading")}</h1>
+      <p class="admin-muted">{t(locale, "admin.signIn.lead")}</p>
+      <button
+        class="admin-button w-full sm:w-auto"
+        type="button"
+        hidden
+        data-passkey="login"
+        data-next={home}
+        data-status="status"
+        data-working={t(locale, "admin.working")}
+        data-cancelled={t(locale, "admin.error.cancelled")}
+        data-failed={t(locale, "admin.error.failed")}
+      >{t(locale, "admin.signIn.button")}</button>
+      <p class="admin-message" data-needs-js>{t(locale, "admin.noScript")}</p>
+      <p id="status" role="status" aria-live="polite"></p>
+    </section>
+  )}
+</AdminLayout>
+
+<script>
+  import "../../../admin/passkey-client";
+</script>

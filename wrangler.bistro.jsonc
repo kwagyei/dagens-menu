@@ -16,5 +16,7 @@
       "migrations_dir": "migrations"
     }
   ],
+  // Sign-in and admin writes: 10 per minute per IP (ADR-011 §6).
+  "ratelimits": [{ "name": "AUTH_LIMITER", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }],
   "observability": { "enabled": true }
 }

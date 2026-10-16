@@ -15,6 +15,8 @@ export default defineConfig({
   output: "server",
   adapter: cloudflare({ imageService: "passthrough", configPath: `wrangler.${site}.jsonc` }),
   session: false,
+  // Cross-site form posts get a 403 (on by default; stated because the admin relies on it).
+  security: { checkOrigin: true },
   vite: {
     plugins: [tailwindcss()],
     // The site the build was made for; the Worker refuses to serve another (src/content/site-id.ts).

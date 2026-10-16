@@ -1,0 +1,123 @@
+---
+// Admin → Security (plan M4.6): see and remove your passkeys, add another device, and sign
+// out everywhere. Form posts come back here and redirect (post/redirect/get).
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { env } from "cloudflare:workers";
+import { adminSecret } from "../../../admin/context";
+import { checkFormToken, formToken } from "../../../auth/guard";
+import { clearSessionCookie, endAllSessionsStatement } from "../../../auth/sessions";
+import { prepare, stmt } from "../../../db/sql";
+import { getLocale, localePath, t } from "../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const locale = getLocale(Astro.url);
+const here = localePath(locale, "/admin/security/");
+const session = Astro.locals.session;
+if (!session) return Astro.redirect(localePath(locale, "/admin/"), 303);
+
+const secret = adminSecret();
+const countPasskeys = () =>
+  env.DB.prepare("SELECT count(*) AS n FROM passkeys WHERE user_id = ? AND site_id = ?").bind(session.userId, session.siteId).first<number>("n");
+
+if (Astro.request.method === "POST") {
+  const form = await Astro.request.formData();
+  if (!(await checkFormToken(secret, session.tokenHash, form.get("csrf")))) return Astro.redirect(`${here}?done=expired`, 303);
+  const action = form.get("action");
+  if (action === "remove") {
+    // Never the last one: that would lock the owner out (recovery is an operator invite).
+    if (((await countPasskeys()) ?? 0) > 1) {
+      await env.DB.batch(
+        prepare(env.DB, [stmt("DELETE FROM passkeys WHERE id = ? AND user_id = ? AND site_id = ?", String(form.get("id")), session.userId, session.siteId)]),
+      );
+    }
+    return Astro.redirect(`${here}?done=removed`, 303);
+  }
+  if (action === "sign-out-everywhere") {
+    await env.DB.batch(prepare(env.DB, [endAllSessionsStatement(session.userId, session.siteId)]));
+    return new Response(null, { status: 303, headers: { Location: localePath(locale, "/admin/"), "Set-Cookie": clearSessionCookie } });
+  }
+  return Astro.redirect(here, 303);
+}
+
+const { results: passkeys } = await env.DB.prepare(
+  "SELECT id, created_at, last_used_at FROM passkeys WHERE user_id = ? AND site_id = ? ORDER BY created_at",
+)
+  .bind(session.userId, session.siteId)
+  .all<{ id: string; created_at: string; last_used_at: string | null }>();
+const csrf = await formToken(secret, session.tokenHash);
+const done = Astro.url.searchParams.get("done");
+const message =
+  done === "removed" ? t(locale, "admin.security.removed") : done === "added" ? t(locale, "admin.security.added") : done === "expired" ? t(locale, "admin.error.form") : "";
+const when = (iso: string) =>
+  new Intl.DateTimeFormat(locale === "sv" ? "sv-SE" : "en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Stockholm" }).format(new Date(iso));
+---
+
+<AdminLayout title={t(locale, "admin.security.heading")}>
+  <section class="space-y-8">
+    <div class="flex items-center justify-between gap-4">
+      <h1 class="text-3xl font-bold">{t(locale, "admin.security.heading")}</h1>
+      <a class="underline" href={localePath(locale, "/admin/")}>{t(locale, "admin.back")}</a>
+    </div>
+    {message && <p class="admin-message" role="status">{message}</p>}
+
+    <div class="space-y-3">
+      <h2 class="text-xl font-semibold">{t(locale, "admin.security.passkeys")}</h2>
+      <ul class="space-y-3">
+        {passkeys.map((p, i) => (
+          <li class="admin-card p-4 flex items-center justify-between gap-4">
+            <div>
+              <p class="font-medium">Passkey {i + 1}</p>
+              <p class="text-sm admin-muted">
+                {t(locale, "admin.security.created")} {when(p.created_at)} · {t(locale, "admin.security.lastUsed")}{" "}
+                {p.last_used_at ? when(p.last_used_at) : t(locale, "admin.security.never")}
+              </p>
+            </div>
+            {passkeys.length > 1 && (
+              <form method="post">
+                <input type="hidden" name="csrf" value={csrf} />
+                <input type="hidden" name="action" value="remove" />
+                <input type="hidden" name="id" value={p.id} />
+                <button class="admin-button admin-button-quiet" type="submit">{t(locale, "admin.security.remove")}</button>
+              </form>
+            )}
+          </li>
+        ))}
+      </ul>
+      {passkeys.length === 1 && <p class="text-sm admin-muted">{t(locale, "admin.security.lastOne")}</p>}
+    </div>
+
+    <div class="space-y-3">
+      <h2 class="text-xl font-semibold">{t(locale, "admin.security.addDevice")}</h2>
+      <p class="admin-muted">{t(locale, "admin.security.addDeviceLead")}</p>
+      <button
+        class="admin-button"
+        type="button"
+        hidden
+        data-passkey="add"
+        data-next={`${here}?done=added`}
+        data-status="add-status"
+        data-working={t(locale, "admin.working")}
+        data-cancelled={t(locale, "admin.error.cancelled")}
+        data-failed={t(locale, "admin.error.failed")}
+      >{t(locale, "admin.security.addDevice")}</button>
+      <p class="admin-message" data-needs-js>{t(locale, "admin.noScript")}</p>
+      <p id="add-status" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="space-y-3">
+      <h2 class="text-xl font-semibold">{t(locale, "admin.security.signOutEverywhere")}</h2>
+      <p class="admin-muted">{t(locale, "admin.security.signOutEverywhereLead")}</p>
+      <form method="post">
+        <input type="hidden" name="csrf" value={csrf} />
+        <input type="hidden" name="action" value="sign-out-everywhere" />
+        <button class="admin-button admin-button-quiet" type="submit">{t(locale, "admin.security.signOutEverywhere")}</button>
+      </form>
+    </div>
+  </section>
+</AdminLayout>
+
+<script>
+  import "../../../admin/passkey-client";
+</script>

@@ -1,0 +1,49 @@
+---
+// The single-use enrolment link from `npm run admin -- invite`.
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import { env } from "cloudflare:workers";
+import { findInvite } from "../../../../auth/invites";
+import { localized } from "../../../../content/load";
+import { getLocale, localePath, t } from "../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const locale = getLocale(Astro.url);
+const token = Astro.params.token ?? "";
+const invite = await findInvite(env.DB, env.SITE_ID, token, new Date());
+if (!invite) Astro.response.status = 410;
+const siteName = localized(Astro.locals.content.settings.name, locale);
+---
+
+<AdminLayout title={t(locale, "admin.invite.heading")}>
+  <section class="space-y-6">
+    <h1 class="text-3xl font-bold">{t(locale, "admin.invite.heading")}</h1>
+    {invite ? (
+      <>
+        <p>{t(locale, "admin.invite.lead").replace("{site}", siteName)}</p>
+        <p class="admin-muted">{invite.email}</p>
+        <button
+          class="admin-button w-full sm:w-auto"
+          type="button"
+          hidden
+          data-passkey="enrol"
+          data-token={token}
+          data-next={localePath(locale, "/admin/")}
+          data-status="status"
+          data-working={t(locale, "admin.working")}
+          data-cancelled={t(locale, "admin.error.cancelled")}
+          data-failed={t(locale, "admin.error.failed")}
+        >{t(locale, "admin.invite.button")}</button>
+        <p class="admin-message" data-needs-js>{t(locale, "admin.noScript")}</p>
+        <p id="status" role="status" aria-live="polite"></p>
+      </>
+    ) : (
+      <p class="admin-message">{t(locale, "admin.invite.invalid")}</p>
+    )}
+  </section>
+</AdminLayout>
+
+<script>
+  import "../../../../admin/passkey-client";
+</script>
