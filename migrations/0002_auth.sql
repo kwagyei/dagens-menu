@@ -4,7 +4,7 @@
 
 CREATE TABLE users (
   id TEXT PRIMARY KEY CHECK (length(id) = 12 AND id NOT GLOB '*[^a-z0-9]*'),
-  email TEXT NOT NULL UNIQUE COLLATE NOCASE CHECK (email GLOB '?*@?*.?*'),
+  email TEXT NOT NULL UNIQUE COLLATE NOCASE CHECK (email GLOB '?*@?*.?*' AND email NOT GLOB '*[ @]*@*' AND email NOT GLOB '* *'),
   display_name TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 ) STRICT;
@@ -38,6 +38,8 @@ CREATE TABLE sessions (
   created_at TEXT NOT NULL,
   last_seen_at TEXT NOT NULL,
   expires_at TEXT NOT NULL,
+  -- One fixed format, so comparing these as text compares them as times.
+  CHECK (strftime('%Y-%m-%dT%H:%M:%SZ', created_at) IS created_at AND strftime('%Y-%m-%dT%H:%M:%SZ', last_seen_at) IS last_seen_at AND strftime('%Y-%m-%dT%H:%M:%SZ', expires_at) IS expires_at),
   CHECK (expires_at > created_at),
   FOREIGN KEY (user_id, site_id) REFERENCES memberships (user_id, site_id) ON DELETE CASCADE
 ) STRICT;
@@ -50,6 +52,7 @@ CREATE TABLE invites (
   created_at TEXT NOT NULL,
   expires_at TEXT NOT NULL,
   used_at TEXT,
+  CHECK (strftime('%Y-%m-%dT%H:%M:%SZ', created_at) IS created_at AND strftime('%Y-%m-%dT%H:%M:%SZ', expires_at) IS expires_at AND (used_at IS NULL OR strftime('%Y-%m-%dT%H:%M:%SZ', used_at) IS used_at)),
   CHECK (expires_at > created_at),
   FOREIGN KEY (user_id, site_id) REFERENCES memberships (user_id, site_id) ON DELETE CASCADE
 ) STRICT;
@@ -64,3 +67,7 @@ CREATE TABLE rate_limits (
 
 CREATE INDEX sessions_user ON sessions (user_id, site_id);
 CREATE INDEX passkeys_user ON passkeys (user_id, site_id);
+CREATE INDEX memberships_site ON memberships (site_id);
+CREATE INDEX invites_user ON invites (user_id, site_id);
+CREATE INDEX sessions_expires ON sessions (expires_at);
+CREATE INDEX rate_limits_window ON rate_limits (window_start);

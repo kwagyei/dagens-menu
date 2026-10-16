@@ -229,3 +229,34 @@ describe("sites", () => {
     expect(await rejected("INSERT INTO sites (id) VALUES ('../x')")).toMatch(/CHECK/);
   });
 });
+
+describe("content_version", () => {
+  const version = () => db.prepare("SELECT content_version FROM sites WHERE id = 'bistro'").first<number>("content_version");
+
+  it.each<[string, string]>([
+    ["a settings change", "UPDATE settings SET tagline_en = 'New' WHERE site_id = 'bistro'"],
+    ["a price change", `UPDATE menu_items SET price_ore = 15500 WHERE id = '${ITEM}'`],
+    ["a new category", "INSERT INTO menu_categories (site_id, id, slug, name_sv, name_en, position) VALUES ('bistro', 'cat000000002', 'drinks', 'Drycker', 'Drinks', 1)"],
+    ["opening hours", "INSERT INTO weekly_hours (site_id, weekday, opens, closes) VALUES ('bistro', 2, '11:00', '22:00')"],
+    ["a holiday", "INSERT INTO hours_exceptions (site_id, date, note_sv, note_en) VALUES ('bistro', '2026-12-24', 'Julafton', 'Christmas Eve')"],
+    ["a deleted dish", `DELETE FROM menu_items WHERE id = '${ITEM}'`],
+    ["a new image", `INSERT INTO images (site_id, id, kind, path, mime) VALUES ('bistro', '${"9".repeat(64)}', 'static', '/images/bistro/b.jpg', 'image/jpeg')`],
+  ])("moves on with %s, by a trigger, whoever writes it", async (_name, sql) => {
+    const before = await version();
+    await db.prepare(sql).run();
+    expect(await version()).toBeGreaterThan(before!);
+  });
+
+  it("stays put when a statement changes nothing", async () => {
+    const before = await version();
+    await db.prepare("UPDATE menu_items SET price_ore = 1 WHERE id = 'nonexistent0'").run();
+    expect(await version()).toBe(before);
+  });
+
+  it("moves only the changed site's version", async () => {
+    await db.prepare("INSERT INTO sites (id) VALUES ('westafrican')").run();
+    const other = await db.prepare("SELECT content_version FROM sites WHERE id = 'westafrican'").first<number>("content_version");
+    await db.prepare(`UPDATE menu_items SET price_ore = 15500 WHERE id = '${ITEM}'`).run();
+    expect(await db.prepare("SELECT content_version FROM sites WHERE id = 'westafrican'").first<number>("content_version")).toBe(other);
+  });
+});
