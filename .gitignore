@@ -36,3 +36,5 @@ inspiration/
 !.dev.vars.example
 !.env.example
 
+playwright-report/
+test-results/
