@@ -141,6 +141,8 @@ export default {
   "admin.menu.saved": "Sparat.",
   "admin.menu.deleted": "Borttaget.",
   "admin.menu.added": "Tillagt.",
+  "admin.menu.savedNotFeatured": "Sparat. Startsidan visar redan tre rätter, så den här lades inte till där.",
+  "admin.menu.addedNotFeatured": "Tillagt. Startsidan visar redan tre rätter, så den här lades inte till där.",
   "admin.menu.notFound": "Det fanns inte längre, någon kan ha tagit bort det.",
   "admin.item.newHeading": "Ny rätt",
   "admin.item.editHeading": "Ändra rätt",

@@ -47,8 +47,8 @@ if (Astro.request.method === "POST") {
   if (parsed.edit && Object.keys(errors).length === 0) {
     const result = await createMenuItem(repo, categoryId, parsed.edit);
     if (result.ok && result.id) {
-      if (values.featured) await setFeatured(repo, result.id, true);
-      return Astro.redirect(`${page.path("/")}?done=added#item-${result.id}`, 303);
+      const featured = values.featured ? await setFeatured(repo, result.id, true) : { ok: true };
+      return Astro.redirect(`${page.path("/")}?done=${featured.ok ? "added" : "added-not-featured"}#item-${result.id}`, 303);
     }
     if (!result.ok && result.error === "not-found") return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
     errors = { ...errors, name_sv: t(locale, "admin.error.failed") };

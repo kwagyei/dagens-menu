@@ -162,6 +162,54 @@ export function moved(order: string[], id: string, direction: Direction): string
 const renumber = (table: "menu_items" | "menu_categories", site: string, order: string[]): Statement[] =>
   order.map((id, position) => stmt(`UPDATE ${table} SET position = ? WHERE site_id = ? AND id = ?`, position, site, id));
 
+type Placed = { id: string; position: number };
+
+/**
+ * Swap a row with its neighbour, guarded on both still holding the positions just read, so
+ * two moves at once can't overwrite each other: the one that lost re-reads and tries again.
+ * Positions that have drifted into duplicates are renumbered instead (no guard needed:
+ * renumbering from any order is safe, and the next move is guarded again).
+ */
+async function swapWithNeighbour(
+  ctx: RepoContext,
+  table: "menu_items" | "menu_categories",
+  read: () => Promise<Placed[]>,
+  id: string,
+  direction: Direction,
+  entry: Parameters<typeof commit>[2],
+): Promise<WriteResult> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const rows = await read();
+    if (!rows.some((r) => r.id === id)) return { ok: false, error: "not-found" };
+    const order = moved(
+      rows.map((r) => r.id),
+      id,
+      direction,
+    );
+    if (!order) return { ok: true }; // already first or last: nothing to do
+    const a = rows.find((r) => r.id === id)!;
+    const b = rows.find((r) => r.id === order[rows.indexOf(a)])!;
+    if (a.position === b.position) {
+      await commit(ctx, renumber(table, ctx.siteId, order), entry);
+      return { ok: true };
+    }
+    const swapped = await commitIf(
+      ctx,
+      stmt(
+        `UPDATE ${table} SET position = CASE id WHEN ? THEN ? ELSE ? END
+         WHERE site_id = ? AND id IN (?, ?)
+           AND (SELECT count(*) FROM ${table} WHERE site_id = ? AND ((id = ? AND position = ?) OR (id = ? AND position = ?))) = 2`,
+        a.id, b.position, a.position,
+        ctx.siteId, a.id, b.id,
+        ctx.siteId, a.id, a.position, b.id, b.position,
+      ),
+      entry,
+    );
+    if (swapped) return { ok: true };
+  }
+  return { ok: false, error: "conflict", current: -1 };
+}
+
 /** Move a dish one place up or down within its category. */
 export async function moveMenuItem(ctx: RepoContext, id: string, direction: Direction): Promise<WriteResult> {
   const item = await ctx.db
@@ -169,46 +217,33 @@ export async function moveMenuItem(ctx: RepoContext, id: string, direction: Dire
     .bind(ctx.siteId, id)
     .first<{ category_id: string; name_sv: string }>();
   if (!item) return { ok: false, error: "not-found" };
-  const { results } = await ctx.db
-    .prepare("SELECT id FROM menu_items WHERE site_id = ? AND category_id = ? ORDER BY position, id")
-    .bind(ctx.siteId, item.category_id)
-    .all<{ id: string }>();
-  const order = moved(
-    results.map((r) => r.id),
-    id,
-    direction,
-  );
-  if (!order) return { ok: true }; // already first or last: nothing to do
-  await commit(ctx, renumber("menu_items", ctx.siteId, order), {
+  const read = async () =>
+    (
+      await ctx.db
+        .prepare("SELECT id, position FROM menu_items WHERE site_id = ? AND category_id = ? ORDER BY position, id")
+        .bind(ctx.siteId, item.category_id)
+        .all<Placed>()
+    ).results;
+  return swapWithNeighbour(ctx, "menu_items", read, id, direction, {
     entity: "menu_item",
     entityId: id,
     action: "reorder",
     summary: `${item.name_sv}: moved ${direction}`,
   });
-  return { ok: true };
 }
 
 /** Move a category one place up or down. */
 export async function moveCategory(ctx: RepoContext, id: string, direction: Direction): Promise<WriteResult> {
-  const { results } = await ctx.db
-    .prepare("SELECT id, name_sv FROM menu_categories WHERE site_id = ? ORDER BY position, id")
-    .bind(ctx.siteId)
-    .all<{ id: string; name_sv: string }>();
-  const category = results.find((r) => r.id === id);
-  if (!category) return { ok: false, error: "not-found" };
-  const order = moved(
-    results.map((r) => r.id),
-    id,
-    direction,
-  );
-  if (!order) return { ok: true };
-  await commit(ctx, renumber("menu_categories", ctx.siteId, order), {
+  const name = await ctx.db.prepare("SELECT name_sv FROM menu_categories WHERE site_id = ? AND id = ?").bind(ctx.siteId, id).first<string>("name_sv");
+  if (name === null) return { ok: false, error: "not-found" };
+  const read = async () =>
+    (await ctx.db.prepare("SELECT id, position FROM menu_categories WHERE site_id = ? ORDER BY position, id").bind(ctx.siteId).all<Placed>()).results;
+  return swapWithNeighbour(ctx, "menu_categories", read, id, direction, {
     entity: "menu_category",
     entityId: id,
     action: "reorder",
-    summary: `${category.name_sv}: moved ${direction}`,
+    summary: `${name}: moved ${direction}`,
   });
-  return { ok: true };
 }
 
 /** A URL-safe slug: "Varmrätter" → "varmratter". */
@@ -230,11 +265,23 @@ const categoryName = localizedText(TEXT_LIMITS.name);
 export async function createCategory(ctx: RepoContext, name: { sv: string; en: string }): Promise<WriteResult & { id?: string }> {
   const checked = categoryName.safeParse(name);
   if (!checked.success) return { ok: false, error: "invalid", issues: issuesOf(checked.error) };
-  const { results } = await ctx.db.prepare("SELECT slug FROM menu_categories WHERE site_id = ?").bind(ctx.siteId).all<{ slug: string }>();
-  const taken = new Set(results.map((r) => r.slug));
   const base = slugify(checked.data.sv);
-  let slug = base;
-  for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`;
+  for (let attempt = 0; ; attempt++) {
+    const { results } = await ctx.db.prepare("SELECT slug FROM menu_categories WHERE site_id = ?").bind(ctx.siteId).all<{ slug: string }>();
+    const taken = new Set(results.map((r) => r.slug));
+    let slug = base;
+    for (let n = 2; taken.has(slug); n++) slug = `${base}-${n}`;
+    try {
+      return await insertCategory(ctx, slug, checked.data);
+    } catch (error) {
+      // Another request took this slug between our read and our insert: read again.
+      if (attempt < 2 && /UNIQUE constraint failed/.test(String(error))) continue;
+      throw error;
+    }
+  }
+}
+
+async function insertCategory(ctx: RepoContext, slug: string, name: { sv: string; en: string }): Promise<WriteResult & { id: string }> {
   const id = newId();
   await commit(
     ctx,
@@ -245,12 +292,12 @@ export async function createCategory(ctx: RepoContext, name: { sv: string; en: s
         ctx.siteId,
         id,
         slug,
-        checked.data.sv,
-        checked.data.en,
+        name.sv,
+        name.en,
         ctx.siteId,
       ),
     ],
-    { entity: "menu_category", entityId: id, action: "create", summary: `${checked.data.sv}: category added` },
+    { entity: "menu_category", entityId: id, action: "create", summary: `${name.sv}: category added` },
   );
   return { ok: true, id };
 }

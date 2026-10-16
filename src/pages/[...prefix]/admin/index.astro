@@ -28,14 +28,15 @@ if (Astro.locals.session) {
     const form = await page.postedForm();
     if (!form) return Astro.redirect(`${home}?done=expired`, 303);
     const id = String(form.get("id") ?? "");
-    const direction: Direction = form.get("direction") === "up" ? "up" : "down";
+    const raw = form.get("direction");
+    const direction: Direction | null = raw === "up" || raw === "down" ? raw : null;
     const action = form.get("action");
     const result =
       action === "sold-out"
         ? await setSoldOut(page.repo, id, form.get("value") === "1")
-        : action === "move-item"
+        : action === "move-item" && direction
           ? await moveMenuItem(page.repo, id, direction)
-          : action === "move-category"
+          : action === "move-category" && direction
             ? await moveCategory(page.repo, id, direction)
             : { ok: false as const, error: "not-found" as const };
     const anchor = action === "move-category" ? `category-${id}` : `item-${id}`;
@@ -52,6 +53,8 @@ const message: Record<string, string> = {
   added: t(locale, "admin.menu.added"),
   deleted: t(locale, "admin.menu.deleted"),
   "not-found": t(locale, "admin.menu.notFound"),
+  "saved-not-featured": t(locale, "admin.menu.savedNotFeatured"),
+  "added-not-featured": t(locale, "admin.menu.addedNotFeatured"),
   expired: t(locale, "admin.error.form"),
 };
 ---

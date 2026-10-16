@@ -141,6 +141,8 @@ export default {
   "admin.menu.saved": "Saved.",
   "admin.menu.deleted": "Deleted.",
   "admin.menu.added": "Added.",
+  "admin.menu.savedNotFeatured": "Saved. The home page already shows three dishes, so this one wasn't added there.",
+  "admin.menu.addedNotFeatured": "Added. The home page already shows three dishes, so this one wasn't added there.",
   "admin.menu.notFound": "It no longer existed; someone may have deleted it.",
   "admin.item.newHeading": "New dish",
   "admin.item.editHeading": "Edit dish",

@@ -2,6 +2,7 @@
 // The dish form, for adding and editing (plan M5.2). Works without JavaScript: errors come
 // back from the server next to each field, with a summary at the top linking to them.
 import type { FieldErrors, ItemFormValues } from "./forms";
+import { TEXT_LIMITS } from "../content/schema";
 import { ALLERGENS, MENU_TAGS } from "../content/vocabulary";
 import { t } from "../i18n";
 
@@ -47,7 +48,7 @@ const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-er
   {(["name_sv", "name_en"] as const).map((name) => (
     <div class="space-y-1">
       <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
-      <input class="admin-input" id={name} name={name} value={values[name]} maxlength="200" aria-invalid={invalid(name)} aria-describedby={describedBy(name)} />
+      <input class="admin-input" id={name} name={name} value={values[name]} maxlength={TEXT_LIMITS.name} aria-invalid={invalid(name)} aria-describedby={describedBy(name)} />
       {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
     </div>
   ))}
@@ -55,7 +56,7 @@ const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-er
   {(["description_sv", "description_en"] as const).map((name) => (
     <div class="space-y-1">
       <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
-      <textarea class="admin-input" id={name} name={name} rows="3" maxlength="600" aria-invalid={invalid(name)} aria-describedby={describedBy(name)}>{values[name]}</textarea>
+      <textarea class="admin-input" id={name} name={name} rows="3" maxlength={TEXT_LIMITS.short} aria-invalid={invalid(name)} aria-describedby={describedBy(name)}>{values[name]}</textarea>
       {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
     </div>
   ))}
@@ -65,8 +66,8 @@ const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-er
     <p class="text-sm admin-muted" id="price-hint">{t(locale, "admin.item.priceHint")}</p>
     <input class="admin-input" id="price" name="price" value={values.price} inputmode="decimal" autocomplete="off" aria-invalid={invalid("price")} aria-describedby={describedBy("price", "price-hint")} />
     {errors.price && <p class="admin-error" id="price-error">{errors.price}</p>}
-    {needsPriceConfirm && (
-      <label class="flex items-center gap-2 mt-2"><input type="checkbox" name="confirm_price" class="h-5 w-5" /> {t(locale, "admin.price.confirmLabel")}</label>
+    {(needsPriceConfirm || values.confirmPrice) && (
+      <label class="flex items-center gap-2 mt-2 min-h-11"><input type="checkbox" name="confirm_price" checked={values.confirmPrice} class="h-5 w-5" /> {t(locale, "admin.price.confirmLabel")}</label>
     )}
   </div>
 

@@ -1,5 +1,6 @@
 ---
 // The category form: a name in Swedish and in English.
+import { TEXT_LIMITS } from "../content/schema";
 import type { FieldErrors } from "./forms";
 import { t } from "../i18n";
 
@@ -32,7 +33,7 @@ const errorList = Object.entries(errors).filter(([, m]) => m);
   {(["name_sv", "name_en"] as const).map((name) => (
     <div class="space-y-1">
       <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
-      <input class="admin-input" id={name} name={name} value={values[name]} maxlength="200" aria-invalid={errors[name] ? "true" : undefined} aria-describedby={errors[name] ? `${name}-error` : undefined} />
+      <input class="admin-input" id={name} name={name} value={values[name]} maxlength={TEXT_LIMITS.name} aria-invalid={errors[name] ? "true" : undefined} aria-describedby={errors[name] ? `${name}-error` : undefined} />
       {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
     </div>
   ))}

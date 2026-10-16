@@ -143,6 +143,16 @@ describe("moving", () => {
     expect((await adminMenu(bistro)).map((c) => c.id)).toEqual([before[1], before[0], ...before.slice(2)]);
   });
 
+  it("renumbers when positions have drifted into duplicates, then moves", async () => {
+    const [first] = await adminMenu(bistro);
+    await db.prepare("UPDATE menu_items SET position = 0 WHERE site_id = 'bistro' AND category_id = ?").bind(first.id).run();
+    const drifted = (await adminMenu(bistro))[0].items.map((i) => i.id);
+    expect(await moveMenuItem(bistro, drifted[1], "up")).toEqual({ ok: true });
+    expect((await adminMenu(bistro))[0].items.map((i) => i.id)).toEqual([drifted[1], drifted[0], ...drifted.slice(2)]);
+    const { results } = await db.prepare("SELECT position FROM menu_items WHERE site_id = 'bistro' AND category_id = ? ORDER BY position").bind(first.id).all<{ position: number }>();
+    expect(results.map((r) => r.position)).toEqual(results.map((_, i) => i));
+  });
+
   it("is not-found for another site's dish or category", async () => {
     const [first] = await adminMenu(bistro);
     expect(await moveMenuItem(ctx("westafrican"), first.items[1].id, "up")).toEqual({ ok: false, error: "not-found" });

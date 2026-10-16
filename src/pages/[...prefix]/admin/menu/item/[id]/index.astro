@@ -52,8 +52,8 @@ if (Astro.request.method === "POST") {
   if (parsed.edit && Object.keys(errors).length === 0) {
     const result = await updateMenuItem(repo, id, rowVersion, parsed.edit);
     if (result.ok) {
-      if (values.featured !== wasFeatured) await setFeatured(repo, id, values.featured);
-      return Astro.redirect(`${page.path("/")}?done=saved#item-${id}`, 303);
+      const featured = values.featured !== wasFeatured ? await setFeatured(repo, id, values.featured) : { ok: true };
+      return Astro.redirect(`${page.path("/")}?done=${featured.ok ? "saved" : "saved-not-featured"}#item-${id}`, 303);
     }
     if (result.error === "not-found") return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
     if (result.error === "conflict") {
