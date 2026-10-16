@@ -10,6 +10,8 @@ import type { ContentSource, LoadedContent } from "../content/source";
 import { emergencyPage } from "./emergency";
 import { type HandlerDeps, handlePage, type PageState } from "./handler";
 import { etagFor, isNotModified } from "./http";
+
+const tagFor = (path: string, version = "7", date = "2026-10-16") => etagFor(version, date, "b1", "bistro", path);
 import { serializeJsonLd as jsonLd } from "./json-ld";
 
 const content = siteContentSchema("bistro").parse({ settings, hours, menu, pages, gallery, theme });
@@ -36,7 +38,8 @@ describe("handlePage", () => {
   it("renders with security headers, no-cache and an ETag of build, version and date", async () => {
     const res = await handlePage(get("/menu/"), deps(), page);
     expect(res.status).toBe(200);
-    expect(res.headers.get("ETag")).toBe('W/"b1-7-2026-10-16"');
+    expect(res.headers.get("ETag")).toBe(tagFor("/menu/"));
+    expect(res.headers.get("ETag")).toMatch(/^W\/"b1-7-2026-10-16-[0-9a-z]+"$/);
     expect(res.headers.get("Cache-Control")).toBe("no-cache");
     expect(res.headers.get("Content-Security-Policy")).toContain("default-src 'self'");
     expect(res.headers.get("Content-Security-Policy")).not.toMatch(/unpkg|unsafe-eval/);
@@ -45,20 +48,20 @@ describe("handlePage", () => {
 
   it("answers 304 without rendering when the browser has this version for today", async () => {
     const render = vi.fn(page);
-    const res = await handlePage(get("/menu/", { "If-None-Match": 'W/"b1-7-2026-10-16"' }), deps(), render);
+    const res = await handlePage(get("/menu/", { "If-None-Match": tagFor("/menu/") }), deps(), render);
     expect(res.status).toBe(304);
     expect(render).not.toHaveBeenCalled();
-    expect(res.headers.get("ETag")).toBe('W/"b1-7-2026-10-16"');
+    expect(res.headers.get("ETag")).toBe(tagFor("/menu/"));
   });
 
   it("renders again after a save, and again at Stockholm midnight", async () => {
-    const tag = 'W/"b1-7-2026-10-16"';
+    const tag = tagFor("/");
     const afterSave = await handlePage(get("/", { "If-None-Match": tag }), deps({}, { version: "8" }), page);
     expect(afterSave.status).toBe(200);
     const midnight = new Date("2026-10-16T22:00:00Z"); // 00:00 on the 17th in Stockholm
     const nextDay = await handlePage(get("/", { "If-None-Match": tag }), deps({ now: () => midnight }), page);
     expect(nextDay.status).toBe(200);
-    expect(nextDay.headers.get("ETag")).toBe('W/"b1-7-2026-10-17"');
+    expect(nextDay.headers.get("ETag")).toBe(tagFor("/", "7", "2026-10-17"));
   });
 
   it("gives the page today's hours and today's sold-out dishes", async () => {
@@ -76,7 +79,7 @@ describe("handlePage", () => {
 
   it("marks a stale copy and never confirms it with a 304", async () => {
     const render = vi.fn(page);
-    const res = await handlePage(get("/", { "If-None-Match": 'W/"b1-7-2026-10-16"' }), deps({}, { stale: true }), render);
+    const res = await handlePage(get("/", { "If-None-Match": tagFor("/") }), deps({}, { stale: true }), render);
     expect(res.status).toBe(200);
     expect(render).toHaveBeenCalled();
     expect(res.headers.get("X-Content-Stale")).toBe("1");
@@ -101,7 +104,7 @@ describe("handlePage", () => {
     const down: ContentSource = { load: async () => Promise.reject(new Error("D1 unavailable")) };
     const res = await handlePage(get("/en/menu/"), deps({ source: () => down }), page);
     expect(res.status).toBe(503);
-    expect(res.headers.get("Retry-After")).toBe("60");
+    expect(res.headers.get("Retry-After")).toBe("120");
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     const html = await res.text();
     expect(html).toContain('lang="en"');
@@ -129,13 +132,14 @@ describe("emergencyPage", () => {
 });
 
 describe("isNotModified", () => {
-  const tag = etagFor("7", "2026-10-16", "b1");
+  const tag = tagFor("/");
   it.each([
     [tag, true],
-    ['"b1-7-2026-10-16"', true],
+    [tag.replace(/^W\//, ""), true],
     [`"other", ${tag}`, true],
-    ["*", true],
-    ['W/"b1-6-2026-10-16"', false],
+    ["*", false],
+    [tagFor("/menu/"), false],
+    [tagFor("/", "6"), false],
     ["", false],
   ])("If-None-Match %j → %s", (header, expected) => {
     expect(isNotModified(get("/", header ? { "If-None-Match": header } : {}), tag)).toBe(expected);

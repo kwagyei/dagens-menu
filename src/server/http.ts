@@ -1,7 +1,7 @@
 /**
- * Response headers for pages rendered by the Worker (ADR-011 §2, §9). Static assets keep
- * public/_headers; Cloudflare doesn't apply that file to Worker responses, so pages get
- * their headers here.
+ * Response headers for pages rendered by the Worker (ADR-011 §2, §9). Static assets get the
+ * same policy from public/_headers; Cloudflare doesn't apply that file to Worker responses,
+ * so pages get their headers here.
  */
 
 export type RouteClass = "public" | "admin";
@@ -11,8 +11,7 @@ export function routeClass(pathname: string): RouteClass {
 }
 
 // Pages load nothing from another origin (the consent check enforces it); the inline
-// scripts Astro emits need 'unsafe-inline'. Decap's allowances (unsafe-eval, unpkg, the
-// GitHub API) stay on the static /admin/ page only, in public/_headers.
+// scripts Astro emits need 'unsafe-inline'.
 const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
@@ -41,20 +40,37 @@ export function securityHeaders(route: RouteClass): Record<string, string> {
   };
 }
 
-/**
- * The page's entity tag: the content version and the restaurant's date. A save changes the
- * version; midnight in Stockholm changes the date (today's hours and sold-out flags). The
- * build id covers a deploy that changes templates without touching content.
- */
-export function etagFor(contentVersion: string, restaurantDate: string, buildId: string): string {
-  return `W/"${buildId}-${contentVersion}-${restaurantDate}"`;
+/** A short, stable hash (FNV-1a, 32-bit) for the parts of an ETag that needn't be readable. */
+function shortHash(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
 }
 
-/** Whether the request's If-None-Match already holds `etag`. */
+/**
+ * The page's entity tag (ADR-011 §2): build, site, path, content version and the
+ * restaurant's date. A save changes the version; midnight in Stockholm changes the date
+ * (today's hours and sold-out flags); a deploy changes the build. The site and path make
+ * every page's tag its own, so one page's tag can never confirm another.
+ */
+export function etagFor(contentVersion: string, restaurantDate: string, buildId: string, site: string, pathname: string): string {
+  return `W/"${buildId}-${contentVersion}-${restaurantDate}-${shortHash(`${site}:${pathname}`)}"`;
+}
+
+/**
+ * Whether the request's If-None-Match already holds `etag` (weak comparison). "*" is not
+ * honoured: it means "any current representation", which isn't known before rendering, and a
+ * page that doesn't exist must stay a 404.
+ */
 export function isNotModified(request: Request, etag: string): boolean {
   const header = request.headers.get("If-None-Match");
   if (!header) return false;
-  if (header.trim() === "*") return true;
   const strip = (tag: string) => tag.trim().replace(/^W\//, "");
-  return header.split(",").some((tag) => strip(tag) === strip(etag));
+  return header.split(",").some((tag) => {
+    const value = strip(tag);
+    return value.startsWith('"') && value === strip(etag);
+  });
 }

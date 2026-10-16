@@ -4,8 +4,9 @@
  *
  * 1. Check the Worker serves the site it was built for; otherwise 500, logged.
  * 2. Load the content; if the database is down and nothing is held, the emergency page (503).
- * 3. Answer 304 when the browser already has this version for today, without rendering.
- * 4. Otherwise render, then add the security, caching and ETag headers.
+ * 3. Refuse anything but GET and HEAD on public pages (405).
+ * 4. Answer 304 when the browser already has this page's version for today, without rendering.
+ * 5. Otherwise render, then add the security, caching and ETag headers.
  */
 import type { SiteSettings } from "../content/schema";
 import type { SiteContent } from "../content/schema";
@@ -51,6 +52,11 @@ export async function handlePage(
     return new Response("Misconfigured site", { status: 500, headers: { ...headers, "Cache-Control": "no-store" } });
   }
 
+  // Public pages are read-only; only the admin accepts form posts (ADR-011 M5).
+  if (route === "public" && request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("Method not allowed", { status: 405, headers: { ...headers, Allow: "GET, HEAD" } });
+  }
+
   const now = deps.now();
   let loaded;
   try {
@@ -60,16 +66,16 @@ export async function handlePage(
     const locale = url.pathname === "/en" || url.pathname.startsWith("/en/") ? "en" : "sv";
     return new Response(emergencyPage(deps.emergencySettings(site), locale), {
       status: 503,
-      headers: { ...headers, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Retry-After": "60" },
+      headers: { ...headers, "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Retry-After": "120" },
     });
   }
 
   const today = todayFor(loaded.content.hours, loaded.soldOutOn, now);
-  const etag = etagFor(loaded.version, today.date, deps.buildId);
+  const etag = etagFor(loaded.version, today.date, deps.buildId, site, url.pathname);
   const extra: Record<string, string> = loaded.stale ? { "X-Content-Stale": "1" } : {};
 
   // A stale copy is never confirmed as current, and the admin is never cached.
-  if (route === "public" && !loaded.stale && (request.method === "GET" || request.method === "HEAD") && isNotModified(request, etag)) {
+  if (route === "public" && !loaded.stale && isNotModified(request, etag)) {
     return new Response(null, { status: 304, headers: { ...headers, ETag: etag } });
   }
 
