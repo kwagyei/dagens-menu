@@ -8,6 +8,7 @@ import { needsConsent } from "../content/consent";
 import { upcomingExceptions } from "../content/hours";
 import { localized } from "../content/load";
 import { serializeJsonLd } from "../server/json-ld";
+import { pageLinks } from "../server/page-links";
 import { getLocale, t } from "../i18n";
 
 interface Props {
@@ -31,10 +32,7 @@ const preloadFonts =
     ? ["/fonts/CormorantGaramond-SemiBold.woff2", "/fonts/Jost-Medium.woff2"]
     : ["/fonts/Anton-Regular.woff2"];
 const pageTitle = title === siteName ? siteName : `${title} | ${siteName}`;
-const altLocale = locale === "sv" ? "en" : "sv";
-// One URL per page: /menu and /menu/ both render, the trailing-slash form is canonical.
-const canonicalPath = Astro.url.pathname.endsWith("/") ? Astro.url.pathname : `${Astro.url.pathname}/`;
-const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
+const links = pageLinks(Astro.url, locale);
 
 const dayMap: Record<string, string> = {
   monday: "Mo", tuesday: "Tu", wednesday: "We",
@@ -85,9 +83,9 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     {preloadFonts.map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
-    <link rel="canonical" href={canonicalPath} />
-    <link rel="alternate" hreflang={altLocale} href={altPath} />
-    <link rel="alternate" hreflang={locale} href={Astro.url.pathname} />
+    <link rel="canonical" href={links.canonical} />
+    <link rel="alternate" hreflang="sv" href={links.sv} />
+    <link rel="alternate" hreflang="en" href={links.en} />
 
     <!-- Open Graph -->
     <meta property="og:title" content={pageTitle} />
