@@ -183,11 +183,12 @@ test.describe("history page", () => {
 
   test("an unknown entity falls back to its stored name; an empty summary still renders", async ({ page }) => {
     await signedInOwner(page);
-    d1(audit("ny bild", "image"));
+    // "image" has its own label since M6.6 ("Foto"), so an entity no version knows stands in.
+    d1(audit("ny pryl", "gadget"));
     await page.goto("/admin/history/");
-    await expect(page.locator("ol > li").first()).toContainText("image ändrad");
+    await expect(page.locator("ol > li").first()).toContainText("gadget ändrad");
     await page.goto("/en/admin/history/");
-    await expect(page.locator("ol > li").first()).toContainText("image changed");
+    await expect(page.locator("ol > li").first()).toContainText("gadget changed");
   });
 
   test("owner text in a summary is escaped, not rendered as HTML", async ({ page }) => {
@@ -304,7 +305,16 @@ test.describe("restore with the seed CLI", () => {
       ["broken JSON", writeExport("{"), /not valid JSON/],
       ["missing file", join(dir, "does-not-exist.json"), /can't read/],
       ["a directory", dir, /can't read/],
-      ["image not on disk", tampered((f) => (f.content.pages.home.heroImage = "/images/bistro/not-there.jpg")), /not found under public/],
+      // Listed in the library (M6.3), so the schema accepts it and the seed finds the file missing.
+      [
+        "image not on disk",
+        tampered((f) => {
+          f.content.pages.home.heroImage = "/images/bistro/not-there.jpg";
+          f.content.images.push({ ref: "/images/bistro/not-there.jpg", alt: { sv: "Saknas", en: "Missing" } });
+        }),
+        /not found under public/,
+      ],
+      ["image not in the library", tampered((f) => (f.content.pages.home.heroImage = "/images/bistro/not-listed.jpg")), /not in the image library/],
     ];
     for (const [name, path, message] of cases) {
       const r = seed(["--site", "bistro", "--from", path, "--reset"]);

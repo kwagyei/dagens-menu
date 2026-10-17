@@ -126,3 +126,34 @@ export async function photoUsage(ctx: RepoContext): Promise<{ count: number; byt
     .first<{ count: number; bytes: number }>();
   return row ?? { count: 0, bytes: 0 };
 }
+
+export interface UploadListing {
+  id: string;
+  alt: { sv: string; en: string };
+  width: number;
+  height: number;
+  /** Widths stored, smallest first; the last is the master. */
+  widths: number[];
+  createdAt: string;
+}
+
+/** The site's uploads, newest first: the "Your photos" page and its download links (ADR-014 §5). */
+export async function listUploads(ctx: RepoContext): Promise<UploadListing[]> {
+  const rows = await ctx.db
+    .prepare(
+      `SELECT i.id, i.alt_sv, i.alt_en, i.width, i.height, i.created_at, group_concat(v.width) AS widths
+       FROM images i JOIN image_variants v ON v.site_id = i.site_id AND v.image_id = i.id
+       WHERE i.site_id = ? AND i.kind = 'upload'
+       GROUP BY i.id ORDER BY i.created_at DESC, i.id`,
+    )
+    .bind(ctx.siteId)
+    .all<{ id: string; alt_sv: string | null; alt_en: string | null; width: number; height: number; created_at: string; widths: string }>();
+  return rows.results.map((r) => ({
+    id: r.id,
+    alt: { sv: r.alt_sv ?? "", en: r.alt_en ?? "" },
+    width: r.width,
+    height: r.height,
+    widths: r.widths.split(",").map(Number).sort((a, b) => a - b),
+    createdAt: r.created_at,
+  }));
+}

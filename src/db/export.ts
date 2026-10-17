@@ -23,6 +23,17 @@ export interface ExportedSite {
   soldOutOn: Record<string, string>;
 }
 
+/** Each upload's stored widths, smallest first: what an export lists so a restore can fetch the master. */
+export async function uploadWidths(db: D1Database, site: string): Promise<Record<string, number[]>> {
+  const rows = await db
+    .prepare("SELECT v.image_id AS id, v.width FROM image_variants v JOIN images i ON i.site_id = v.site_id AND i.id = v.image_id WHERE v.site_id = ? AND i.kind = 'upload' ORDER BY v.image_id, v.width")
+    .bind(site)
+    .all<{ id: string; width: number }>();
+  const out: Record<string, number[]> = {};
+  for (const r of rows.results) (out[r.id] ??= []).push(r.width);
+  return out;
+}
+
 /**
  * The site's content and the version it was read at, or null if the site has no content.
  * All reads run in one batch, which D1 executes as a single transaction: a consistent

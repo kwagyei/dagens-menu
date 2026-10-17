@@ -306,4 +306,8 @@ export default {
   "admin.photos.quotaCount": "You already have {limit} photos, which is the most. Remove a photo you don't use and try again.",
   "admin.photos.quotaBytes": "Your photos already use nearly all the space ({limitMb} MB). Remove a photo you don't use and try again.",
   "admin.photos.quotaDatabase": "There's no room for more photos just now. Contact whoever built your website.",
+  "admin.photos.yours": "Your photos",
+  "admin.photos.yoursLead": "Photos you've uploaded. Download one at full size with the link below it.",
+  "admin.photos.none": "You haven't uploaded any photos yet.",
+  "admin.photos.download": "Download at full size",
 } as const;

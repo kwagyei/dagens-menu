@@ -1,0 +1,48 @@
+---
+// "Your photos" (plan M6.4; ADR-014 §5): every uploaded photo, with a link to download it at
+// full size. This is the owner's way out with their own photos, as plain links, no JavaScript.
+// Choosing, describing and removing photos come with the photo library (M6.10).
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import { adminPage } from "../../../../admin/page";
+import { listUploads } from "../../../../db/photos";
+import { localized } from "../../../../content/load";
+import { t } from "../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const uploads = await listUploads(repo);
+const media = (id: string, width: number) => `/media/${id}-${width}.webp`;
+---
+
+<AdminLayout title={t(locale, "admin.photos.yours")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <div class="space-y-2">
+      <h1 class="text-3xl font-bold">{t(locale, "admin.photos.yours")}</h1>
+      <p class="admin-muted">{t(locale, "admin.photos.yoursLead")}</p>
+      <a class="admin-button inline-flex" href={page.path("/photos/new/")}>{t(locale, "admin.photos.heading")}</a>
+    </div>
+    {uploads.length === 0 ? (
+      <p class="admin-muted">{t(locale, "admin.photos.none")}</p>
+    ) : (
+      <ul class="space-y-3" id="uploads">
+        {uploads.map((u) => {
+          const master = u.widths[u.widths.length - 1];
+          return (
+            <li class="admin-card p-3 flex gap-3 items-center" id={`photo-${u.id.slice(0, 12)}`}>
+              <img src={media(u.id, u.widths[0])} alt={localized(u.alt, locale)} width="96" height={Math.round((96 * u.height) / u.width)} loading="lazy" class="rounded" />
+              <div class="space-y-1 min-w-0">
+                <p class="font-medium">{localized(u.alt, locale)}</p>
+                <p class="text-sm admin-muted">{u.width} × {u.height}</p>
+                <a href={media(u.id, master)} download={`${u.id}.webp`}>{t(locale, "admin.photos.download")}</a>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </section>
+</AdminLayout>

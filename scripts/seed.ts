@@ -5,6 +5,10 @@
  *   npm run seed -- --site bistro [--reset]       # local database (d1.local.jsonc)
  *   npm run seed -- --site bistro --remote --config <deployed config> [--reset]
  *   npm run seed -- --site bistro --from bistro-content-2026-10-16.json --reset   # restore an export
+ *   npm run seed -- --site bistro --from <file> --photos <folder> --reset        # photos from a folder
+ *
+ * A restore brings uploaded photos back too (M6.4): each is fetched from the link in the file,
+ * or taken from <folder>/<id>.webp, and refused unless its SHA-256 is its id.
  *
  * --from loads an owner's "Export my content" file (plan M5.6) instead of sites/<site>/;
  * the theme still comes from the repository. Validates the content with the schema, registers the curated images by hashing the real
@@ -19,8 +23,9 @@ import { parseArgs } from "node:util";
 import sharp from "sharp";
 import { JsonContentSource } from "../src/content/json-source";
 import { readExportFile } from "../src/db/export-file";
-import { type ImageResolver, resetStatements, seedStatements } from "../src/db/seed";
+import { type ImageResolver, resetStatements, seedStatements, type UploadBytes } from "../src/db/seed";
 import { checkTarget, type D1Target, execute, fail as failWith, query, root, targetName } from "./d1-cli";
+import { loadUploads } from "./restore-photos";
 
 const { values } = parseArgs({
   options: {
@@ -30,6 +35,7 @@ const { values } = parseArgs({
     database: { type: "string", default: "dagens-menu" },
     config: { type: "string", default: "d1.local.jsonc" },
     from: { type: "string" },
+    photos: { type: "string" },
   },
 });
 
@@ -75,6 +81,7 @@ try {
 const { theme, ...fromRepository } = full;
 let content = fromRepository;
 let summary: string | undefined;
+let uploads: UploadBytes = new Map();
 if (values.from) {
   let text: string;
   try {
@@ -88,12 +95,24 @@ if (values.from) {
   if (read.operatorFieldsReplaced) console.warn(`seed: the file's booking and map settings differ from sites/${site}/; keeping the repository's (operator-only).`);
   if (read.highlightImagesDropped > 0) console.warn(`seed: the file is format 1; dropped ${read.highlightImagesDropped} per-highlight photo(s), which the content model no longer has.`);
   content = read.content;
+  if (read.uploads.length > 0) {
+    console.log(`seed: bringing back ${read.uploads.length} uploaded photo(s)${values.photos ? ` (from ${values.photos} where present)` : ""}.`);
+    try {
+      uploads = await loadUploads(read.uploads, values.photos);
+    } catch (error) {
+      fail((error as Error).message);
+    }
+  }
   summary = `Restored from ${basename(values.from).replace(/[^\w.-]/g, "_").slice(0, 80)} (exported ${read.exportedAt})`;
   console.log(`seed: restoring "${site}" from ${values.from} (exported ${read.exportedAt}).`);
 }
 
 const [{ n: existing }] = query<{ n: number }>("seed", target, `SELECT count(*) AS n FROM settings WHERE site_id = '${site}'`);
 if (existing > 0 && !values.reset) fail(`site "${site}" already has content in the ${targetName(target)} database; pass --reset to replace it`);
+if (values.reset) {
+  const [{ n: uploaded }] = query<{ n: number }>("seed", target, `SELECT count(*) AS n FROM images WHERE site_id = '${site}' AND kind = 'upload'`);
+  if (uploaded > 0) console.warn(`seed: --reset deletes the site's ${uploaded} uploaded photo(s)${values.from ? "; the file brings back the ones it lists" : ""}.`);
+}
 
 for (const { ref } of content.images) {
   try {
@@ -108,7 +127,7 @@ for (const { ref } of content.images) {
 
 let statements;
 try {
-  statements = [...(values.reset ? resetStatements(site) : []), ...seedStatements(site, content, resolveImage, new Date(), summary)];
+  statements = [...(values.reset ? resetStatements(site) : []), ...seedStatements(site, content, resolveImage, new Date(), summary, uploads)];
 } catch (error) {
   fail((error as Error).message);
 }
