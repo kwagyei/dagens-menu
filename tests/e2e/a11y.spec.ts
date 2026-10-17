@@ -73,7 +73,7 @@ test("the photo library pages, in both languages, and the description form rejec
   await signedInOwner(page);
   await page.goto("/admin/photos/");
   const photoPath = await page.locator("#uploads a[href*='/admin/photos/']").last().getAttribute("href");
-  const paths = ["/admin/photos/", "/admin/photos/?filter=unused", "/admin/photos/unused/delete/", photoPath!, `${photoPath}delete/`];
+  const paths = ["/admin/photos/", "/admin/photos/?filter=unused", "/admin/photos/unused/delete/", photoPath!, `${photoPath}delete/`, "/admin/gallery/", "/admin/gallery/?done=already"];
   for (const path of paths) {
     for (const prefix of ["", "/en"]) {
       await page.goto(`${prefix}${path}`);

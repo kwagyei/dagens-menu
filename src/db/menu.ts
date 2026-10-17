@@ -159,10 +159,12 @@ export function moved(order: string[], id: string, direction: Direction): string
 }
 
 /** Renumber positions 0..n-1 in the given order: one batch, self-healing if positions drifted. */
-const renumber = (table: "menu_items" | "menu_categories", site: string, order: string[]): Statement[] =>
+const renumber = (table: Ordered, site: string, order: string[]): Statement[] =>
   order.map((id, position) => stmt(`UPDATE ${table} SET position = ? WHERE site_id = ? AND id = ?`, position, site, id));
 
-type Placed = { id: string; position: number };
+/** The tables whose rows the owner puts in order. */
+type Ordered = "menu_items" | "menu_categories" | "gallery_images";
+export type Placed = { id: string; position: number };
 
 /**
  * Swap a row with its neighbour, guarded on both still holding the positions just read, so
@@ -170,9 +172,9 @@ type Placed = { id: string; position: number };
  * Positions that have drifted into duplicates are renumbered instead (no guard needed:
  * renumbering from any order is safe, and the next move is guarded again).
  */
-async function swapWithNeighbour(
+export async function swapWithNeighbour(
   ctx: RepoContext,
-  table: "menu_items" | "menu_categories",
+  table: Ordered,
   read: () => Promise<Placed[]>,
   id: string,
   direction: Direction,

@@ -19,8 +19,8 @@ export function thumbnail(image: Pick<LibraryImage, "ref" | "width" | "height">)
 
 /** Where a page photo is chosen. Until the "Page photos" form (M6.10c), the texts page. */
 const SLOT_PAGE = "/admin/texts/";
-/** Where a gallery photo is seen. Until gallery management (M6.10b), the public gallery. */
-const GALLERY_PAGE = "/gallery/";
+/** Where the gallery is put together (M6.10b). */
+const GALLERY_PAGE = "/admin/gallery/";
 
 /** Each use as words and the admin page where it can be changed. */
 export function describeUses(uses: readonly ImageUse[], locale: Locale): Array<{ label: string; href: string }> {

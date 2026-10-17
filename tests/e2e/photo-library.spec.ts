@@ -4,39 +4,11 @@
  * a photo in use (409, with the places), a built-in photo (409) and an unknown one (404).
  * Until the dish photo picker (M6.10c), a photo is put on a dish with SQL on the local D1.
  */
-import { execFileSync } from "node:child_process";
-import sharp from "sharp";
 import { expect, type Page, test } from "@playwright/test";
-import { freshIp, signedInOwner } from "./helpers";
+import { d1, freshIp, signedInOwner, uploadPhoto as upload } from "./helpers";
 
 const BASE = "http://localhost:8790";
-const NEW = "/admin/photos/new/";
 const LIBRARY = "/admin/photos/";
-
-function d1<T>(sql: string): T[] {
-  const out = execFileSync("npx", ["wrangler", "d1", "execute", "dagens-menu", "--local", "--config", "d1.local.jsonc", "--json", "--command", sql], { encoding: "utf-8" });
-  return JSON.parse(out)[0].results as T[];
-}
-
-let photoCount = 0;
-/** Upload a distinct photo through the real endpoint; returns its id and alt. */
-async function upload(page: Page): Promise<{ id: string; sv: string; en: string }> {
-  const n = ++photoCount;
-  const tint = { r: 100 + ((Date.now() + n * 37) % 150), g: 60 + (n % 90), b: 200 };
-  const parts = await Promise.all([400, 800].map((width) => sharp("public/images/bistro/kottbullar-hero.jpg").resize({ width }).tint(tint).webp({ quality: 70 }).toBuffer()));
-  const sv = `Biblioteksfoto ${Date.now().toString(36)}-${n}`;
-  const en = `Library photo ${Date.now().toString(36)}-${n}`;
-  await page.goto(NEW);
-  const form = new FormData();
-  form.set("csrf", await page.locator("input[name=csrf]").first().inputValue());
-  form.set("alt_sv", sv);
-  form.set("alt_en", en);
-  for (const p of parts) form.append("variant", new Blob([new Uint8Array(p)], { type: "image/webp" }), "v.webp");
-  const res = await page.request.post(NEW, { multipart: form, maxRedirects: 0, headers: { Origin: BASE } });
-  expect(res.headers().location).toBe(`${NEW}?done=added`);
-  const [row] = d1<{ id: string }>(`SELECT id FROM images WHERE site_id = 'bistro' AND alt_sv = '${sv}'`);
-  return { id: row.id, sv, en };
-}
 
 const item = (page: Page, id: string) => page.locator(`#photo-${id.slice(0, 12)}`);
 
