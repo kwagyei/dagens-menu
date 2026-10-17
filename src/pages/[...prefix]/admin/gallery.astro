@@ -1,0 +1,171 @@
+---
+// The gallery (plan M6.10b; ADR-014 §1, §6): the photos the gallery page shows, in order, with
+// a button each to move it earlier or later or take it out (the photo stays in the library),
+// and the library photos not in the gallery, each with a button to add it. Plain forms that
+// post back here; after a move, focus returns to the button just used (M5.7), no JavaScript.
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { thumbnail } from "../../../admin/library";
+import { adminPage } from "../../../admin/page";
+import { localized } from "../../../content/load";
+import { addToGallery, GALLERY_LIMIT, listGallery, moveGalleryImage, removeFromGallery } from "../../../db/gallery";
+import { listLibrary } from "../../../db/library";
+import type { Direction } from "../../../db/menu";
+import { t } from "../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const here = page.path("/gallery/");
+
+if (Astro.request.method === "POST") {
+  const form = await page.postedForm();
+  if (!form) return Astro.redirect(`${here}?done=expired`, 303);
+  const action = form.get("action");
+  const id = String(form.get("id") ?? "");
+  const raw = form.get("direction");
+  const direction: Direction | null = raw === "up" || raw === "down" ? raw : null;
+  if (action === "move" && direction) {
+    const result = await moveGalleryImage(repo, id, direction);
+    if (result.ok) return Astro.redirect(`${here}?changed=${encodeURIComponent(`${id}:${direction}`)}`, 303);
+    return Astro.redirect(`${here}?done=${result.error === "conflict" ? "busy" : "not-found"}`, 303);
+  }
+  if (action === "remove") {
+    const result = await removeFromGallery(repo, id);
+    return Astro.redirect(`${here}?done=${result.ok ? "removed" : "not-found"}`, 303);
+  }
+  if (action === "add") {
+    const result = await addToGallery(repo, id);
+    const done = result.ok ? "added" : result.error === "conflict" ? "busy" : result.error === "invalid" ? "not-found" : result.error;
+    return Astro.redirect(`${here}?done=${done}`, 303); // no #fragment: it would stop the message taking focus
+  }
+  // An action this page never sends (a crafted or stale form): nothing changes (tester L3).
+  return Astro.redirect(`${here}?done=unknown`, 303);
+}
+
+const [gallery, library] = await Promise.all([listGallery(repo), listLibrary(repo)]);
+const inGallery = new Set(gallery.map((g) => g.imageId));
+const addable = library.filter((i) => !inGallery.has(i.id) && i.alt);
+
+const done = Astro.url.searchParams.get("done");
+const message: Record<string, string> = {
+  added: t(locale, "admin.gallery.added"),
+  removed: t(locale, "admin.gallery.removed"),
+  already: t(locale, "admin.gallery.already"),
+  full: t(locale, "admin.gallery.full").replace("{limit}", String(GALLERY_LIMIT)),
+  "no-alt": t(locale, "admin.gallery.noAlt"),
+  "not-found": t(locale, "admin.gallery.notFound"),
+  busy: t(locale, "admin.gallery.busy"),
+  expired: t(locale, "admin.error.form"),
+  unknown: t(locale, "admin.gallery.unknown"),
+};
+const problem = done === "already" || done === "full" || done === "no-alt" || done === "not-found" || done === "busy" || done === "expired" || done === "unknown";
+
+// After a move, focus returns to the button just used; at the top or bottom, to the other one.
+const [changedId, changedDir] = (Astro.url.searchParams.get("changed") ?? "").split(":");
+const last = gallery.length - 1;
+const isDisabled = (index: number, dir: Direction) => (dir === "up" ? index === 0 : index === last);
+const focusMove = (id: string, index: number, dir: Direction) => {
+  if (id !== changedId) return false;
+  const other: Direction = changedDir === "up" ? "down" : "up";
+  return isDisabled(index, changedDir as Direction) ? dir === other : dir === changedDir;
+};
+---
+
+<AdminLayout title={t(locale, "admin.gallery.heading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <div class="space-y-2">
+      <h1 class="text-3xl font-bold">{t(locale, "admin.gallery.heading")}</h1>
+      {done && message[done] && (problem ? (
+        <p class="admin-message" role="alert" tabindex="-1" autofocus id="gallery-message">{message[done]}</p>
+      ) : (
+        <p class="admin-message" role="status" id="gallery-message">{message[done]}</p>
+      ))}
+      <p class="admin-muted">{t(locale, "admin.gallery.lead")}</p>
+    </div>
+
+    {gallery.length === 0 ? (
+      <p class="admin-muted" id="gallery">{t(locale, "admin.gallery.empty")}</p>
+    ) : (
+      <ol class="space-y-3" id="gallery">
+        {gallery.map((entry, index) => {
+          const thumb = thumbnail(entry);
+          const alt = entry.alt ? localized(entry.alt, locale) : "";
+          const position = t(locale, "admin.gallery.position").replace("{n}", String(index + 1)).replace("{total}", String(gallery.length));
+          return (
+            <li class="admin-card p-3 flex flex-wrap gap-3 items-center" id={`gallery-${entry.id}`}>
+              {thumb ? (
+                <img src={thumb.src} alt={alt} width="96" height={Math.round((96 * thumb.height) / thumb.width)} loading="lazy" class="rounded shrink-0" />
+              ) : (
+                <img src={entry.ref} alt={alt} width="96" loading="lazy" class="rounded shrink-0" />
+              )}
+              <div class="space-y-1 min-w-0 flex-1">
+                <p class="text-sm admin-muted">{position}</p>
+                <p class="font-medium">{alt}</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                {(["up", "down"] as const).map((dir) => (
+                  <form method="post">
+                    <input type="hidden" name="csrf" value={page.csrf} />
+                    <input type="hidden" name="action" value="move" />
+                    <input type="hidden" name="id" value={entry.id} />
+                    <input type="hidden" name="direction" value={dir} />
+                    <button
+                      class="admin-small-button"
+                      type="submit"
+                      disabled={isDisabled(index, dir)}
+                      autofocus={focusMove(entry.id, index, dir)}
+                      aria-label={`${t(locale, dir === "up" ? "admin.gallery.up" : "admin.gallery.down")}: ${alt}`}
+                    >{dir === "up" ? "↑" : "↓"}</button>
+                  </form>
+                ))}
+                <form method="post">
+                  <input type="hidden" name="csrf" value={page.csrf} />
+                  <input type="hidden" name="action" value="remove" />
+                  <input type="hidden" name="id" value={entry.id} />
+                  <button class="admin-small-button" type="submit" aria-label={`${t(locale, "admin.gallery.remove")}: ${alt}`}>{t(locale, "admin.gallery.remove")}</button>
+                </form>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    )}
+
+    <section class="space-y-3" aria-labelledby="gallery-add-heading">
+      <h2 class="text-xl font-semibold" id="gallery-add-heading">{t(locale, "admin.gallery.addHeading")}</h2>
+      <p class="admin-muted">{t(locale, "admin.gallery.addLead")} <a class="underline" href={page.path("/photos/new/")}>{t(locale, "admin.photos.heading")}</a></p>
+      {gallery.length >= GALLERY_LIMIT && addable.length > 0 && (
+        <p class="admin-message" role="status" id="gallery-full">{message.full}</p>
+      )}
+      {addable.length === 0 ? (
+        <p class="admin-muted">{t(locale, "admin.gallery.noneToAdd")}</p>
+      ) : (
+        <ul class="space-y-3" id="gallery-addable">
+          {addable.map((image) => {
+            const thumb = thumbnail(image);
+            const alt = localized(image.alt!, locale);
+            return (
+              <li class="admin-card p-3 flex flex-wrap gap-3 items-center" id={`addable-${image.id.slice(0, 12)}`}>
+                {thumb ? (
+                  <img src={thumb.src} alt={alt} width="96" height={Math.round((96 * thumb.height) / thumb.width)} loading="lazy" class="rounded shrink-0" />
+                ) : (
+                  <img src={image.ref} alt={alt} width="96" loading="lazy" class="rounded shrink-0" />
+                )}
+                <p class="font-medium min-w-0 flex-1">{alt}</p>
+                <form method="post">
+                  <input type="hidden" name="csrf" value={page.csrf} />
+                  <input type="hidden" name="action" value="add" />
+                  <input type="hidden" name="id" value={image.id} />
+                  <button class="admin-small-button" type="submit" disabled={gallery.length >= GALLERY_LIMIT} aria-label={`${t(locale, "admin.gallery.add")}: ${alt}`}>{t(locale, "admin.gallery.add")}</button>
+                </form>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  </section>
+</AdminLayout>

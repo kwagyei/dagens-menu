@@ -58,3 +58,34 @@ export async function signedInOwner(page: Page): Promise<string> {
 
 /** The admin's list entry for a dish, by its Swedish name. */
 export const dishRow = (page: Page, name: string) => page.locator("li[id^='item-']").filter({ has: page.getByText(name, { exact: true }) });
+
+/** Run SQL on the local D1 the Worker under test uses; for setting up what no admin page can yet. */
+export function d1<T>(sql: string): T[] {
+  const out = execFileSync("npx", ["wrangler", "d1", "execute", "dagens-menu", "--local", "--config", "d1.local.jsonc", "--json", "--command", sql], { encoding: "utf-8" });
+  return JSON.parse(out)[0].results as T[];
+}
+
+let photoCount = 0;
+/**
+ * Upload a distinct photo through the real endpoint (two WebP sizes made by sharp, as the
+ * browser pipeline would post them); returns its id and alt. The page must be signed in.
+ */
+export async function uploadPhoto(page: Page): Promise<{ id: string; sv: string; en: string }> {
+  const { default: sharp } = await import("sharp");
+  const n = ++photoCount;
+  const tint = { r: 100 + ((Date.now() + n * 37) % 150), g: 60 + (n % 90), b: 200 };
+  const parts = await Promise.all([400, 800].map((width) => sharp("public/images/bistro/kottbullar-hero.jpg").resize({ width }).tint(tint).webp({ quality: 70 }).toBuffer()));
+  const tag = `${Date.now().toString(36)}-${process.pid}-${n}`;
+  const sv = `Testfoto ${tag}`;
+  const en = `Test photo ${tag}`;
+  await page.goto("/admin/photos/new/");
+  const form = new FormData();
+  form.set("csrf", await page.locator("input[name=csrf]").first().inputValue());
+  form.set("alt_sv", sv);
+  form.set("alt_en", en);
+  for (const p of parts) form.append("variant", new Blob([new Uint8Array(p)], { type: "image/webp" }), "v.webp");
+  const res = await page.request.post("/admin/photos/new/", { multipart: form, maxRedirects: 0, headers: { Origin: "http://localhost:8790" } });
+  expect(res.headers().location).toBe("/admin/photos/new/?done=added");
+  const [row] = d1<{ id: string }>(`SELECT id FROM images WHERE site_id = '${SITE}' AND alt_sv = '${sv}'`);
+  return { id: row.id, sv, en };
+}
