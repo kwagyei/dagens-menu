@@ -12,6 +12,7 @@ export function readSiteJson(site: string) {
     menu: read("content/menu.json"),
     pages: read("content/pages.json"),
     gallery: read("content/gallery.json"),
+    images: read("content/images.json"),
     theme: read("theme.json"),
   };
 }

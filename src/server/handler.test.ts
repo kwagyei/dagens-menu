@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import gallery from "../../sites/bistro/content/gallery.json";
+import images from "../../sites/bistro/content/images.json";
 import hours from "../../sites/bistro/content/hours.json";
 import menu from "../../sites/bistro/content/menu.json";
 import pages from "../../sites/bistro/content/pages.json";
@@ -14,7 +15,7 @@ import { etagFor, isNotModified } from "./http";
 const tagFor = (path: string, version = "7", date = "2026-10-16") => etagFor(version, date, "b1", "bistro", path);
 import { serializeJsonLd as jsonLd } from "./json-ld";
 
-const content = siteContentSchema("bistro").parse({ settings, hours, menu, pages, gallery, theme });
+const content = siteContentSchema("bistro").parse({ settings, hours, menu, pages, gallery, images, theme });
 const NOW = new Date("2026-10-16T10:00:00Z"); // a Friday in Stockholm
 
 function deps(overrides: Partial<HandlerDeps> = {}, loaded: Partial<LoadedContent> = {}): HandlerDeps {

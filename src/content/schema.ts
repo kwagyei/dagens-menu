@@ -109,6 +109,35 @@ export const imagePath = (site: string) => {
   return z.string().regex(pattern, `must be a file under /images/${site}/`);
 };
 
+/** An owner's upload, named by the SHA-256 of its largest WebP variant (ADR-012 §3). */
+export const UPLOAD_ID = /^[0-9a-f]{64}$/;
+
+/**
+ * A reference to an image in the site's library (ADR-014 §1): a curated file under the site's
+ * own folder, or an upload id. Every reference must be listed in the content's `images`.
+ */
+export const imageRef = (site: string) => {
+  const curated = new RegExp(`^/images/${escapeRegExp(site)}/[A-Za-z0-9_-][A-Za-z0-9._-]*$`);
+  return z.string().refine((v) => curated.test(v) || UPLOAD_ID.test(v), `must be a file under /images/${site}/ or an upload id`);
+};
+
+/** True when a reference names an upload rather than a curated file. */
+export const isUploadRef = (ref: string) => UPLOAD_ID.test(ref);
+
+/**
+ * One image in the library. The alt is optional only while the expand migration (0005) is
+ * live: curated rows from before it have none until the operator re-seeds. The contract
+ * migration makes it required here and in the database.
+ */
+export const libraryImageSchema = (site: string) =>
+  z.strictObject({
+    ref: imageRef(site),
+    // One line: alt text is read as a phrase, and a line break in it reads as a pause.
+    alt: localizedLine(TEXT_LIMITS.short).optional(),
+    width: z.number().int().min(1).max(10000).optional(),
+    height: z.number().int().min(1).max(10000).optional(),
+  });
+
 export const menuItemSchema = (site: string) =>
   z.strictObject({
     id: itemId,
@@ -118,7 +147,7 @@ export const menuItemSchema = (site: string) =>
     tags: z.array(z.enum(MENU_TAGS)).refine(unique, "must not repeat a tag"),
     allergens: z.array(z.enum(ALLERGENS)).refine(unique, "must not repeat an allergen"),
     available: z.boolean(),
-    image: imagePath(site).optional(),
+    image: imageRef(site).optional(),
   });
 
 /** Adds an issue at each later occurrence of a repeated value. */
@@ -212,24 +241,16 @@ export const pagesSchema = (site: string) =>
       .strictObject({
         tagline: localizedText(TEXT_LIMITS.short),
         highlights: z.array(itemId).max(MAX_HIGHLIGHTS, `must have at most ${MAX_HIGHLIGHTS} highlights`).refine(unique, "must not repeat a highlight"),
-        heroImage: imagePath(site).optional(),
-        highlightImages: record(itemId, imagePath(site)).optional(),
+        heroImage: imageRef(site).optional(),
         pullQuote: localizedText(TEXT_LIMITS.short).optional(),
-        ctaImage: imagePath(site).optional(),
-      })
-      .superRefine((home, ctx) => {
-        for (const id of Object.keys(home.highlightImages ?? {})) {
-          if (!home.highlights.includes(id)) {
-            ctx.addIssue({ code: "custom", path: ["highlightImages", id], message: "names an item that is not highlighted" });
-          }
-        }
+        ctaImage: imageRef(site).optional(),
       }),
-    menu: z.strictObject({ heroImage: imagePath(site).optional() }),
+    menu: z.strictObject({ heroImage: imageRef(site).optional() }),
     about: z.strictObject({
       story: localizedText(TEXT_LIMITS.long),
       chef: localizedText(TEXT_LIMITS.long),
-      storyImage: imagePath(site).optional(),
-      kitchenImage: imagePath(site).optional(),
+      storyImage: imageRef(site).optional(),
+      kitchenImage: imageRef(site).optional(),
     }),
   });
 
@@ -241,9 +262,10 @@ export const pageTextsSchema = z.strictObject({
   aboutChef: localizedText(TEXT_LIMITS.long),
 });
 
+/** The gallery lists library images in order; their alt lives on the image (ADR-014 §1). */
 export const gallerySchema = (site: string) =>
   z.strictObject({
-    images: z.array(z.strictObject({ src: imagePath(site), alt: localizedText(TEXT_LIMITS.short) })),
+    images: z.array(z.strictObject({ image: imageRef(site) })),
   });
 
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "must be a six-digit hex colour");
@@ -282,9 +304,25 @@ export const siteContentSchema = (site: string) =>
       menu: menuSchema(site),
       pages: pagesSchema(site),
       gallery: gallerySchema(site),
+      images: z.array(libraryImageSchema(site)),
       theme: themeSchema,
     })
     .superRefine((c, ctx) => {
+      // The library: each ref once, and every image the content shows must be in it. Each
+      // problem is reported at the reference itself, not one level up (M1 review, L3).
+      reportDuplicates(ctx, c.images.map((i) => i.ref), (i) => ["images", i, "ref"], "image");
+      const listed = new Map(c.images.map((i) => [i.ref, i]));
+      for (const { ref, path } of imageReferences(c)) {
+        if (!listed.has(ref)) ctx.addIssue({ code: "custom", path, message: `is not in the image library (images)` });
+      }
+      // gallery_images keeps its own NOT NULL alt until the contract migration, so a gallery
+      // photo needs its alt already.
+      c.gallery.images.forEach((g, index) => {
+        if (listed.get(g.image) && !listed.get(g.image)!.alt) {
+          ctx.addIssue({ code: "custom", path: ["gallery", "images", index, "image"], message: "a gallery photo needs alt text in the image library" });
+        }
+      });
+
       // Highlights must exist. A highlighted dish that is unavailable (sold out) is valid:
       // the home page skips it, and marking a dish sold out must never break the site.
       const ids = new Set(c.menu.categories.flatMap((cat) => cat.items.map((i) => i.id)));
@@ -294,6 +332,24 @@ export const siteContentSchema = (site: string) =>
         }
       });
     });
+
+/** Every image reference in the content, with where it is, in first-use order. */
+export function imageReferences(c: {
+  pages: z.output<ReturnType<typeof pagesSchema>>;
+  menu: z.output<ReturnType<typeof menuSchema>>;
+  gallery: z.output<ReturnType<typeof gallerySchema>>;
+}): Array<{ ref: string; path: PropertyKey[] }> {
+  const out: Array<{ ref: string | undefined; path: PropertyKey[] }> = [
+    { ref: c.pages.home.heroImage, path: ["pages", "home", "heroImage"] },
+    { ref: c.pages.home.ctaImage, path: ["pages", "home", "ctaImage"] },
+    { ref: c.pages.menu.heroImage, path: ["pages", "menu", "heroImage"] },
+    { ref: c.pages.about.storyImage, path: ["pages", "about", "storyImage"] },
+    { ref: c.pages.about.kitchenImage, path: ["pages", "about", "kitchenImage"] },
+    ...c.menu.categories.flatMap((cat, ci) => cat.items.map((item, ii) => ({ ref: item.image, path: ["menu", "categories", ci, "items", ii, "image"] }))),
+    ...c.gallery.images.map((g, i) => ({ ref: g.image, path: ["gallery", "images", i, "image"] })),
+  ];
+  return out.filter((r): r is { ref: string; path: PropertyKey[] } => typeof r.ref === "string");
+}
 
 export type LocalizedString = z.output<ReturnType<typeof localizedText>>;
 export type DayHours = z.output<typeof dayHours>;
@@ -305,5 +361,6 @@ export type SiteSettings = z.output<typeof settingsSchema>;
 export type Pages = z.output<ReturnType<typeof pagesSchema>>;
 export type GalleryImage = z.output<ReturnType<typeof gallerySchema>>["images"][number];
 export type Gallery = z.output<ReturnType<typeof gallerySchema>>;
+export type LibraryImage = z.output<ReturnType<typeof libraryImageSchema>>;
 export type Theme = z.output<typeof themeSchema>;
 export type SiteContent = z.output<ReturnType<typeof siteContentSchema>>;

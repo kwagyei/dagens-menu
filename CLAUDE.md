@@ -67,7 +67,11 @@ Content lives in `sites/<SITE>/content/`, theme in `sites/<SITE>/theme.json`.
   /admin and /en/admin. Local admin needs `.dev.vars` (see `.dev.vars.example`).
 - `src/content/` holds no markup and is excluded from Tailwind's class scan (`global.css`).
 - i18n: Swedish default at `/`, English at `/en/`. UI strings in `src/i18n/`.
-- Alt text required on every image.
+- Alt text required on every image. Images live once in the site's library,
+  `sites/<site>/content/images.json` (`ref` + sv/en `alt`), and content refers to them by `ref`:
+  a curated path or a 64-hex upload id (ADR-014). The gallery lists `{ image: ref }`.
+- A PR that changes `sites/<site>/content/*.json` needs a production re-seed after its deploy
+  (`npm run seed -- --site <site> --remote --reset`); ask Kwabena first.
 - No third-party requests before cookie consent.
 - Security headers and the CSP are set by the Worker (`securityHeaders()` in `src/server/http.ts`); `public/_headers`
   only reaches static files.
