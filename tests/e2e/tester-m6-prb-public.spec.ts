@@ -58,7 +58,8 @@ test("links, buttons and summaries are at least 44 px square on a phone and on a
 test("the footer shows today's hours and keeps the week closed until opened", async ({ page }) => {
   await page.goto("/menu/");
   const footer = page.locator("footer");
-  await expect(footer).toContainText(/Idag: \d\d:\d\d–\d\d:\d\d/);
+  // Today's hours, or "Stängt" on the site's closed weekday (the bistro on Sunday, Chez Abena on Monday).
+  await expect(footer).toContainText(/Idag: (\d\d:\d\d–\d\d:\d\d|Stängt)/);
   const week = footer.locator("details").first();
   await expect(week.locator("table, ul, dl").first()).toBeHidden();
   await week.locator("summary").click();
