@@ -49,7 +49,7 @@
 .site h1, .site h2, .site h3, .site p, .site ul, .site ol, .site figure, .site dl, .site dd, .site blockquote { margin: 0; }
 .site ul.plain, .site ol.plain { padding: 0; list-style: none; }
 .site img { display: block; max-width: 100%; }
-.site a { color: inherit; }
+:where(.site) a { color: inherit; }
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 @media (max-width: 56.2rem) { .wide-only { display: none !important; } }
