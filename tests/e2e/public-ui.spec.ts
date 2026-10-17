@@ -51,7 +51,10 @@ test("each page has one booking button, in the page and not in the header, at ea
     for (const width of [390, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(path);
-      await expect(page.locator("main a[href='/book/']:visible"), `${path} at ${width}px`).toHaveCount(1);
+      // The one exception, chosen by Kwabena from the reference: the modern home on a wide screen
+      // has Boka bord in the nav above the photo as well as the oval on the name.
+      const expected = theme.style === "modern" && path === "/" && width === 1440 ? 2 : 1;
+      await expect(page.locator("main a[href='/book/']:visible"), `${path} at ${width}px`).toHaveCount(expected);
       await expect(page.locator("header a[href='/book/']:visible"), `${path} at ${width}px`).toHaveCount(0);
     }
   }
@@ -106,4 +109,22 @@ test("social links are icons with a name a screen reader can say", async ({ page
   const instagram = page.getByRole("contentinfo").getByRole("link", { name: /Instagram/ });
   await expect(instagram).toBeVisible();
   await expect(instagram).toHaveText("");
+});
+
+test("on a wide screen the modern home puts Meny and Boka bord at the far right above the photo, the rest at the left", async ({ page }) => {
+  test.skip(theme.style !== "modern", "only the modern look has this hero");
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const nav = page.getByRole("navigation", { name: "Huvudnavigering" });
+  const box = async (name: string) => (await nav.getByRole("link", { name, exact: true }).boundingBox())!;
+  const photo = (await page.locator(".hero-dag__img").boundingBox())!;
+  const [menu, book, about, english] = [await box("Meny"), await box("Boka bord"), await box("Om oss"), await box("English")];
+  for (const b of [menu, book, about, english]) expect(b.y + b.height, "the nav sits above the photo").toBeLessThanOrEqual(photo.y);
+  expect(about.x, "Om oss starts at the left").toBeLessThan(photo.x + photo.width * 0.25);
+  expect(english.x, "the left group stays left").toBeLessThan(photo.x + photo.width / 2);
+  expect(menu.x, "Meny is in the right group").toBeGreaterThan(photo.x + photo.width / 2);
+  expect(book.x, "Boka bord is last").toBeGreaterThan(menu.x);
+  // The name is pulled up onto the photo.
+  const word = (await page.locator(".hero-dag__word svg:visible").boundingBox())!;
+  expect(word.y, "the name overlaps the photo").toBeLessThan(photo.y + photo.height);
 });
