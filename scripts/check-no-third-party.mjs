@@ -22,6 +22,9 @@ export const ROUTES = ["/", "/menu/", "/book/", "/about/", "/gallery/", "/contac
 // navigation, not a request, so outbound links to Instagram etc. are fine.
 const FETCHING_TAG = /<(script|link|img|iframe|source|video|audio|embed|object)\b[^>]*>/gi;
 const URL_ATTR = /\b(src|href|srcset|poster|data)\s*=\s*["']([^"']*)["']/gi;
+// <link rel="canonical"> and rel="alternate" (hreflang) only describe the page to search engines;
+// the browser never fetches them, and they must be absolute URLs.
+const NOT_FETCHED_LINK = /^<link\b[^>]*\brel\s*=\s*["'](?:canonical|alternate)["']/i;
 const EXTERNAL = /(^|[\s,])(https?:)?\/\//i;
 // CSS can fetch too: url(...) and @import in <style> blocks and style attributes.
 const CSS_URL = /(?:url\(\s*["']?|@import\s+["'])((?:https?:)?\/\/[^"')\s]+)/gi;
@@ -32,6 +35,7 @@ export function thirdPartyRequests(html) {
   const page = html.replace(/<template\b[\s\S]*?<\/template>/gi, "");
   const found = [];
   for (const [tag] of page.matchAll(FETCHING_TAG)) {
+    if (NOT_FETCHED_LINK.test(tag)) continue;
     for (const [, attr, value] of tag.matchAll(URL_ATTR)) {
       if (EXTERNAL.test(value)) found.push(`${attr}="${value}"`);
     }
