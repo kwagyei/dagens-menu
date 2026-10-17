@@ -136,6 +136,10 @@ async function conflictStates(page: Page, prefix: string) {
     await other.goto(`${prefix}${path}`);
     await change(other);
     await save(other);
+    // Let the other save land before closing its tab. Closing mid-POST hung Chromium for 79 s
+    // on CI, and without the wait the 409 below wasn't guaranteed anyway.
+    await other.waitForLoadState("load");
+    await expect(other).not.toHaveURL(new RegExp(`${path}$`));
     await other.close();
     await edit(page);
     await save(page);
