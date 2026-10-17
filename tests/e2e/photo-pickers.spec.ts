@@ -113,3 +113,19 @@ test("without JavaScript, in English: choose a dish photo and set it back to non
     d1(`UPDATE menu_items SET image_id = ${dish.image_id ? `'${dish.image_id}'` : "NULL"} WHERE site_id = 'bistro' AND id = '${dish.id}'`);
   }
 });
+
+test("on a phone the picker never scrolls sideways, even with long descriptions, and Save can be clicked", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await signedInOwner(page);
+  const photo = await uploadPhoto(page);
+  // A long description with no break points, as an owner might paste.
+  d1(`UPDATE images SET alt_sv = '${"Långbeskrivning".repeat(8)} ${photo.sv}' WHERE site_id = 'bistro' AND id = '${photo.id}'`);
+  for (const path of ["/admin/page-photos/story/", "/en/admin/page-photos/story/"]) {
+    await page.goto(path);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, `${path} is wider than the phone by ${overflow}px`).toBeLessThanOrEqual(0);
+  }
+  await page.goto("/admin/page-photos/story/");
+  await page.getByRole("button", { name: "Spara valet" }).click({ timeout: 10_000 });
+  await expect(page.getByRole("status")).toHaveText("Fotot är sparat.");
+});
