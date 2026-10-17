@@ -21,13 +21,19 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The edge project is split into six shards. Each shard is its own runner, with its own
+  # wrangler dev server and local D1, so the specs share nothing across shards. Playwright cuts
+  # the ordered spec list into equal-sized chunks by test count, not duration: with four shards
+  # one still held the three slowest files, with six they land apart. The run went from about
+  # 14 minutes to about 5.
   edge:
-    name: Admin edge cases (non-blocking)
+    name: Admin edge cases, shard ${{ matrix.shard }}/6 (non-blocking)
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: read
-      issues: write
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -36,9 +42,29 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium webkit
-      # Tester F3: the per-site isolation test in security.spec.ts needs a westafrican Worker on
-      # the same local D1 as the bistro one, so the gate skips it; it runs here instead. The
-      # Worker stays up in the background until the job ends.
+      - run: npx playwright test --project=edge --shard=${{ matrix.shard }}/6
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-report-edge-${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 7
+
+  # Tester F3: the per-site isolation test in security.spec.ts needs a westafrican Worker on
+  # the same local D1 as the bistro one, so the gate skips it; it runs here instead, in its own
+  # job beside the shards. The Worker stays up in the background until the job ends.
+  isolation:
+    name: Per-site isolation (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - name: Start a westafrican Worker beside the bistro one
         run: |
           scripts/serve-westafrican.sh 8792 > westafrican.log 2>&1 &
@@ -52,30 +78,36 @@ jobs:
         run: npx playwright test --project=gate tests/e2e/security.spec.ts --grep "per-site isolation"
         env:
           WESTAFRICAN_URL: http://localhost:8792
-          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-isolation
-      - run: npx playwright test --project=edge
-        if: ${{ !cancelled() }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: playwright-report-edge
+          name: playwright-report-isolation
           path: |
             playwright-report/
-            playwright-report-isolation/
             westafrican.log
           retention-days: 7
-      - name: File the nightly failure as an issue
-        if: failure() && github.event_name != 'pull_request'
-        env:
+
+  # One issue per failed nightly, however many shards failed: the shards cannot file it
+  # themselves without racing each other.
+  report:
+    name: File the nightly failure as an issue
+    needs: [edge, isolation]
+    if: always() && github.event_name != 'pull_request' && (needs.edge.result == 'failure' || needs.isolation.result == 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - env:
           GH_TOKEN: ${{ github.token }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           title="Nightly e2e edge cases failed"
-          open=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
           if [ -n "$open" ]; then
-            gh issue comment "$open" --body "Failed again: $RUN"
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "Failed again: $RUN"
           else
-            gh issue create --title "$title" --body "The non-blocking edge-case specs failed on \`main\`: $RUN. The report is attached to the run for 7 days."
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "The non-blocking edge-case specs failed on \`main\`: $RUN. The reports are attached to the run for 7 days."
           fi
 
   # The WebKit specs (the browser photo pipeline, standing in for iPhone Safari) run on macOS.
