@@ -137,7 +137,8 @@ is the seed data the demos are loaded from.
   sign-in. The gate runs in about 5 minutes with no retries, because a retried test hides
   flakiness that people then learn to merge over. The tester's edge-case sweeps run on every
   PR and nightly (straddling Stockholm midnight) but never block a deploy; a nightly failure
-  opens an issue.
+  opens an issue. A merge that changes only Markdown doesn't deploy, since it can't change
+  the site.
 - **If the database is unreachable, the site still answers.** Each Worker keeps the last
   good content in memory and serves it, marked stale, when D1 fails or takes longer than
   1.5 s. With nothing held, visitors get a page with the restaurant's phone number,

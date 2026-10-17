@@ -3,6 +3,12 @@ name: CI
 on:
   push:
     branches: [main]
+    # A merge that changes only Markdown (README, CLAUDE.md, notes) can't change the live
+    # sites, so it doesn't run CI on main, and so doesn't deploy. Its PR has already run every
+    # check. Any merge that also touches code, config or migrations deploys as usual.
+    # tests/ci-paths.test.ts keeps Markdown out of what the build reads.
+    paths-ignore:
+      - "**/*.md"
   pull_request:
 
 permissions:
