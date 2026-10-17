@@ -7,6 +7,10 @@
 import { expect, type Page, test } from "@playwright/test";
 import { d1, freshIp, signedInOwner, uploadPhoto } from "./helpers";
 
+// Several uploads, picks and local SQL calls per test: up to ~35 s on CI runners, over the
+// 30 s default, so each test gets 90 s (as tester-m6-media does).
+test.describe.configure({ timeout: 90_000 });
+
 const BASE = "http://localhost:8790";
 const version = () => d1<{ v: number }>("SELECT content_version AS v FROM sites WHERE id = 'bistro'")[0].v;
 const slots = () => d1<Record<string, string | null>>("SELECT hero_image_id, cta_image_id, menu_hero_image_id, story_image_id, kitchen_image_id FROM page_content WHERE site_id = 'bistro'")[0];

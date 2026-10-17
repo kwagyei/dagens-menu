@@ -6,6 +6,10 @@
 import { expect, type Page, test } from "@playwright/test";
 import { d1, freshIp, signedInOwner, uploadPhoto } from "./helpers";
 
+// Several uploads, picks and local SQL calls per test: up to ~35 s on CI runners, over the
+// 30 s default, so each test gets 90 s (as tester-m6-media does).
+test.describe.configure({ timeout: 90_000 });
+
 const BASE = "http://localhost:8790";
 
 async function choose(page: Page, path: string, label: string | RegExp) {
