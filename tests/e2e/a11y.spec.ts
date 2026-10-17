@@ -73,12 +73,17 @@ test("the photo library pages, in both languages, and the description form rejec
   await signedInOwner(page);
   await page.goto("/admin/photos/");
   const photoPath = await page.locator("#uploads a[href*='/admin/photos/']").last().getAttribute("href");
-  const paths = ["/admin/photos/", "/admin/photos/?filter=unused", "/admin/photos/unused/delete/", photoPath!, `${photoPath}delete/`, "/admin/gallery/", "/admin/gallery/?done=already"];
+  const paths = ["/admin/photos/", "/admin/photos/?filter=unused", "/admin/photos/unused/delete/", photoPath!, `${photoPath}delete/`, "/admin/gallery/", "/admin/gallery/?done=already", "/admin/page-photos/", "/admin/page-photos/story/", "/admin/page-photos/story/?done=not-found"];
   for (const path of paths) {
     for (const prefix of ["", "/en"]) {
       await page.goto(`${prefix}${path}`);
       await expectNoViolations(page, `${prefix}${path}`);
     }
+  }
+  const dishPath = await page.goto("/admin/").then(() => page.locator("li[id^='item-'] a").first().getAttribute("href"));
+  for (const prefix of ["", "/en"]) {
+    await page.goto(`${prefix}${dishPath}photo/`);
+    await expectNoViolations(page, `${prefix}${dishPath}photo/`);
   }
   await page.goto(photoPath!);
   await page.getByLabel("Beskrivning på svenska").fill("");

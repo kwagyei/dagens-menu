@@ -1,0 +1,65 @@
+---
+// Choose the photo for one page slot, or none (plan M6.10c). The slot comes from the fixed
+// list (PAGE_SLOTS); any other value is not a page. Saving writes only that slot's column.
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import PhotoPicker from "../../../../admin/PhotoPicker.astro";
+import { adminPage } from "../../../../admin/page";
+import { listLibrary } from "../../../../db/library";
+import { isPageSlot, pagePhotos, setPagePhoto, shownSlots } from "../../../../db/photo-choice";
+import { t, type TranslationKey } from "../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const slot = Astro.params.slot ?? "";
+if (!isPageSlot(slot)) return new Response(null, { status: 404 });
+const here = page.path(`/page-photos/${slot}/`);
+// A place this design doesn't draw can only be cleared (M6.10c tester M1, M2).
+const isShown = shownSlots(Astro.locals.content.theme.style).includes(slot);
+
+if (Astro.request.method === "POST") {
+  const form = await page.postedForm();
+  if (!form) return Astro.redirect(`${here}?done=expired`, 303);
+  const chosen = String(form.get("image") ?? "");
+  if (!isShown && chosen !== "") return Astro.redirect(`${here}?done=not-shown`, 303);
+  const result = await setPagePhoto(repo, slot, chosen === "" ? null : chosen);
+  return Astro.redirect(`${here}?done=${result.ok ? "saved" : "not-found"}`, 303);
+}
+
+const [chosen, library] = await Promise.all([pagePhotos(repo), listLibrary(repo)]);
+// A hidden place offers only "No photo" (and shows what it holds now).
+const photos = library.filter((i) => i.alt && (isShown || i.id === chosen?.[slot]));
+const slotName = t(locale, `admin.photos.slot.${slot}` as TranslationKey);
+const done = Astro.url.searchParams.get("done");
+const message: Record<string, { text: string; problem: boolean }> = {
+  saved: { text: t(locale, "admin.pick.saved"), problem: false },
+  "not-found": { text: t(locale, "admin.pick.notFound"), problem: true },
+  expired: { text: t(locale, "admin.error.form"), problem: true },
+  "not-shown": { text: t(locale, "admin.pagePhotos.notShown"), problem: true },
+};
+const shown = done ? message[done] : undefined;
+const heading = slotName.charAt(0).toUpperCase() + slotName.slice(1);
+---
+
+<AdminLayout title={heading} csrf={page.csrf}>
+  <section class="space-y-6">
+    <a class="admin-target underline" href={page.path("/page-photos/")}>{t(locale, "admin.pagePhotos.back")}</a>
+    <h1 class="text-3xl font-bold">{heading}</h1>
+    {shown && (shown.problem ? (
+      <p class="admin-message" role="alert" tabindex="-1" autofocus>{shown.text}</p>
+    ) : (
+      <p class="admin-message" role="status">{shown.text}</p>
+    ))}
+    {!isShown && <p class="admin-muted">{t(locale, "admin.pagePhotos.hiddenNote")}</p>}
+    {isShown && photos.length === 0 && <p class="admin-muted">{t(locale, "admin.pick.noneYet")}</p>}
+    <form method="post" class="space-y-4">
+      <input type="hidden" name="csrf" value={page.csrf} />
+      <PhotoPicker locale={locale} legend={t(locale, "admin.pagePhotos.legend").replace("{slot}", slotName)} photos={photos} current={chosen?.[slot] ?? null} />
+      <button class="admin-button" type="submit">{t(locale, "admin.pick.save")}</button>
+    </form>
+    <a class="admin-target underline" href={page.path("/photos/new/")}>{t(locale, "admin.pick.upload")}</a>
+  </section>
+</AdminLayout>
