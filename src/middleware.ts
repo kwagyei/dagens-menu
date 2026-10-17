@@ -8,8 +8,10 @@ import { guardAdminRequest } from "./auth/guard";
 import { getSession, readCookie, SESSION_COOKIE } from "./auth/sessions";
 import { bundledSettings, bundledTheme } from "./content/bundled";
 import { D1ContentSource } from "./content/d1-source";
+import { checkSiteId } from "./content/site-id";
 import { handlePage } from "./server/handler";
 import { decodedPath, isAdminRoute, routeClass, securityHeaders } from "./server/http";
+import { handleMedia, isMediaPath, mediaErrorHeaders } from "./server/media";
 
 declare const __BUILD_SITE__: string;
 declare const __BUILD_ID__: string;
@@ -26,6 +28,20 @@ function source(site: string): D1ContentSource {
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // Photos first: no content load, no content_version read, no session (ADR-015 §2). The
+  // site-id check still runs, and the query is scoped to this Worker's own site.
+  if (isMediaPath(decodedPath(context.url.pathname))) {
+    let site: string;
+    try {
+      site = checkSiteId(env.SITE_ID, __BUILD_SITE__);
+    } catch (error) {
+      console.error(`site: ${(error as Error).message}`);
+      return new Response("Misconfigured site", { status: 500, headers: mediaErrorHeaders() });
+    }
+    // The request as sent: handleMedia matches the raw path, so an encoded or doubled spelling
+    // is a 404 rather than another URL for the same photo.
+    return handleMedia(context.request, { db: env.DB, siteId: site });
+  }
   const admin = isAdminRoute(routeClass(context.url.pathname));
   if (admin) {
     // Without a signing secret the admin can't work safely: refuse all of it, cleanly.
