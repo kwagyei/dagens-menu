@@ -7,7 +7,7 @@ declare namespace Cloudflare {
     SITE_ID: string;
     /** Signs challenge cookies and form tokens (a Worker secret, never in the repo). */
     SESSION_SECRET?: string;
-    /** Per-IP budget for sign-in and admin writes (ADR-011 §6). */
+    /** Per-site, per-IP budget for invite links and passkey ceremonies (ADR-011 §6); required. */
     AUTH_LIMITER?: import("./auth/guard").RateLimiter;
   }
 }

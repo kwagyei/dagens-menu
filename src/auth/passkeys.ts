@@ -45,6 +45,15 @@ export interface ApiResult {
   cookies: string[];
 }
 
+/**
+ * User verification (Face ID, a fingerprint or the device PIN) is required, not "preferred"
+ * (review L9). The passkey is the only factor, so without UV a security key with no PIN
+ * would sign in on possession alone. WebAuthn L3 §5.1.4.1 and §7.2: "preferred" lets an
+ * authenticator skip UV, and only `requireUserVerification` makes the server check the UV
+ * flag. Phone and laptop passkeys always verify; a key without a PIN is asked to set one.
+ */
+const USER_VERIFICATION = "required";
+
 const ok = (body: Record<string, unknown>, cookies: string[] = []): ApiResult => ({ status: 200, body, cookies });
 const refuse = (status: number, error: string): ApiResult => ({ status, body: { error }, cookies: [clearChallenge] });
 
@@ -92,7 +101,7 @@ async function registrationOptionsFor(ctx: CeremonyContext, userId: string, emai
     userID: userHandle(userId),
     attestationType: "none",
     excludeCredentials: await registeredCredentials(ctx, userId),
-    authenticatorSelection: { residentKey: "required", userVerification: "preferred" },
+    authenticatorSelection: { residentKey: "required", userVerification: USER_VERIFICATION },
   });
   return ok({ options }, [await challengeCookie(ctx, purpose, options.challenge)]);
 }
@@ -111,7 +120,7 @@ async function verifiedCredential(ctx: CeremonyContext, challenge: string, respo
       expectedChallenge: challenge,
       expectedOrigin: ctx.origin,
       expectedRPID: ctx.rpID,
-      requireUserVerification: false,
+      requireUserVerification: true,
     });
     return result.verified ? (result.registrationInfo?.credential ?? null) : null;
   } catch {
@@ -124,6 +133,16 @@ function passkeyInsert(ctx: CeremonyContext, userId: string, credential: { id: s
   return conditional
     ? stmt("INSERT INTO passkeys (id, user_id, site_id, public_key, counter, transports, created_at) SELECT ?, ?, ?, ?, ?, ?, ? WHERE changes() = 1", ...values)
     : stmt("INSERT INTO passkeys (id, user_id, site_id, public_key, counter, transports, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", ...values);
+}
+
+/**
+ * Whether an invite link is still good, and for whom: the invite page asks before showing its
+ * button. The token reaches the server only in this POST body, never in a URL, so it stays
+ * out of request logs (review L8). Reads only; it sets no cookie.
+ */
+export async function checkInvite(ctx: Pick<CeremonyContext, "db" | "site" | "now">, inviteToken: string): Promise<ApiResult> {
+  const invite = await findInvite(ctx.db, ctx.site, inviteToken, ctx.now);
+  return invite ? ok({ email: invite.email }) : { status: 410, body: { error: "invite-invalid" }, cookies: [] };
 }
 
 /** Step 1 of enrolment: the invite must be valid; nothing is written. */
@@ -188,7 +207,7 @@ function handleMatches(handle: string, userId: string): boolean {
 
 /** Sign-in step 1: a challenge for any passkey of this site (discoverable, no username). */
 export async function loginOptions(ctx: CeremonyContext): Promise<ApiResult> {
-  const options = await generateAuthenticationOptions({ rpID: ctx.rpID, userVerification: "preferred" });
+  const options = await generateAuthenticationOptions({ rpID: ctx.rpID, userVerification: USER_VERIFICATION });
   return ok({ options }, [await challengeCookie(ctx, "login", options.challenge)]);
 }
 
@@ -218,7 +237,7 @@ export async function loginVerify(ctx: CeremonyContext, response: unknown): Prom
       expectedOrigin: ctx.origin,
       expectedRPID: ctx.rpID,
       credential: { id: row.id, publicKey: new Uint8Array(row.public_key), counter: row.counter, transports: JSON.parse(row.transports) },
-      requireUserVerification: false,
+      requireUserVerification: true,
     });
     if (!result.verified) return refuse(401, "verification-failed");
     newCounter = result.authenticationInfo.newCounter;

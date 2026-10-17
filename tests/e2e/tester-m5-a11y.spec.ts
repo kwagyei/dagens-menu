@@ -245,8 +245,10 @@ test("axe: invite page (valid, used, bogus), sign-in with and without error stat
   const link = invite(`inv-${Date.now().toString(36)}@example.se`);
   for (const prefix of ["", "/en"]) {
     await page.goto(`${prefix}${link}`);
-    await axe(page, `${prefix}${link}`);
-    await page.goto(`${prefix}/admin/invite/${"A".repeat(43)}`);
+    await expect(page.locator("button[data-passkey]")).toBeVisible(); // the script checked the link
+    await axe(page, `${prefix} valid invite`);
+    await page.goto(`${prefix}/admin/invite/#${"A".repeat(43)}`);
+    await expect(page.locator("[data-invite-invalid]")).toBeVisible();
     await axe(page, `${prefix} dead invite`);
     await page.goto(`${prefix}/admin/?done=expired`);
     await axe(page, `${prefix} sign-in ?done=expired`);
@@ -509,7 +511,7 @@ test("English admin has no Swedish: pages, errors, conflicts, status messages, 4
   // Signed out, and the pages that have no English of their own.
   const ctx = await page.context().browser()!.newContext();
   const out = await ctx.newPage();
-  for (const path of ["/en/admin/", "/en/admin/hours/", `/en/admin/invite/${"B".repeat(43)}`, "/en/admin/nope/"]) {
+  for (const path of ["/en/admin/", "/en/admin/hours/", `/en/admin/invite/#${"B".repeat(43)}`, "/en/admin/nope/"]) {
     await out.goto(path);
     const lines = await readable(out);
     for (const text of lines) if (swedishLetters.test(text) || swedishPhrases.some(([, p]) => text.includes(p))) seen.push(`signed out ${path}: "${text.slice(0, 80)}"`);

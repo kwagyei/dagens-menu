@@ -8,9 +8,10 @@ import { freshIp } from "./helpers";
 
 function invite(email: string): string {
   const out = execFileSync("npm", ["run", "-s", "admin", "--", "invite", "--site", "bistro", "--email", email, "--url", "http://localhost:8790"], { encoding: "utf-8" });
-  const link = out.match(/http:\/\/localhost:8790\/admin\/invite\/[A-Za-z0-9_-]{43}/)?.[0];
+  const link = out.match(/http:\/\/localhost:8790\/admin\/invite\/#[A-Za-z0-9_-]{43}/)?.[0];
   if (!link) throw new Error(`no invite link in: ${out}`);
-  return new URL(link).pathname;
+  const url = new URL(link);
+  return url.pathname + url.hash; // the token is in the fragment (review L8)
 }
 
 function revoke(email: string): void {
@@ -70,10 +71,12 @@ test("an invited owner creates a passkey and is signed in", async ({ page, conte
 test("an invite works only once", async ({ page, request }) => {
   const { link } = await enrol(page);
   await page.context().clearCookies();
-  const again = await page.goto(link);
-  expect(again?.status()).toBe(410);
+  await page.goto(link);
   await expect(page.getByText("Den här länken har redan använts eller har gått ut")).toBeVisible();
-  const token = link.split("/").pop();
+  await expect(page.getByRole("button", { name: "Skapa passkey" })).toBeHidden();
+  const token = link.split("#").pop();
+  const check = await request.post("/admin/api/invite-check", { data: { token }, headers: { Origin: "http://localhost:8790" } });
+  expect(check.status()).toBe(410);
   const api = await request.post("/admin/api/enrol-options", { data: { token }, headers: { Origin: "http://localhost:8790" } });
   expect(api.status()).toBe(410);
 });

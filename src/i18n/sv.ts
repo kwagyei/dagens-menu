@@ -70,6 +70,7 @@ export default {
   "admin.signIn.heading": "Logga in",
   "admin.signIn.lead": "Logga in med den passkey du skapade på den här enheten.",
   "admin.signIn.button": "Logga in med passkey",
+  "admin.signIn.expired": "Din inloggning hade gått ut, så ändringen sparades inte. Logga in och försök igen.",
   "admin.noScript": "Inloggning med passkey kräver JavaScript. Slå på det i webbläsaren och ladda om sidan.",
   "admin.invite.heading": "Välkommen",
   "admin.invite.lead": "Skapa en passkey för att administrera {site}. Du godkänner med Face ID, fingeravtryck eller enhetens kod. Inget lösenord behövs.",

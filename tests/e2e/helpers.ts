@@ -34,9 +34,11 @@ export function invite(email: string): string {
   const out = execFileSync("npm", ["run", "-s", "admin", "--", "invite", "--site", SITE, "--email", email, "--url", "http://localhost:8790"], {
     encoding: "utf-8",
   });
-  const link = out.match(/http:\/\/localhost:8790\/admin\/invite\/[A-Za-z0-9_-]{43}/)?.[0];
+  const link = out.match(/http:\/\/localhost:8790\/admin\/invite\/#[A-Za-z0-9_-]{43}/)?.[0];
   if (!link) throw new Error(`no invite link in: ${out}`);
-  return new URL(link).pathname;
+  // The token is in the fragment (review L8), so keep it: the path alone is just the page.
+  const url = new URL(link);
+  return url.pathname + url.hash;
 }
 
 /** Sign a fresh owner in with a virtual passkey; lands on the admin's menu page. */

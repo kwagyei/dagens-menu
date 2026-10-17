@@ -80,6 +80,22 @@ describe("guardAdminRequest: rate limiting", () => {
     expect(res?.headers.get("Content-Security-Policy")).toContain("script-src 'self'");
   });
 
+  it("fails closed when the limiter binding is missing, and says so in the log (review L2)", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const signIn = await guardAdminRequest(req("/admin/api/login-verify", { method: "POST", headers: { Origin: site } }), "bistro", undefined);
+      expect(signIn?.status).toBe(503);
+      expect(signIn?.headers.get("Cache-Control")).toBe("no-store");
+      expect((await guardAdminRequest(req("/admin/invite/abc"), "bistro", undefined))?.status).toBe(503);
+      expect(log).toHaveBeenCalledWith(expect.stringContaining("AUTH_LIMITER"));
+      // Pages that aren't rate limited carry on: an owner already signed in can still work.
+      expect(await guardAdminRequest(req("/admin/", {}), "bistro", undefined)).toBeNull();
+      expect(await guardAdminRequest(req("/admin/security/", { method: "POST", headers: { Origin: site } }), "bistro", undefined)).toBeNull();
+    } finally {
+      log.mockRestore();
+    }
+  });
+
   it("doesn't run the limiter for a refused cross-site request", async () => {
     const l = limiter(10);
     const spy = vi.spyOn(l, "limit");

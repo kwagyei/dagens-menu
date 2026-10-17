@@ -8,14 +8,18 @@ export type RouteClass = "public" | "admin";
 
 /**
  * The path as the router sees it: percent-decoded, so /%61dmin/ can't reach the admin while
- * being classed as a public page. A path that doesn't decode is left as it is.
+ * being classed as a public page, and with runs of slashes collapsed, because the router
+ * serves /admin//api/… as /admin/api/… (tester F1, 17 Oct). A path that doesn't decode is
+ * left undecoded.
  */
 export function decodedPath(pathname: string): string {
+  let path = pathname;
   try {
-    return decodeURIComponent(pathname);
+    path = decodeURIComponent(pathname);
   } catch {
-    return pathname;
+    // keep it as sent
   }
+  return path.replace(/\/{2,}/g, "/");
 }
 
 export function routeClass(pathname: string): RouteClass {
