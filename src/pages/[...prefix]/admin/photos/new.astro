@@ -85,6 +85,7 @@ const labels: Record<string, string> = { photo: t(locale, "admin.photos.choose")
       data-msg-too-narrow={t(locale, "admin.photos.tooNarrow")}
       data-msg-alt-required={t(locale, "admin.photos.altRequired")}
       data-msg-failed={t(locale, "admin.photos.failed")}
+      data-msg-choose-photo={t(locale, "admin.photos.choosePhoto")}
     >
       <ErrorSummary locale={locale} errors={errors} id="photo-errors" labels={labels} />
       <input type="hidden" name="csrf" value={page.csrf} />

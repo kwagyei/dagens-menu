@@ -318,4 +318,5 @@ export default {
   "admin.photos.tooNarrow": "The photo is too narrow. It needs to be at least 320 pixels wide once fitted.",
   "admin.photos.altRequired": "Describe the photo in both languages before uploading it.",
   "admin.photos.failed": "Something went wrong while preparing the photo. Try again.",
+  "admin.photos.choosePhoto": "Choose a photo first.",
 } as const;

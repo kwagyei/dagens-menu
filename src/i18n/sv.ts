@@ -318,4 +318,5 @@ export default {
   "admin.photos.tooNarrow": "Fotot är för smalt. Det behöver vara minst 320 pixlar brett efter att det anpassats.",
   "admin.photos.altRequired": "Beskriv fotot på båda språken innan du laddar upp det.",
   "admin.photos.failed": "Något gick fel när fotot förbereddes. Försök igen.",
+  "admin.photos.choosePhoto": "Välj ett foto först.",
 } as const;

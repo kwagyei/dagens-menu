@@ -30,7 +30,7 @@ export default defineConfig({
     { name: "edge", testMatch: EDGE, use: { ...devices["Pixel 7"] } },
     // Safari is where iPhone owners upload: the encoder, canvas and DataTransfer path in WebKit
     // (plan M6.7). Non-blocking, with the edge suite.
-    { name: "webkit", testMatch: /photo-upload\.spec\.ts$/, use: { ...devices["iPhone 14"] } },
+    { name: "webkit", testMatch: /(photo-upload|tester-m6-browser-pipeline)\.spec\.ts$/, use: { ...devices["iPhone 14"] } },
   ],
   webServer: {
     command: [

@@ -15,6 +15,8 @@ export const MAX_PIXELS = 100_000_000;
  * pushed a normal phone photo over the 1 MB cap in the held-out run (M6.7 error analysis).
  */
 export const SNAP_WITHIN = 0.1;
+/** The largest canvas a step may use: under iOS Safari's 16,777,216-pixel limit, with a margin. */
+export const MAX_CANVAS_AREA = 16_000_000;
 
 export type SizePlan =
   | {
@@ -46,8 +48,13 @@ export function planSizes(fileBytes: number, width: number, height: number): Siz
  * the target, so each draw averages at most about 2 × 2 pixels into one. One big jump in a
  * canvas skips pixels and looks jagged (ADR-013, "halving steps").
  */
-export function halvingSteps(fromWidth: number, toWidth: number): number[] {
+export function halvingSteps(fromWidth: number, toWidth: number, fromHeight = fromWidth): number[] {
   const steps: number[] = [];
-  for (let w = Math.floor(fromWidth / 2); w >= toWidth * 2; w = Math.floor(w / 2)) steps.push(w);
+  for (let w = Math.floor(fromWidth / 2); w >= toWidth * 2; w = Math.floor(w / 2)) {
+    // iOS Safari refuses a canvas over 16,777,216 px; a step that big is skipped and the photo is
+    // drawn straight to the next one (M6.7 tester F2). The decoded <img> itself is no canvas.
+    if (w * Math.round((fromHeight * w) / fromWidth) > MAX_CANVAS_AREA) continue;
+    steps.push(w);
+  }
   return steps;
 }

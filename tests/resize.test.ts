@@ -48,7 +48,8 @@ describe("planSizes", () => {
 
 describe("halvingSteps", () => {
   it("halves while the next step is still twice the target", () => {
-    expect(halvingSteps(16352, 1600)).toEqual([8176, 4088]);
+    expect(halvingSteps(16352, 1600, 3628)).toEqual([8176, 4088]); // the panorama
+    expect(halvingSteps(10_000, 1600, 10_000), "a 5000² step would be 25 MP: skipped").toEqual([]);
     expect(halvingSteps(4032, 1600)).toEqual([]);
     expect(halvingSteps(6400, 400)).toEqual([3200, 1600, 800]);
   });
