@@ -149,7 +149,10 @@ is the seed data the demos are loaded from.
   flakiness that people then learn to merge over. The tester's edge-case sweeps run on every
   PR and nightly (straddling Stockholm midnight) but never block a deploy; a nightly failure
   opens an issue. A merge that changes only Markdown doesn't deploy, since it can't change
-  the site.
+  the site. The deploy ships the exact builds CI crawled rather than rebuilding them, and
+  every action is pinned to a commit SHA (Dependabot keeps the pins current). If a deploy
+  stops halfway, [the deploy runbook](docs/deploy-runbook.md) says how to tell and how to
+  roll back.
 - **If the database is unreachable, the site still answers.** Each Worker keeps the last
   good content in memory and serves it, marked stale, when D1 fails or takes longer than
   1.5 s. With nothing held, visitors get a page with the restaurant's phone number,
