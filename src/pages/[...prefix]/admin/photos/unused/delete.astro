@@ -1,0 +1,47 @@
+---
+// "Delete all unused photos" (plan M6.10; ADR-014 §6): the owner's photos that nothing on the
+// website uses, after confirming with the count. Nothing is ever deleted automatically.
+// Built-in photos are kept. The delete re-checks every photo, so one used since the
+// confirmation page was shown is kept too.
+import AdminLayout from "../../../../../layouts/AdminLayout.astro";
+import { adminPage } from "../../../../../admin/page";
+import { deleteUnusedImages, listLibrary } from "../../../../../db/library";
+import { t } from "../../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const library = page.path("/photos/");
+
+if (Astro.request.method === "POST") {
+  if (!(await page.postedForm())) return Astro.redirect(`${library}?done=expired`, 303);
+  const { deleted } = await deleteUnusedImages(repo);
+  return Astro.redirect(`${library}?done=deleted-unused&n=${deleted}`, 303);
+}
+
+const unused = (await listLibrary(repo)).filter((i) => i.kind === "upload" && i.uses.length === 0).length;
+---
+
+<AdminLayout title={t(locale, "admin.photos.deleteUnusedHeading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <h1 class="text-3xl font-bold">{t(locale, "admin.photos.deleteUnusedHeading")}</h1>
+    {unused === 0 ? (
+      <>
+        <p>{t(locale, "admin.photos.noneUnused")}</p>
+        <a class="admin-target underline" href={library}>{t(locale, "admin.photos.back")}</a>
+      </>
+    ) : (
+      <>
+        <p>{t(locale, "admin.photos.deleteUnusedLead").replace("{n}", String(unused))}</p>
+        <form method="post" class="flex flex-wrap gap-3">
+          <input type="hidden" name="csrf" value={page.csrf} />
+          <button class="admin-button" type="submit">{t(locale, "admin.photos.deleteUnusedConfirm").replace("{n}", String(unused))}</button>
+          <a class="admin-button admin-button-quiet" href={`${library}?filter=unused`}>{t(locale, "admin.item.cancel")}</a>
+        </form>
+      </>
+    )}
+  </section>
+</AdminLayout>

@@ -1,0 +1,76 @@
+---
+// Delete one of the owner's photos, after confirming (plan M6.10; ADR-014 §4). A photo that is
+// used somewhere can't be deleted: the page lists where, with links, and has no delete
+// button. Posting anyway (an old tab, or a use added since) answers 409 with the same list.
+// A built-in photo answers 409 too; an unknown one, or another site's, 404.
+import AdminLayout from "../../../../../layouts/AdminLayout.astro";
+import { describeUses } from "../../../../../admin/library";
+import { adminPage } from "../../../../../admin/page";
+import { deleteImage, getLibraryImage, type ImageUse, isImageId } from "../../../../../db/library";
+import { t } from "../../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const id = Astro.params.id ?? "";
+const library = page.path("/photos/");
+// Anything but an image id is simply not found, before it reaches a header or a query (tester F2).
+if (!isImageId(id)) return Astro.redirect(`${library}?done=not-found`, 303);
+
+let state: "confirm" | "in-use" | "built-in" | "not-found";
+let uses: ImageUse[] = [];
+
+if (Astro.request.method === "POST") {
+  if (!(await page.postedForm())) return Astro.redirect(`${page.path(`/photos/${id}/delete/`)}?done=expired`, 303);
+  const result = await deleteImage(repo, id);
+  if (result.ok) return Astro.redirect(`${library}?done=deleted`, 303);
+  state = result.error;
+  if (result.error === "in-use") uses = result.uses;
+} else {
+  const image = await getLibraryImage(repo, id);
+  state = !image ? "not-found" : image.kind === "static" ? "built-in" : image.uses.length > 0 ? "in-use" : "confirm";
+  uses = image?.uses ?? [];
+}
+if (state === "not-found") Astro.response.status = 404;
+else if (state !== "confirm") Astro.response.status = 409;
+
+const places = describeUses(uses, locale);
+const expired = Astro.url.searchParams.get("done") === "expired";
+---
+
+<AdminLayout title={t(locale, "admin.photos.deleteHeading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <h1 class="text-3xl font-bold">{t(locale, "admin.photos.deleteHeading")}</h1>
+    {expired && <p class="admin-message" role="status">{t(locale, "admin.error.form")}</p>}
+    {state === "confirm" && (
+      <>
+        <p>{t(locale, "admin.photos.deleteLead")}</p>
+        <form method="post" class="flex flex-wrap gap-3">
+          <input type="hidden" name="csrf" value={page.csrf} />
+          <button class="admin-button" type="submit">{t(locale, "admin.photos.deleteConfirm")}</button>
+          <a class="admin-button admin-button-quiet" href={page.path(`/photos/${id}/`)}>{t(locale, "admin.item.cancel")}</a>
+        </form>
+      </>
+    )}
+    {state === "in-use" && (
+      <div class="admin-message space-y-2" role="alert" tabindex="-1" autofocus id="delete-refused">
+        {places.length > 0 ? (
+          <>
+            <p>{t(locale, "admin.photos.inUseRefused")}</p>
+            <ul class="list-disc pl-5">
+              {places.map((p) => <li><a class="admin-target underline" href={p.href}>{p.label}</a></li>)}
+            </ul>
+          </>
+        ) : (
+          <p>{t(locale, "admin.photos.usesUnknown")}</p>
+        )}
+      </div>
+    )}
+    {state === "built-in" && <p class="admin-message" role="alert" tabindex="-1" autofocus id="delete-refused">{t(locale, "admin.photos.builtInRefused")}</p>}
+    {state === "not-found" && <p class="admin-message" role="alert" tabindex="-1" autofocus id="delete-refused">{t(locale, "admin.photos.notFound")}</p>}
+    {state !== "confirm" && <a class="admin-target underline" href={library}>{t(locale, "admin.photos.back")}</a>}
+  </section>
+</AdminLayout>

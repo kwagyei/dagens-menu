@@ -4,7 +4,7 @@ import en from "./en";
 const translations = { sv, en } as const;
 
 type Locale = keyof typeof translations;
-type TranslationKey = keyof (typeof translations)["sv"];
+export type TranslationKey = keyof (typeof translations)["sv"];
 
 export function t(locale: Locale, key: TranslationKey): string {
   return translations[locale]?.[key] ?? translations.sv[key] ?? key;

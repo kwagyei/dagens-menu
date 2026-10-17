@@ -68,3 +68,21 @@ test("each error in the summary takes the keyboard to its field", async ({ page 
   await page.locator("#exception-errors a").first().click();
   await expect(page.locator("#date")).toBeFocused();
 });
+
+test("the photo library pages, in both languages, and the description form rejected (M6.10)", async ({ page }) => {
+  await signedInOwner(page);
+  await page.goto("/admin/photos/");
+  const photoPath = await page.locator("#uploads a[href*='/admin/photos/']").last().getAttribute("href");
+  const paths = ["/admin/photos/", "/admin/photos/?filter=unused", "/admin/photos/unused/delete/", photoPath!, `${photoPath}delete/`];
+  for (const path of paths) {
+    for (const prefix of ["", "/en"]) {
+      await page.goto(`${prefix}${path}`);
+      await expectNoViolations(page, `${prefix}${path}`);
+    }
+  }
+  await page.goto(photoPath!);
+  await page.getByLabel("Beskrivning på svenska").fill("");
+  await page.getByRole("button", { name: "Spara beskrivningen" }).click();
+  await expect(page.locator("#photo-alt-errors")).toBeVisible();
+  await expectNoViolations(page, "photo description, rejected");
+});
