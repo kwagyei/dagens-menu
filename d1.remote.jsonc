@@ -1,0 +1,14 @@
+// The production database for scripts/check-d1-guard.ts only (review M2): "remote": true makes
+// wrangler's platform proxy reach the real D1 instead of the local copy. Nothing else uses it.
+{
+  "name": "dagens-menu-deploy-check",
+  "compatibility_date": "2026-10-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dagens-menu",
+      "database_id": "df3dcc91-ea36-4834-ae85-6ebc1ba12b2e",
+      "remote": true
+    }
+  ]
+}
