@@ -129,7 +129,8 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ["theme colour missing", (c) => delete c.theme.colors.heroBg, "theme.colors.heroBg", "expected string"],
   ["font stack with CSS injection", (c) => (c.theme.fonts.body = "x; } body { display:none"), "theme.fonts.body", "font stack"],
   ["corner radius that isn't a length", (c) => (c.theme.cornerRadius = "1rem; color: red"), "theme.cornerRadius", "CSS length"],
-  ["unknown hero style", (c) => (c.theme.heroStyle = "carousel"), "theme.heroStyle", "Invalid option"],
+  ["unknown theme style", (c) => (c.theme.style = "brutalist"), "theme.style", "Invalid option"],
+  ["theme style missing", (c) => delete c.theme.style, "theme.style", "Invalid option"],
   // Unknown keys are errors
   ["unknown field on a dish", (c) => (firstItem(c).spicy = true), item, "Unrecognized key"],
 ];

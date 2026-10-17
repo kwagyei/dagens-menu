@@ -1,23 +1,23 @@
 {
+  "style": "classic",
   "colors": {
-    "primary": "#2d4a3e",
-    "secondary": "#b8956a",
-    "accent": "#a84a2e",
-    "background": "#f7f3ee",
-    "surface": "#f2ede6",
-    "surfaceAlt": "#ebe5db",
-    "text": "#2c2c2c",
-    "textMuted": "#6d6253",
-    "border": "#d9d0c4",
-    "heroBg": "#1b3327",
-    "heroText": "#f0ebe4",
-    "heroMuted": "#c2bdb5"
+    "primary": "#12394a",
+    "secondary": "#d9541e",
+    "accent": "#b8441a",
+    "background": "#fffdfb",
+    "surface": "#f9ece4",
+    "surfaceAlt": "#f3e1d6",
+    "text": "#12394a",
+    "textMuted": "#5b6870",
+    "border": "#e7dcd4",
+    "heroBg": "#12394a",
+    "heroText": "#fffdfb",
+    "heroMuted": "#d5e0e5"
   },
   "fonts": {
-    "heading": "Georgia, 'Times New Roman', serif",
-    "display": "'Bebas Neue', Impact, 'Arial Narrow', sans-serif",
-    "body": "system-ui, -apple-system, sans-serif"
+    "heading": "'Cormorant Garamond', Garamond, 'Times New Roman', serif",
+    "display": "'Cormorant Garamond', Garamond, 'Times New Roman', serif",
+    "body": "Jost, 'Century Gothic', system-ui, sans-serif"
   },
-  "cornerRadius": "0.25rem",
-  "heroStyle": "image-overlay"
+  "cornerRadius": "0"
 }
