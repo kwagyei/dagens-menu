@@ -124,8 +124,13 @@ is the seed data the demos are loaded from.
   bound to its site's address, so a Bistro Norden passkey can't sign in to Chez Abena.
 - **Sessions can't outlive their owner's access.** The cookie is `__Host-`, HttpOnly and
   SameSite=Lax, and the database keeps only its hash. A session ends after 30 days, after
-  14 days unused, or the moment the operator revokes the owner. Starting a passkey
-  ceremony writes nothing: the challenge travels in a signed five-minute cookie.
+  14 days unused, the moment the operator revokes the owner, or the moment the passkey it
+  was signed in with is removed (a foreign key, so no code path can forget it). Starting a
+  passkey ceremony writes nothing: the challenge travels in a signed five-minute cookie.
+- **Security events are in the history.** Invites (and recovery invites), enrolments, added
+  and removed passkeys, signing out everywhere and revoked access each write an audit row
+  in the same transaction as the event, so every owner sees them next to the content
+  changes. Summaries name the person, never a token or a credential id.
 - **Admin writes are guarded:** an Origin check on every write (form or fetch) and a form
   token tied to the session. Sign-in, enrolment and invite links are limited to 10 a minute
   per IP; ordinary edits aren't, so an owner can mark a dozen dishes sold out in a minute.

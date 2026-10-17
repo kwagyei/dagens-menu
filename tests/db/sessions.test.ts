@@ -13,7 +13,7 @@ import {
   SESSION_IDLE_MS,
   sessionCookie,
 } from "../../src/auth/sessions";
-import { prepare } from "../../src/db/sql";
+import { prepare, stmt } from "../../src/db/sql";
 
 const db = env.DB;
 const now = new Date("2026-10-16T10:00:00Z");
@@ -27,9 +27,15 @@ beforeEach(async () => {
   userId = (await db.prepare("SELECT id FROM users").first<string>("id"))!;
 });
 
+/** A session made with a stand-in passkey (sessions record the passkey they were made with). */
 async function signIn(site = "bistro", when = now) {
-  const s = await newSession(userId, site, when);
-  await db.batch(prepare(db, [s.statement]));
+  const s = await newSession(userId, site, "test-passkey", when);
+  await db.batch(
+    prepare(db, [
+      stmt("INSERT INTO passkeys (id, user_id, site_id, public_key) VALUES ('test-passkey', ?, ?, x'00') ON CONFLICT DO NOTHING", userId, site),
+      s.statement,
+    ]),
+  );
   return s.token;
 }
 

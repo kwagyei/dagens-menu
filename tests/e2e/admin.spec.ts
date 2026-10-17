@@ -97,7 +97,7 @@ test("a revoked owner's session ends at once", async ({ page }) => {
   await expect(page.getByRole("status")).toContainText("Det gick inte");
 });
 
-test("security: add a second device, remove the first, sign out everywhere", async ({ page }) => {
+test("security: add a second device, remove the first (which signs it out), sign out everywhere", async ({ page }) => {
   const { auth } = await enrol(page);
   await page.getByRole("link", { name: "Säkerhet" }).click();
   await expect(page.getByText("Din enda passkey kan inte tas bort")).toBeVisible();
@@ -109,9 +109,15 @@ test("security: add a second device, remove the first, sign out everywhere", asy
   await expect(page.getByText("Den nya passkeyn är sparad.")).toBeVisible();
   await expect(page.getByText(/^Passkey 2$/)).toBeVisible();
 
+  // Removing the first device's passkey ends the sign-ins made with it, this one included.
+  await expect(page.getByText(/^Passkey 1 · du är inloggad med den här$/)).toBeVisible();
   await page.getByRole("button", { name: "Ta bort" }).first().click();
-  await expect(page.getByText("Passkeyn är borttagen.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Logga in" })).toBeVisible();
+  await page.getByRole("button", { name: "Logga in med passkey" }).click();
+  await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Säkerhet" }).click();
   await expect(page.getByText(/^Passkey 2$/)).toHaveCount(0);
+  await expect(page.getByText("Din enda passkey kan inte tas bort")).toBeVisible();
 
   await page.getByRole("button", { name: "Logga ut överallt" }).click();
   await expect(page.getByRole("heading", { name: "Logga in" })).toBeVisible();

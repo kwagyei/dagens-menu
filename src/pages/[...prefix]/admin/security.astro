@@ -5,8 +5,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { env } from "cloudflare:workers";
 import { adminSecret } from "../../../admin/context";
 import { checkFormToken, formToken } from "../../../auth/guard";
-import { clearSessionCookie, endAllSessionsStatement } from "../../../auth/sessions";
-import { prepare, stmt } from "../../../db/sql";
+import { removePasskey } from "../../../auth/passkeys";
+import { clearSessionCookie, signOutEverywhere } from "../../../auth/sessions";
 import { getLocale, localePath, t } from "../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
@@ -23,25 +23,16 @@ if (Astro.request.method === "POST") {
   if (!(await checkFormToken(secret, session.tokenHash, form.get("csrf")))) return Astro.redirect(`${here}?done=expired`, 303);
   const action = form.get("action");
   if (action === "remove") {
-    // One statement, so two removals at once can't both pass the check: never the last
-    // passkey, or the owner is locked out (recovery is an operator invite).
-    const [result] = await env.DB.batch(
-      prepare(env.DB, [
-        stmt(
-          `DELETE FROM passkeys WHERE id = ? AND user_id = ? AND site_id = ?
-           AND (SELECT count(*) FROM passkeys WHERE user_id = ? AND site_id = ?) > 1`,
-          String(form.get("id")),
-          session.userId,
-          session.siteId,
-          session.userId,
-          session.siteId,
-        ),
-      ]),
-    );
-    return Astro.redirect(`${here}?done=${result.meta.changes > 0 ? "removed" : "not-removed"}`, 303);
+    // Never the last passkey (recovery is an operator invite); the sign-ins made with it end.
+    const result = await removePasskey(env.DB, session, String(form.get("id")), new Date());
+    if (result === "signed-out") {
+      // That was the passkey this session signed in with, so this session has ended too.
+      return new Response(null, { status: 303, headers: { Location: localePath(locale, "/admin/"), "Set-Cookie": clearSessionCookie } });
+    }
+    return Astro.redirect(`${here}?done=${result}`, 303);
   }
   if (action === "sign-out-everywhere") {
-    await env.DB.batch(prepare(env.DB, [endAllSessionsStatement(session.userId, session.siteId)]));
+    await signOutEverywhere(env.DB, session, new Date());
     return new Response(null, { status: 303, headers: { Location: localePath(locale, "/admin/"), "Set-Cookie": clearSessionCookie } });
   }
   return Astro.redirect(here, 303);
@@ -82,7 +73,10 @@ const when = (iso: string) =>
         {passkeys.map((p, i) => (
           <li class="admin-card p-4 flex items-center justify-between gap-4">
             <div>
-              <p class="font-medium">Passkey {i + 1}</p>
+              <p class="font-medium">
+                Passkey {i + 1}
+                {p.id === session.passkeyId && <span class="admin-muted font-normal"> · {t(locale, "admin.security.thisSignIn")}</span>}
+              </p>
               <p class="text-sm admin-muted">
                 {t(locale, "admin.security.created")} {when(p.created_at)} · {t(locale, "admin.security.lastUsed")}{" "}
                 {p.last_used_at ? when(p.last_used_at) : t(locale, "admin.security.never")}

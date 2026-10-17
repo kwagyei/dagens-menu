@@ -49,13 +49,41 @@ export async function issueInvite(site: string, email: string, now: Date): Promi
         isoSeconds(new Date(now.getTime() + INVITE_TTL_MS)),
         normalised,
       ),
+      // Audit (reviewer M3). An invite for someone who already has a passkey is a recovery
+      // link, the one way back in after losing every device, so the history says so.
+      stmt(
+        `INSERT INTO audit_log (site_id, user_id, at, entity, entity_id, action, summary)
+         SELECT ?, NULL, ?, 'invite', id, 'create', email || CASE
+           WHEN EXISTS (SELECT 1 FROM passkeys p WHERE p.user_id = users.id AND p.site_id = ?) THEN ': invited again (recovery), already has a passkey'
+           ELSE ': invited as owner' END || ?
+         FROM users WHERE email = ?`,
+        site,
+        isoSeconds(now),
+        site,
+        `; link valid ${INVITE_TTL_MS / 3_600_000} hours`,
+        normalised,
+      ),
     ],
   };
 }
 
-/** Remove someone's access to `site`: membership, passkeys, sessions and invites (cascade). */
+/**
+ * Remove someone's access to `site`: membership, passkeys, sessions and invites (cascade),
+ * with an audit row written first, while there is still a membership to name.
+ */
 export function revokeStatements(site: string, email: string): Statement[] {
-  return [stmt("DELETE FROM memberships WHERE site_id = ? AND user_id = (SELECT id FROM users WHERE email = ?)", site, email.trim().toLowerCase())];
+  const normalised = email.trim().toLowerCase();
+  return [
+    stmt(
+      `INSERT INTO audit_log (site_id, user_id, entity, entity_id, action, summary)
+       SELECT m.site_id, NULL, 'membership', u.id, 'delete',
+         u.email || ': access revoked; passkeys removed: ' || (SELECT count(*) FROM passkeys p WHERE p.user_id = u.id AND p.site_id = m.site_id)
+       FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.site_id = ? AND u.email = ?`,
+      site,
+      normalised,
+    ),
+    stmt("DELETE FROM memberships WHERE site_id = ? AND user_id = (SELECT id FROM users WHERE email = ?)", site, normalised),
+  ];
 }
 
 export interface PendingInvite {
