@@ -56,7 +56,7 @@ test("a page photo is chosen per slot, shown on its page, and the other slots st
   try {
     await page.goto("/admin/photos/");
     await page.getByRole("link", { name: "Välj sidornas foton" }).click();
-    await expect(page.locator("#page-photos li")).toHaveCount(5);
+    await expect(page.locator("#page-photos li")).toHaveCount(3); // classic draws hero, story and kitchen
     await page.getByRole("link", { name: "Byt: om oss-sidans foto till berättelsen" }).click();
     await page.getByRole("radio", { name: photo.sv }).check();
     await page.getByRole("button", { name: "Spara valet" }).click();
