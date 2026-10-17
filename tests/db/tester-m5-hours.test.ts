@@ -44,19 +44,19 @@ beforeEach(async () => {
 
 describe("weekly hours: odd but legal times", () => {
   it("accepts closing after midnight, and the exported content still validates", async () => {
-    expect(await saveWeeklyHours(bistro, week({ open: "18:00", close: "01:00" }))).toEqual({ ok: true });
+    expect(await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, week({ open: "18:00", close: "01:00" }))).toEqual({ ok: true });
     const exported = await exportSite(db, "bistro");
     expect(hoursSchema.safeParse(exported?.content.hours).success).toBe(true);
     expect(exported?.content.hours.weekly.friday).toEqual({ open: "18:00", close: "01:00" });
   });
 
   it("accepts 00:00 as a closing time and 23:59 as an opening time", async () => {
-    expect(await saveWeeklyHours(bistro, week({ open: "23:59", close: "00:00" }))).toEqual({ ok: true });
+    expect(await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, week({ open: "23:59", close: "00:00" }))).toEqual({ ok: true });
   });
 
   it.each(["24:00", "7:00", "07:00:00", "07.00", "", " 07:00", "07:60", "-1:00"])("rejects the time %j and writes nothing", async (bad) => {
     const v0 = await version();
-    const result = invalid(await saveWeeklyHours(bistro, { ...week({ open: "10:00", close: "20:00" }), tuesday: { open: bad, close: "20:00" } }));
+    const result = invalid(await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, { ...week({ open: "10:00", close: "20:00" }), tuesday: { open: bad, close: "20:00" } }));
     expect(result.error).toBe("invalid");
     expect((await adminHours(bistro)).weekly).toEqual(hours.weekly);
     expect(await version()).toBe(v0);
@@ -64,34 +64,34 @@ describe("weekly hours: odd but legal times", () => {
   });
 
   it("rejects open == close for every day, naming each day", async () => {
-    const result = invalid(await saveWeeklyHours(bistro, week({ open: "10:00", close: "10:00" })));
+    const result = invalid(await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, week({ open: "10:00", close: "10:00" })));
     expect(result.issues?.map((i) => i.path)).toEqual(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]);
   });
 
   it("rejects extra properties on a day (strict object)", async () => {
     const weird = { ...week(null), monday: { open: "10:00", close: "11:00", admin: true } as unknown as Hours };
-    expect(invalid(await saveWeeklyHours(bistro, weird)).error).toBe("invalid");
+    expect(invalid(await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, weird)).error).toBe("invalid");
   });
 
   it("closes a day that is missing from the posted week, rather than keeping the old hours", async () => {
     // Documents behaviour: a partial object is treated as 'closed' for the absent days.
     const partial = { monday: { open: "10:00", close: "11:00" } } as unknown as Record<Weekday, Hours | null>;
-    expect(await saveWeeklyHours(bistro, partial)).toEqual({ ok: true });
+    expect(await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, partial)).toEqual({ ok: true });
     const saved = (await adminHours(bistro)).weekly;
     expect(saved.monday).toEqual({ open: "10:00", close: "11:00" });
     expect(saved.tuesday).toBeNull();
   });
 
-  it("writes one audit entry and one version bump per save, even for an unchanged week", async () => {
+  it("writes nothing for an unchanged week: no audit entry, no version bump (review M4)", async () => {
     const v0 = (await version())!;
-    await saveWeeklyHours(bistro, hours.weekly as Record<Weekday, Hours | null>);
-    expect(await version()).toBeGreaterThan(v0); // triggers fire per row; only "moved forward" matters
-    expect(await audits("hours")).toHaveLength(1);
+    expect(await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, hours.weekly as Record<Weekday, Hours | null>)).toEqual({ ok: true, unchanged: true });
+    expect(await version()).toBe(v0);
+    expect(await audits("hours")).toHaveLength(0);
   });
 
   it("does not touch the other site, in either direction", async () => {
-    await saveWeeklyHours(ctx("westafrican"), week({ open: "09:00", close: "10:00" }));
-    await saveWeeklyHours(bistro, week(null));
+    await saveWeeklyHours(ctx("westafrican"), (await adminHours(ctx("westafrican"))).weeklyToken, week({ open: "09:00", close: "10:00" }));
+    await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, week(null));
     expect((await adminHours(ctx("westafrican"))).weekly.monday).toEqual({ open: "09:00", close: "10:00" });
     expect(await version("westafrican")).toBeGreaterThan(0);
     const wa = await db.prepare("SELECT COUNT(*) AS n FROM audit_log WHERE site_id = 'westafrican'").first<number>("n");
@@ -273,7 +273,7 @@ describe("what the public site sees after the write", () => {
 
   it("a rewritten week reaches the export and nothing else changes", async () => {
     const before = (await exportSite(db, "bistro"))!.content;
-    await saveWeeklyHours(bistro, week({ open: "18:00", close: "01:00" }));
+    await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, week({ open: "18:00", close: "01:00" }));
     const after = (await exportSite(db, "bistro"))!.content;
     expect(after.menu).toEqual(before.menu);
     expect(after.settings).toEqual(before.settings);
@@ -292,7 +292,7 @@ describe("what the public site sees after the write", () => {
   it("after midnight: Friday 18:00-01:00 is not 'open' at 00:30 on Saturday in the today lookup (it reads Saturday's row)", async () => {
     // Characterisation, not an endorsement: hoursOn works per calendar day, so the Friday tail
     // after midnight is invisible. See the report (low).
-    await saveWeeklyHours(bistro, { ...week(null), friday: { open: "18:00", close: "01:00" } });
+    await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, { ...week(null), friday: { open: "18:00", close: "01:00" } });
     const pub = (await exportSite(db, "bistro"))!.content.hours;
     expect(hoursOn(pub, new Date("2026-10-16T22:30:00Z"))).toBeNull(); // Sat 00:30 Stockholm
     expect(hoursOn(pub, new Date("2026-10-16T17:00:00Z"))).toEqual({ open: "18:00", close: "01:00" }); // Fri 19:00

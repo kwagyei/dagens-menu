@@ -22,7 +22,7 @@ import { siteContentSchema, type Theme } from "../../src/content/schema";
 import { HISTORY_LIMIT, recentChanges } from "../../src/db/audit";
 import { exportSite } from "../../src/db/export";
 import { exportFile, type OperatorContent, readExportFile } from "../../src/db/export-file";
-import { addException, removeException, saveWeeklyHours } from "../../src/db/hours";
+import { addException, adminHours, removeException, saveWeeklyHours } from "../../src/db/hours";
 import { adminMenu, createCategory, createMenuItem, deleteCategory, moveCategory, moveMenuItem, setFeatured } from "../../src/db/menu";
 import { deleteMenuItem, getMenuItem, type RepoContext, setSoldOut, updateMenuItem } from "../../src/db/repository";
 import { type ImageResolver, imagePathsOf, resetStatements, seedStatements, type StoredContent } from "../../src/db/seed";
@@ -156,7 +156,7 @@ describe("round trip: export → restore → export is identical", () => {
 
     // Hours: a week closing after midnight, a closed day, a special day added and one removed.
     const weekly = (await exportSite(db, "bistro"))!.content.hours.weekly;
-    expect(await saveWeeklyHours(bistro, { ...weekly, friday: { open: "18:00", close: "01:00" }, monday: null })).toEqual({ ok: true });
+    expect(await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, { ...weekly, friday: { open: "18:00", close: "01:00" }, monday: null })).toEqual({ ok: true });
     expect((await addException(bistro, { date: "2026-12-24", hours: null, note: { sv: "Julafton", en: "Christmas Eve" } })).ok).toBe(true);
     expect((await addException(bistro, { date: "2026-12-31", hours: { open: "17:00", close: "02:00" }, note: { sv: "Nyår", en: "NYE" } })).ok).toBe(true);
     expect((await removeException(bistro, "2026-12-24")).ok).toBe(true);
@@ -426,7 +426,7 @@ describe("recentChanges", () => {
     await setSoldOut(bistro, menu[0].items[0].id, true);
     await moveCategory(bistro, menu[1].id, "up");
     await addException(bistro, { date: "2026-12-24", hours: null, note: { sv: "Jul", en: "Christmas" } });
-    await saveWeeklyHours(bistro, (await exportSite(db, "bistro"))!.content.hours.weekly);
+    await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, (await exportSite(db, "bistro"))!.content.hours.weekly);
     const texts = (await adminTexts(bistro))!;
     const { rowVersion: pv, ...p } = texts.pages;
     await updatePageTexts(bistro, pv, { ...p, pullQuote: null });

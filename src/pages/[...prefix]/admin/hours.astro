@@ -1,6 +1,7 @@
 ---
 // Opening hours (plan M5.4): the normal week, and holidays or special days. Plain forms that
 // post back here; errors come back next to the day or field, with the owner's input kept.
+// A stale week is a conflict: the owner's input is kept and saving again overwrites knowingly.
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import ErrorSummary from "../../../admin/ErrorSummary.astro";
 import { type ExceptionFormValues, type FieldErrors, inputMaxLength, parseExceptionForm, parseHoursForm, type WeeklyFormValues } from "../../../admin/forms";
@@ -27,6 +28,8 @@ let weekly: WeeklyFormValues = {
   ) as WeeklyFormValues["days"],
 };
 let weeklyErrors: FieldErrors = {};
+let weeklyToken = current.weeklyToken;
+let conflict = false;
 let exception: ExceptionFormValues = { date: "", closed: true, open: "", close: "", note_sv: "", note_en: "" };
 let exceptionErrors: FieldErrors = {};
 
@@ -38,10 +41,14 @@ if (Astro.request.method === "POST") {
     const parsed = parseHoursForm(form, locale);
     weekly = parsed.values;
     weeklyErrors = parsed.errors;
+    weeklyToken = String(form.get("weekly_token") ?? "");
     if (parsed.weekly) {
-      const result = await saveWeeklyHours(repo, parsed.weekly);
-      if (result.ok) return Astro.redirect(`${here}?done=saved`, 303);
-      weeklyErrors = { monday: t(locale, "admin.error.failed") };
+      const result = await saveWeeklyHours(repo, weeklyToken, parsed.weekly);
+      if (result.ok) return Astro.redirect(`${here}?done=${result.unchanged ? "unchanged" : "saved"}`, 303);
+      if (result.error === "conflict") {
+        conflict = true;
+        weeklyToken = result.current; // saving again now overwrites, knowingly
+      } else weeklyErrors = { monday: t(locale, "admin.error.failed") };
     }
   } else if (action === "add-exception") {
     const parsed = parseExceptionForm(form, locale);
@@ -63,12 +70,13 @@ if (Astro.request.method === "POST") {
   } else {
     return Astro.redirect(`${here}?done=expired`, 303);
   }
-  Astro.response.status = 422;
+  Astro.response.status = conflict ? 409 : 422;
 }
 
 const done = Astro.url.searchParams.get("done");
 const message: Record<string, string> = {
   saved: t(locale, "admin.menu.saved"),
+  unchanged: t(locale, "admin.hours.unchanged"),
   added: t(locale, "admin.menu.added"),
   deleted: t(locale, "admin.menu.deleted"),
   "not-found": t(locale, "admin.menu.notFound"),
@@ -85,10 +93,12 @@ const dateText = (iso: string) =>
 
     <form method="post" class="admin-card p-4 space-y-4" novalidate>
       <h2 class="text-xl font-semibold">{t(locale, "admin.hours.weekly")}</h2>
+      {conflict && <p class="admin-message" role="alert" tabindex="-1" autofocus>{t(locale, "admin.hours.conflict")}</p>}
       <p class="text-sm admin-muted">{t(locale, "admin.hours.afterMidnight")}</p>
       <ErrorSummary locale={locale} errors={weeklyErrors} id="weekly-errors" labels={Object.fromEntries(WEEKDAYS.map((d) => [d, t(locale, `weekday.${d}`)]))} targets={Object.fromEntries(WEEKDAYS.map((d) => [d, `${d}_open`]))} />
       <input type="hidden" name="csrf" value={page.csrf} />
       <input type="hidden" name="action" value="weekly" />
+      <input type="hidden" name="weekly_token" value={weeklyToken} />
       {WEEKDAYS.map((day) => (
         <fieldset class="space-y-2 border-t pt-3" style="border-color: var(--color-border);" aria-describedby={weeklyErrors[day] ? `${day}-error` : undefined}>
           <legend class="font-semibold">{t(locale, `weekday.${day}`)}</legend>

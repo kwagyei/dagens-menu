@@ -191,6 +191,8 @@ export default {
   "admin.hours.closes": "Stänger",
   "admin.hours.afterMidnight": "Stänger efter midnatt? Ange till exempel 01:00.",
   "admin.hours.save": "Spara öppettiderna",
+  "admin.hours.unchanged": "Inga ändringar att spara.",
+  "admin.hours.conflict": "Någon annan ändrade öppettiderna nyss. Kontrollera dagarna och spara igen för att skriva över.",
   "admin.hours.timesRequired": "Ange när ni öppnar och stänger, eller bocka i Stängt.",
   "admin.hours.sameTime": "Öppnar och stänger samma tid.",
   "admin.hours.badTime": "Ange tiden som TT:MM, till exempel 11:30.",
