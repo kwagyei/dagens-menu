@@ -1,0 +1,95 @@
+---
+// Add a photo to the site's library (plan M6.6; ADR-012, ADR-013). The browser shrinks and
+// encodes the photo (src/admin/photo-upload.ts, M6.7); this page receives the finished WebP
+// sizes. Without JavaScript the picker stays disabled and the page says why.
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import ErrorSummary from "../../../../admin/ErrorSummary.astro";
+import { type FieldErrors, inputMaxLength } from "../../../../admin/forms";
+import { adminPage } from "../../../../admin/page";
+import { bodySizeProblem, readUploadForm, type UploadFormValues } from "../../../../admin/upload";
+import { TEXT_LIMITS } from "../../../../content/schema";
+import { addUpload, photoUsage, SITE_PHOTO_BYTES, SITE_PHOTO_LIMIT } from "../../../../db/photos";
+import { t } from "../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const here = page.path("/photos/new/");
+const mb = (bytes: number) => (bytes / 1_000_000).toLocaleString(locale === "sv" ? "sv-SE" : "en-GB", { maximumFractionDigits: 1 });
+let values: UploadFormValues = { alt_sv: "", alt_en: "" };
+let errors: FieldErrors = {};
+
+if (Astro.request.method === "POST") {
+  // Checked before the body is read, so an oversized post costs no parsing (ADR-012 Amendment 1).
+  const sizeProblem = bodySizeProblem(Astro.request);
+  if (sizeProblem) {
+    Astro.response.status = sizeProblem;
+    errors = { photo: t(locale, sizeProblem === 413 ? "admin.photos.tooBig" : "admin.photos.notPhoto") };
+  } else {
+    const form = await page.postedForm();
+    if (!form) return Astro.redirect(`${here}?done=expired`, 303);
+    const read = await readUploadForm(form, locale);
+    ({ values, errors } = read);
+    if (read.upload) {
+      const result = await addUpload(repo, read.upload);
+      if (result.ok) return Astro.redirect(`${here}?done=added`, 303);
+      if (result.error === "duplicate") return Astro.redirect(`${here}?done=duplicate`, 303);
+      const quota = {
+        count: t(locale, "admin.photos.quotaCount").replace("{limit}", String(SITE_PHOTO_LIMIT)),
+        "site-bytes": t(locale, "admin.photos.quotaBytes").replace("{limitMb}", mb(SITE_PHOTO_BYTES)),
+        "database-bytes": t(locale, "admin.photos.quotaDatabase"),
+      };
+      errors = { photo: quota[result.limit] };
+    }
+    if (Object.keys(errors).length > 0) Astro.response.status = 422;
+  }
+}
+
+const usage = await photoUsage(repo);
+const done = Astro.url.searchParams.get("done");
+const message: Record<string, string> = {
+  added: t(locale, "admin.photos.added"),
+  duplicate: t(locale, "admin.photos.duplicate"),
+  expired: t(locale, "admin.error.form"),
+};
+const labels: Record<string, string> = { photo: t(locale, "admin.photos.choose"), alt_sv: t(locale, "admin.photos.altSv"), alt_en: t(locale, "admin.photos.altEn") };
+---
+
+<AdminLayout title={t(locale, "admin.photos.heading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <div>
+      <h1 class="text-3xl font-bold">{t(locale, "admin.photos.heading")}</h1>
+      <p class="admin-muted mt-1">{t(locale, "admin.photos.lead")}</p>
+      <p class="admin-muted text-sm mt-1" id="photo-usage">
+        {t(locale, "admin.photos.usage").replace("{count}", String(usage.count)).replace("{limit}", String(SITE_PHOTO_LIMIT)).replace("{mb}", mb(usage.bytes)).replace("{limitMb}", mb(SITE_PHOTO_BYTES))}
+      </p>
+    </div>
+    {done && message[done] && <p class="admin-message" role="status">{message[done]}</p>}
+
+    <form method="post" enctype="multipart/form-data" class="admin-card p-4 space-y-5" id="photo-upload" novalidate>
+      <ErrorSummary locale={locale} errors={errors} id="photo-errors" labels={labels} />
+      <input type="hidden" name="csrf" value={page.csrf} />
+      <noscript><p class="admin-message">{t(locale, "admin.photos.needsScript")}</p></noscript>
+      <div class="space-y-1">
+        <label class="font-medium block" for="photo">{t(locale, "admin.photos.choose")}</label>
+        {/* No name: the original never leaves the phone. Disabled until the script takes over (M6.7). */}
+        <input class="admin-input" type="file" id="photo" accept="image/jpeg,image/png,image/webp" disabled aria-invalid={errors.photo ? "true" : undefined} aria-describedby={errors.photo ? "photo-error" : undefined} />
+        {errors.photo && <p class="admin-error" id="photo-error">{errors.photo}</p>}
+        <input type="file" name="variant" id="photo-variants" multiple hidden />
+        <p class="text-sm admin-muted" id="photo-progress" aria-live="polite"></p>
+      </div>
+      <p class="text-sm admin-muted" id="alt-hint">{t(locale, "admin.photos.altHint")}</p>
+      {(["alt_sv", "alt_en"] as const).map((name) => (
+        <div class="space-y-1">
+          <label class="font-medium block" for={name}>{labels[name]}</label>
+          <input class="admin-input" type="text" id={name} name={name} lang={name.slice(-2)} value={values[name]} required maxlength={inputMaxLength(TEXT_LIMITS.short)} aria-invalid={errors[name] ? "true" : undefined} aria-describedby={["alt-hint", errors[name] ? `${name}-error` : undefined].filter(Boolean).join(" ")} />
+          {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
+        </div>
+      ))}
+      <button class="admin-button" type="submit">{t(locale, "admin.photos.save")}</button>
+    </form>
+  </section>
+</AdminLayout>
