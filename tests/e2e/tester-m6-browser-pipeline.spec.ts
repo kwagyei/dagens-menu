@@ -28,7 +28,8 @@ async function signIn(page: Page, browserName: string) {
   const cookies = await other.context().cookies();
   await helper.close();
   const header = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
-  await page.context().route(`${ORIGIN}/**`, (route) => route.continue({ headers: { ...route.request().headers(), cookie: header } }));
+  // One way only. Sending it as an extra header and again through a route signed every WebKit
+  // spec out on Linux CI (the upload page answered 303 to the sign-in page), never on macOS.
   await page.context().setExtraHTTPHeaders({ cookie: header });
 }
 

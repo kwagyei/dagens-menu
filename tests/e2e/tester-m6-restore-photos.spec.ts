@@ -138,7 +138,10 @@ test("several uploads: Your photos page, hostile files change nothing, restore b
   const ok = seed("--from", good, "--photos", photos, "--reset");
   expect(ok.status, ok.out).toBe(0);
   expect(ok.out).toMatch(/--reset deletes the site's \d+ uploaded photo\(s\); the file brings back the ones it lists/);
-  expect(ok.out).toContain("bringing back 3 uploaded photo(s)");
+  // Every upload the file lists: these three, plus any an earlier spec left on the shared server.
+  const listed = exported.content.images.filter((i: { master?: string }) => i.master).length;
+  expect(listed).toBeGreaterThanOrEqual(3);
+  expect(ok.out).toContain(`bringing back ${listed} uploaded photo(s)`);
 
   const after = await (await page.request.get("/admin/export")).json();
   for (const id of ids) {
