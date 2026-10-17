@@ -391,6 +391,7 @@
 .site-footer { background: var(--color-hero-bg); color: var(--color-hero-text); }
 .site-footer__inner { display: grid; gap: 1.125rem; padding: 1.875rem var(--pad) 1.5rem; }
 .site-footer__col { display: grid; gap: 0.625rem; align-content: start; }
+.site-footer__tagline { color: var(--color-hero-muted); max-width: 36ch; }
 .site-footer address { font-style: normal; display: grid; color: var(--color-hero-muted); }
 .site-footer address a { display: inline-flex; align-items: center; min-height: 2.75rem; justify-self: start; color: var(--color-hero-muted); text-underline-offset: 3px; }
 .site-footer__today { font-weight: 500; font-variant-numeric: tabular-nums; }

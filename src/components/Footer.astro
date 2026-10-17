@@ -1,6 +1,7 @@
 ---
 /**
- * The footer: the name at normal size, how to reach the restaurant, today's hours with the whole
+ * The footer: the name at normal size with the owner's description of the restaurant (the
+ * settings tagline, shown nowhere else), how to reach the restaurant, today's hours with the whole
  * week behind "Alla öppettider" (a <details>, so it opens without JavaScript), upcoming special
  * days, and the social links as icons. Upcoming special days stay visible, so a holiday closure
  * shows on every page.
@@ -65,6 +66,7 @@ const socials = Object.entries(settings.socialLinks).map(([network, url]) => ({
     )}
     <div class="site-footer__col">
       <p class="site-footer__name">{siteName}</p>
+      <p class="site-footer__tagline">{localized(settings.tagline, locale)}</p>
       <address>
         <span>{settings.address}</span>
         <a href={`tel:${settings.phone.replace(/[\s-]/g, "")}`}>{settings.phone}</a>
