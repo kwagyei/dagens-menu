@@ -80,6 +80,10 @@ Content lives in `sites/<SITE>/content/`, theme in `sites/<SITE>/theme.json`.
   `tests/e2e-hygiene.test.ts` enforces it.
 - Merging to `main` deploys (CI: migrations, both Workers, smoke test). Branch and PR, never
   commit to `main`.
+- One open PR at a time, batched by milestone: push atomic commits to its branch as they're done
+  (a branch without a PR runs no CI), open the PR when the milestone is complete, merge on a green
+  edge run. Merge commits keep each commit in history. Keep a content re-seed (`sites/*/content`)
+  or a migration in its own PR, so its deploy and follow-up can be checked alone.
 
 ## Documentation
 
