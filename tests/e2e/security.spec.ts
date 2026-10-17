@@ -9,6 +9,7 @@
  */
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { type APIRequestContext, type BrowserContext, expect, type Page, test } from "@playwright/test";
+import { freshIp } from "./helpers";
 
 const BASE = "http://localhost:8790";
 const SAME = { Origin: BASE };
@@ -48,9 +49,8 @@ const sessionCookie = async (context: BrowserContext) => (await context.cookies(
 let n = 0;
 const freshEmail = () => `tester-${Date.now().toString(36)}-${n++}@example.se`;
 
-let ip = 0;
 test.beforeEach(async ({ context }) => {
-  await context.setExtraHTTPHeaders({ "CF-Connecting-IP": `192.0.2.${++ip}` });
+  await context.setExtraHTTPHeaders({ "CF-Connecting-IP": freshIp() });
 });
 
 async function enrol(page: Page, email = freshEmail(), base = BASE) {

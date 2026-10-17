@@ -133,19 +133,30 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-      - name: Build, deploy and smoke-test each site
-        run: |
-          build="${GITHUB_SHA::12}"
-          deploy() {
-            SITE="$1" npx astro build
-            npx wrangler deploy --tag "$build" --message "${GITHUB_SHA} run ${GITHUB_RUN_ID}"
-            node scripts/smoke.mjs --url "$2" --title "$3" --build "$build"
-          }
-          deploy bistro https://dagens-menu-bistro.kwabenasasuboakye.workers.dev "Bistro Norden"
-          deploy westafrican https://dagens-menu-westafrican.kwabenasasuboakye.workers.dev "Chez Abena"
+      # One site at a time: build (no token), deploy (token), smoke-test the live Worker (no
+      # token). dist/ holds one site, so the second build only starts after the first deploy.
+      - name: Build Bistro Norden
+        run: npx astro build
+        env:
+          SITE: bistro
+      - name: Deploy Bistro Norden
+        run: npx wrangler deploy --tag "${GITHUB_SHA::12}" --message "${GITHUB_SHA} run ${GITHUB_RUN_ID}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Smoke-test Bistro Norden
+        run: node scripts/smoke.mjs --url https://dagens-menu-bistro.kwabenasasuboakye.workers.dev --title "Bistro Norden" --build "${GITHUB_SHA::12}"
+      - name: Build Chez Abena
+        run: npx astro build
+        env:
+          SITE: westafrican
+      - name: Deploy Chez Abena
+        run: npx wrangler deploy --tag "${GITHUB_SHA::12}" --message "${GITHUB_SHA} run ${GITHUB_RUN_ID}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Smoke-test Chez Abena
+        run: node scripts/smoke.mjs --url https://dagens-menu-westafrican.kwabenasasuboakye.workers.dev --title "Chez Abena" --build "${GITHUB_SHA::12}"
       - name: Summary
         if: always()
         run: |

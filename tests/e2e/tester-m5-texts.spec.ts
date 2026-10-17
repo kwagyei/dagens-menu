@@ -7,7 +7,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Browser, expect, type Page, test } from "@playwright/test";
-import { signedInOwner } from "./helpers";
+import { freshIp, signedInOwner } from "./helpers";
 
 const BASE = "http://localhost:8790";
 type Fields = Record<string, string>;
@@ -16,7 +16,6 @@ type Fields = Record<string, string>;
 // a file because Playwright restarts the worker after a failing test and loses module state.
 type Session = Awaited<ReturnType<ReturnType<Page["context"]>["storageState"]>>;
 const SESSION_FILE = join("test-results", ".tester-m5-texts-session.json");
-let ipCounter = 100;
 async function owner(page: Page, browser: Browser) {
   let session: Session | undefined = existsSync(SESSION_FILE) ? JSON.parse(readFileSync(SESSION_FILE, "utf-8")) : undefined;
   if (session) {
@@ -35,7 +34,7 @@ async function owner(page: Page, browser: Browser) {
     writeFileSync(SESSION_FILE, JSON.stringify(session));
   }
   await page.context().addCookies(session.cookies);
-  await page.context().setExtraHTTPHeaders({ "CF-Connecting-IP": `192.0.2.${(++ipCounter % 100) + 120}` });
+  await page.context().setExtraHTTPHeaders({ "CF-Connecting-IP": freshIp() });
 }
 
 /** Every named field of a form on the page, as the browser would post it. */

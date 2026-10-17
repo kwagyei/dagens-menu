@@ -18,6 +18,15 @@ export const daysAhead = (n: number): string => plusDays(stockholmToday(), n);
 let n = 0;
 let ip = 0;
 
+/**
+ * A client address no other test in this run uses, for CF-Connecting-IP. Sign-in is limited to
+ * 10 a minute per address, and every spec file runs in the same process, so specs that each
+ * counted through 192.0.2.x handed out the same addresses and tripped each other's limit
+ * depending on order. IPv6 documentation addresses never run out, and the process id keeps a
+ * second local run from inheriting the first one's counts.
+ */
+export const freshIp = (): string => `2001:db8::${(process.pid & 0xffff).toString(16)}:${(++ip).toString(16)}`;
+
 export function invite(email: string): string {
   const out = execFileSync("npm", ["run", "-s", "admin", "--", "invite", "--site", "bistro", "--email", email, "--url", "http://localhost:8790"], {
     encoding: "utf-8",
@@ -29,7 +38,7 @@ export function invite(email: string): string {
 
 /** Sign a fresh owner in with a virtual passkey; lands on the admin's menu page. */
 export async function signedInOwner(page: Page): Promise<string> {
-  await page.context().setExtraHTTPHeaders({ "CF-Connecting-IP": `192.0.2.${(++ip % 250) + 1}` });
+  await page.context().setExtraHTTPHeaders({ "CF-Connecting-IP": freshIp() });
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("WebAuthn.enable");
   await cdp.send("WebAuthn.addVirtualAuthenticator", {
