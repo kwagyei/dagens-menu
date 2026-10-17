@@ -205,7 +205,8 @@ test("CSRF: all three actions are refused without a valid token and change nothi
   const anon = await page.context().browser()!.newContext({ baseURL: BASE });
   const res = await anon.request.post("/admin/hours/", { form: { csrf, ...weeklyForm({ monday_open: "03:00" }) }, maxRedirects: 0, headers: { Origin: BASE } });
   expect([303, 401, 403]).toContain(res.status());
-  if (res.status() === 303) expect(res.headers().location).toMatch(/\/admin\/$/);
+  // Since review L1 (#33) a POST without a live session lands on the sign-in page with ?done=expired.
+  if (res.status() === 303) expect(res.headers().location).toMatch(/\/admin\/(\?done=expired)?$/);
   await anon.close();
   await page.request.post("/admin/hours/", { form: { csrf, action: "remove-exception", date }, maxRedirects: 0, headers: { Origin: BASE } });
 });
