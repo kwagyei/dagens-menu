@@ -72,12 +72,13 @@ test("the menu's category bar stays on one row, sticks, and jumps to its section
   const links = page.locator("a[href^='#cat-']");
   const tops = await links.evaluateAll((l) => l.map((a) => Math.round(a.getBoundingClientRect().top)));
   expect(new Set(tops).size).toBe(1);
+  // The page scrolls smoothly, so wait for it to settle rather than reading mid-scroll.
   await page.evaluate(() => window.scrollTo(0, 1500));
-  expect(await links.first().evaluate((a) => a.getBoundingClientRect().top)).toBeLessThan(20);
+  await expect.poll(() => links.first().evaluate((a) => a.getBoundingClientRect().top)).toBeLessThan(20);
   const last = (await links.last().getAttribute("href"))!;
   await links.last().click();
   await expect(page).toHaveURL(new RegExp(`${last}$`));
-  expect(await page.evaluate((id) => document.querySelector(id)!.getBoundingClientRect().top, last)).toBeLessThan(140);
+  await expect.poll(() => page.evaluate((id) => document.querySelector(id)!.getBoundingClientRect().top, last)).toBeLessThan(140);
 });
 
 test.describe("the modern look's sticker", () => {
