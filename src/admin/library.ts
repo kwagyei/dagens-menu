@@ -17,16 +17,14 @@ export function thumbnail(image: Pick<LibraryImage, "ref" | "width" | "height">)
   return smallest ? { src: smallest.url, width: smallest.width, height: smallest.height } : null;
 }
 
-/** Where a page photo is chosen. Until the "Page photos" form (M6.10c), the texts page. */
-const SLOT_PAGE = "/admin/texts/";
 /** Where the gallery is put together (M6.10b). */
 const GALLERY_PAGE = "/admin/gallery/";
 
 /** Each use as words and the admin page where it can be changed. */
 export function describeUses(uses: readonly ImageUse[], locale: Locale): Array<{ label: string; href: string }> {
   return uses.map((use) => {
-    if (use.kind === "dish") return { label: t(locale, "admin.photos.useDish").replace("{name}", use.name[locale]), href: localePath(locale, `/admin/menu/item/${use.id}/`) };
+    if (use.kind === "dish") return { label: t(locale, "admin.photos.useDish").replace("{name}", use.name[locale]), href: localePath(locale, `/admin/menu/item/${use.id}/photo/`) };
     if (use.kind === "gallery") return { label: t(locale, "admin.photos.useGallery").replace("{n}", String(use.position)), href: localePath(locale, GALLERY_PAGE) };
-    return { label: t(locale, `admin.photos.slot.${use.slot}` as TranslationKey), href: localePath(locale, SLOT_PAGE) };
+    return { label: t(locale, `admin.photos.slot.${use.slot}` as TranslationKey), href: localePath(locale, `/admin/page-photos/${use.slot}/`) };
   });
 }

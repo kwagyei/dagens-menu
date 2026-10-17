@@ -1,0 +1,43 @@
+---
+// Choose one photo from the library (plan M6.10c): a radio button per photo, each with a small
+// preview and its description, and "No photo" first. Plain HTML, so it works without
+// JavaScript; the whole row is the label, so every choice is a large target.
+import { thumbnail } from "./library";
+import { localized } from "../content/load";
+import type { LibraryImage } from "../db/library";
+import { t } from "../i18n";
+
+interface Props {
+  locale: "sv" | "en";
+  legend: string;
+  /** Photos with alt, in the order to show. */
+  photos: LibraryImage[];
+  /** The image id chosen now, or null for no photo. */
+  current: string | null;
+}
+
+const { locale, legend, photos, current } = Astro.props;
+---
+
+<fieldset class="space-y-2" id="photo-picker">
+  <legend class="font-semibold text-lg mb-2">{legend}</legend>
+  <label class="admin-card p-3 flex items-center gap-3 cursor-pointer" style="min-height: 2.75rem;">
+    <input type="radio" name="image" value="" checked={current === null} />
+    <span>{t(locale, "admin.pick.none")}</span>
+  </label>
+  {photos.map((photo) => {
+    const thumb = thumbnail(photo);
+    const alt = localized(photo.alt!, locale);
+    return (
+      <label class="admin-card p-3 flex items-center gap-3 cursor-pointer" id={`pick-${photo.id.slice(0, 12)}`}>
+        <input type="radio" name="image" value={photo.id} checked={current === photo.id} />
+        {thumb ? (
+          <img src={thumb.src} alt="" width="72" height={Math.round((72 * thumb.height) / thumb.width)} loading="lazy" class="rounded shrink-0" />
+        ) : (
+          <img src={photo.ref} alt="" width="72" loading="lazy" class="rounded shrink-0" />
+        )}
+        <span class="min-w-0">{alt}{photo.kind === "static" && <span class="text-sm admin-muted"> · {t(locale, "admin.photos.builtIn")}</span>}</span>
+      </label>
+    );
+  })}
+</fieldset>

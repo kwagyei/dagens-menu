@@ -51,6 +51,7 @@ const here = page.path("/photos/");
       </p>
       <div class="flex flex-wrap gap-3">
         <a class="admin-button inline-flex" href={page.path("/photos/new/")}>{t(locale, "admin.photos.heading")}</a>
+        <a class="admin-button admin-button-quiet inline-flex" href={page.path("/page-photos/")}>{t(locale, "admin.pagePhotos.link")}</a>
         {unusedUploads.length > 0 && (
           <a class="admin-button admin-button-quiet inline-flex" href={page.path("/photos/unused/delete/")}>
             {t(locale, "admin.photos.deleteUnusedLink").replace("{n}", String(unusedUploads.length))}
