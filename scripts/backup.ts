@@ -36,11 +36,11 @@ export interface Manifest {
 
 const stderrOf = (error: unknown) => (error as { stderr?: string }).stderr ?? String(error);
 
-function wrangler(args: string[]): string {
+function wrangler(args: string[], what = `wrangler ${args.slice(0, 2).join(" ")}`): string {
   try {
     return execFileSync("npx", ["wrangler", ...args], { cwd: root, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
   } catch (error) {
-    fail(`wrangler ${args.slice(0, 2).join(" ")} failed\n${stderrOf(error)}`);
+    fail(`${what} failed\n${stderrOf(error)}`);
   }
 }
 
@@ -68,7 +68,13 @@ function exportTo(out: string, target: D1Target): void {
 function verify(dir: string): void {
   const manifestFile = join(dir, "manifest.json");
   if (!existsSync(manifestFile)) fail(`${manifestFile} not found`);
-  const manifest = JSON.parse(readFileSync(manifestFile, "utf-8")) as Manifest;
+  let manifest: Manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestFile, "utf-8")) as Manifest;
+  } catch (error) {
+    fail(`${manifestFile} isn't valid JSON: ${(error as Error).message}`);
+  }
+  if (!Array.isArray(manifest.migrations) || typeof manifest.tables !== "object") fail(`${manifestFile} has no migrations or tables`);
   const known = readdirSync(resolve(root, "migrations")).filter((f) => f.endsWith(".sql"));
   const unknown = manifest.migrations.filter((m) => !known.includes(m));
   if (unknown.length) fail(`the backup's schema is newer than this checkout (unknown migrations: ${unknown.join(", ")})`);
@@ -87,8 +93,10 @@ function verify(dir: string): void {
       const expected = manifest.tables[table];
       if (expected === undefined) fail(`manifest.json has no count for ${table}`);
       const file = join(dir, `${table}.sql`);
+      if (!existsSync(file)) fail(`${table}.sql is missing from ${dir}`);
       if (countRows(readFileSync(file, "utf-8"), table) !== expected) fail(`${table}.sql doesn't hold the ${expected} rows its manifest says`);
-      if (expected > 0) wrangler(["d1", "execute", "backup-verify", ...local, "--file", file, "-y"]);
+      // A row whose parent is missing fails here, with wrangler's own (terse) message.
+      if (expected > 0) wrangler(["d1", "execute", "backup-verify", ...local, "--file", file, "-y"], `loading ${table}.sql`);
       const out = wrangler(["d1", "execute", "backup-verify", ...local, "--json", "--command", `SELECT count(*) AS n FROM "${table}"`]);
       const loaded = (JSON.parse(out)[0].results as { n: number }[])[0].n;
       if (loaded !== expected) fail(`${table}: loaded ${loaded} rows, the manifest says ${expected}`);

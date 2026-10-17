@@ -76,7 +76,9 @@ the chosen moment is lost, so pick the latest moment that's still good and tell 
    Then open the menu of each and look for the change that was undone.
 
 **Undo the restore** by restoring to a bookmark instead of a timestamp, either the one from step 2
-or the one the restore printed, then repeat step 5 with the current versions:
+or the one the restore printed. The undo rewinds `content_version` again, possibly below a
+number step 5 already set and the sites already served, so repeat step 5 with **the highest
+version each site has had at any point in this whole sequence, plus one**, not the current one:
 
 ```sh
 npx wrangler d1 time-travel restore dagens-menu --bookmark <bookmark> --config wrangler.bistro.jsonc
@@ -136,14 +138,18 @@ Pick a commit (`git log` in that repo) and check it out.
 `.github/workflows/backup.yml`, Mondays at 01:30 UTC (02:30 or 03:30 in Stockholm):
 
 1. `npm run backup -- export --remote` runs one `wrangler d1 export --table` per content table.
-   D1 fails other queries while an export runs (M0.5), a second or two per table at this size;
-   the Workers serve their cached content meanwhile.
+   D1 fails other queries while each export runs (M0.5): about 4 seconds per table, 25 to 45
+   seconds in all at this size, and the Workers serve their cached content meanwhile. The tables
+   are exported one after another, so it isn't a single snapshot: an owner edit in that minute
+   can leave the files out of step, and then the check in step 2 fails the run. Run it again by
+   hand; at 02:30 a clash is unlikely.
 2. `npm run backup -- verify` loads the files into a fresh local database with the migrations
    applied and checks every row count against the manifest. A backup that doesn't load fails the
    run the week it's made.
 3. The files are committed to `kwagyei/dagens-menu-data` as `github-actions[bot]`, only when
    something changed, with a deploy key that can write to that repo only.
 
+The data repo must have at least one commit (it starts with a README), or the checkout fails.
 It needs, in the `production` environment, `CLOUDFLARE_API_TOKEN` (already there, D1 edit) and
 `DATA_REPO_DEPLOY_KEY` (the private half of the data repo's deploy key). A failed run emails the
 person who last changed the schedule. Run it by hand from the Actions tab (Content backup → Run

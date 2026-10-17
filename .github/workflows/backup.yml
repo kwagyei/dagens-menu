@@ -9,13 +9,18 @@ name: Content backup
 on:
   schedule:
     # Monday 01:30 UTC is 02:30 or 03:30 in Stockholm. D1 fails other queries while an export
-    # runs (a few seconds per table); the Workers serve their cached content meanwhile.
+    # runs (about 4 s per table); the Workers serve their cached content meanwhile.
     - cron: "30 1 * * 1"
   workflow_dispatch:
   pull_request:
     paths:
       - "scripts/backup*.ts"
       - "scripts/d1-cli.ts"
+      - "scripts/seed.ts"
+      - "src/db/seed.ts"
+      - "src/db/sql.ts"
+      - "package.json"
+      - "package-lock.json"
       - "migrations/**"
       - ".github/workflows/backup.yml"
 
