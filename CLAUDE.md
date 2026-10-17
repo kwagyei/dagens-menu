@@ -69,7 +69,7 @@ Content lives in `sites/<SITE>/content/`, theme in `sites/<SITE>/theme.json`.
 - i18n: Swedish default at `/`, English at `/en/`. UI strings in `src/i18n/`.
 - Alt text required on every image.
 - No third-party requests before cookie consent.
-- Security headers and the CSP are set by the Worker (`securityHeaders()`); `public/_headers`
+- Security headers and the CSP are set by the Worker (`securityHeaders()` in `src/server/http.ts`); `public/_headers`
   only reaches static files.
 - E2E specs: dates from `stockholmToday()`/`daysAhead()`, client addresses from `freshIp()`
   (`tests/e2e/helpers.ts`); assert on what the test created; no retries.
