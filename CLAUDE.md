@@ -1,17 +1,20 @@
 # dagens-menu
 
-Bilingual restaurant template: Astro 7 + Tailwind 4, static output, Cloudflare Pages.
+Bilingual restaurant template: Astro 7 + Tailwind 4, rendered on request on Cloudflare Workers,
+content in D1, owner admin with passkeys (ADR-011).
 
 Project notes: ~/Vault/Projects/dagens-menu/
 
 ## Stack
 
-- Astro 7 (static site generator)
+- Astro 7, `output: "server"` with the Cloudflare adapter
 - Tailwind CSS 4 (via @tailwindcss/vite)
 - TypeScript (strict), Zod for the content schema
 - Vitest for tests, `astro check` for types
-- Content in Cloudflare D1; owner admin with passkeys in progress (ADR-011 in the project notes)
-- Cloudflare Workers, one per site (`wrangler.<site>.jsonc`); the old Pages demos stay up until cutover
+- Content in Cloudflare D1; owner admin at /admin with passkeys (ADR-011 in the project notes)
+- Cloudflare Workers, one per site (`wrangler.<site>.jsonc`); the old Pages demos stay up until
+  the M7 cutover
+- Playwright for the admin end to end
 
 ## Commands
 
@@ -29,7 +32,8 @@ npm run test:db          # database tests in workerd with a local D1 (migrations
 npm run db:migrate:local # apply migrations/ to the local D1 (d1.local.jsonc); again after a database_id change
 npm run seed -- --site bistro [--reset]   # load a demo's JSON into the local D1
 npm run admin -- invite --site bistro --email x@y.se  # owner invite link (also: revoke, list; --remote)
-npm run test:e2e         # Playwright: admin sign-in end to end with virtual passkeys
+npm run test:e2e         # Playwright deploy gate: admin journeys + sign-in attacks (~5 min)
+npm run test:e2e:edge    # Playwright edge-case sweeps (tester-m5-*); non-blocking, also nightly
 ```
 
 When starting the dev server, use background mode:
@@ -65,7 +69,13 @@ Content lives in `sites/<SITE>/content/`, theme in `sites/<SITE>/theme.json`.
 - i18n: Swedish default at `/`, English at `/en/`. UI strings in `src/i18n/`.
 - Alt text required on every image.
 - No third-party requests before cookie consent.
-- Security headers in `public/_headers`.
+- Security headers and the CSP are set by the Worker (`securityHeaders()`); `public/_headers`
+  only reaches static files.
+- E2E specs: dates from `stockholmToday()`/`daysAhead()`, client addresses from `freshIp()`
+  (`tests/e2e/helpers.ts`); assert on what the test created; no retries.
+  `tests/e2e-hygiene.test.ts` enforces it.
+- Merging to `main` deploys (CI: migrations, both Workers, smoke test). Branch and PR, never
+  commit to `main`.
 
 ## Documentation
 

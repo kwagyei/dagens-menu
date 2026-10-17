@@ -36,7 +36,10 @@ date themselves.
 - The privacy page is generated from the site settings, so it only describes services
   the site actually uses.
 - An owner admin at `/admin/`, signed into with a passkey (Face ID, fingerprint or device PIN),
-  no password. Owners are invited by the operator; editing the menu arrives next.
+  no password. Owners are invited by the operator. They edit the whole menu (add, edit,
+  delete, reorder, sold out today), opening hours and special days, and the site's texts
+  and contact details, on a phone and without JavaScript. Every change is in a history,
+  and "Export my content" downloads the whole site as a file.
 
 ## Running it
 
@@ -142,9 +145,13 @@ is the seed data the demos are loaded from.
 
 ## Known limitations
 
-- **The admin can sign in but not yet edit.** Menu, hours and text editing is next
-  (ADR-011 M5); until then content changes go through the seed CLI. The earlier Decap CMS
-  is removed, because it saved to git, which the Workers no longer read.
+- **Owners can't upload photos yet.** Images are curated per site at build time; uploads
+  (converted to WebP) are the next milestone.
+- **An export file restores a demo, not a client, on the live database.** `npm run seed --
+  --from <file>` restores locally, and `--remote --reset` is allowed only for the two demo
+  sites. A client site on the live database is restored from D1 Time Travel instead.
+- **History has no undo.** It shows the last 50 changes and who made them; going back means
+  restoring an export or Time Travel.
 - **Recovering a lost passkey needs the operator.** Owners can add a second device
   themselves, but if every passkey is lost, the operator sends a new invite.
 - **The edge-case suite can be red while `main` deploys.** That's the price of a fast gate:
@@ -154,4 +161,5 @@ is the seed data the demos are loaded from.
 - **Lighthouse performance is 75–88 on mobile, below the 95 target.** Measured 2026-10-16:
   3 runs each on `/` and `/menu/` of the bistro demo. The cause is the photos:
   Largest Contentful Paint is about 3.7–4.2 s, while the server responds in about 50 ms.
-  Accessibility scores 93–96 and best practices 100. The axe audit hasn't been run yet.
+  Accessibility scores 93–96 and best practices 100. axe runs in CI against the admin of
+  both demos; the public pages haven't had an axe pass yet.
