@@ -19,14 +19,16 @@ const altLocale = locale === "sv" ? "en" : "sv";
 const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
 const currentPath = Astro.url.pathname.replace(/^\/en/, "") || "/";
 
-type Link = { key: Parameters<typeof t>[1]; path: string; wideOnly?: boolean };
+type Link = { key: Parameters<typeof t>[1]; path: string; wideOnly?: boolean; end?: boolean; modernOnly?: boolean };
 const links: Link[] =
   variant === "hero"
     ? [
-        { key: "nav.menu", path: "/menu/" },
+        { key: "nav.menu", path: "/menu/", end: true },
         { key: "nav.about", path: "/about/" },
         { key: "nav.gallery", path: "/gallery/", wideOnly: true },
         { key: "nav.contact", path: "/contact/" },
+        // Modern's wide hero puts Meny and Boka bord at the far right, above the photo.
+        { key: "nav.book", path: "/book/", wideOnly: true, end: true, modernOnly: true },
       ]
     : [
         { key: "nav.menu", path: "/menu/", wideOnly: true },
@@ -57,8 +59,8 @@ const current = (path: string) => (currentPath === path ? { "aria-current": "pag
 
 <nav class:list={["site-nav", `site-nav--${variant}`]} aria-label={t(locale, "nav.main")}>
   <ul class="site-nav__links">
-    {links.map(({ key, path, wideOnly }) => (
-      <li class:list={{ "wide-only": wideOnly }}>
+    {links.map(({ key, path, wideOnly, end, modernOnly }) => (
+      <li class:list={{ "wide-only": wideOnly, "site-nav__end": end, "modern-only": modernOnly }}>
         <a href={localePath(locale, path)} {...current(path)}>{t(locale, key)}</a>
       </li>
     ))}

@@ -47,6 +47,12 @@ const wordLines = lines.map((text) => {
   return { text, size: Math.round(size * 10) / 10, y: Math.round(y * 10) / 10 };
 });
 const wordHeight = Math.ceil(y + 1);
+// On a wide screen the name is one line across the photo's full width (as in the reference),
+// pulled up so its top part overlaps the photo.
+const oneLine = words.join(" ");
+const oneLineSize = Math.round(Math.min(60, Math.max(10, 100 / (0.55 * [...oneLine].length))) * 10) / 10;
+const oneLineY = Math.round(oneLineSize * 0.87 * 10) / 10;
+const oneLineHeight = Math.ceil(oneLineY + 1);
 ---
 
 <Base title={siteName} description={tagline} bare>
@@ -118,10 +124,13 @@ const wordHeight = Math.ceil(y + 1);
           <a class="star wide-only" href={localePath(locale, "/menu/")}>{t(locale, "home.seeMenu")}</a>
         </div>
         <h1 class="hero-dag__word" id="page-title">
-          <svg viewBox={`0 0 100 ${wordHeight}`} role="img" aria-label={siteName}>
+          <svg class="narrow-only" viewBox={`0 0 100 ${wordHeight}`} role="img" aria-label={siteName}>
             {wordLines.map((line) => (
               <text x="0" y={line.y} font-size={line.size} textLength="100" lengthAdjust="spacingAndGlyphs">{line.text}</text>
             ))}
+          </svg>
+          <svg class="wide-only" viewBox={`0 0 100 ${oneLineHeight}`} role="img" aria-label={siteName}>
+            <text x="0" y={oneLineY} font-size={oneLineSize} textLength="100" lengthAdjust="spacingAndGlyphs">{oneLine}</text>
           </svg>
         </h1>
         <a class="btn btn-primary pill" href={localePath(locale, "/book/")}>{t(locale, "home.book")}</a>

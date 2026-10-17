@@ -53,6 +53,7 @@
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 @media (max-width: 56.2rem) { .wide-only { display: none !important; } }
+[data-style="classic"] .modern-only { display: none !important; }
 @media (min-width: 56.25rem) { .narrow-only { display: none !important; } }
 
 [data-style="classic"] .site { font: 400 15px/1.6 var(--font-body); }
@@ -301,18 +302,22 @@
 .dish-card figcaption .dish-card__price { background: var(--color-text); color: var(--color-bg); text-transform: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 @media (min-width: 56.25rem) {
-  .hero-dag {
-    display: grid; grid-template-columns: 35rem 1fr; grid-template-areas: "photo photo" "word side" "word pill"; grid-template-rows: auto auto 1fr;
-    column-gap: 3.5rem; padding: 1.25rem var(--pad) 3.5rem;
-  }
-  .hero-dag__photo { grid-area: photo; }
-  .hero-dag__img { height: 32.5rem; object-position: 50% 58%; border-radius: 80px 80px 240px 240px / 80px 80px 110px 110px; }
-  .hero-dag__nav { top: 1.375rem; left: 1.625rem; right: 1.625rem; }
-  .hero-dag__word { grid-area: word; margin-top: -9.375rem; }
-  .hero-dag__side { grid-area: side; justify-items: start; text-align: left; padding-top: 3.5rem; }
+  /* As in the reference: the nav above a short, wide photo; the name on one line across its full
+     width, pulled up so about 40% of the letters sit on the photo; the booking oval on the word. */
+  .hero-dag { display: grid; grid-template-areas: "photo" "word" "side"; padding: 0.75rem var(--pad) 3.5rem; }
+  .hero-dag__photo { grid-area: photo; display: flex; flex-direction: column; }
+  .hero-dag__nav { position: static; order: -1; margin: 0 0 0.75rem; }
+  .hero-dag__nav .site-nav__links { width: 100%; }
+  .hero-dag__nav .site-nav__end { order: 2; }
+  .hero-dag__nav .site-nav__end:first-child { margin-left: auto; }
+  .hero-dag__img { height: clamp(15rem, 25vw, 22rem); object-position: 50% 55%; border-radius: 80px 80px 240px 240px / 80px 80px 110px 110px; }
+  /* Percent margins follow the width, and so does the one-line word's height: -7% puts about
+     40% of the capitals on the photo at any desktop width. */
+  .hero-dag .hero-dag__word { grid-area: word; z-index: 1; margin-top: -7%; } /* beats .site h1 { margin: 0 } */
+  .hero-dag .pill { grid-area: word; z-index: 2; justify-self: end; align-self: end; margin: 0 6% 4% 0; width: 12.5rem; height: 5rem; font-size: 1.625rem; }
+  .hero-dag__photo > .star { top: 4.25rem; bottom: auto; right: 2rem; }
+  .hero-dag__side { grid-area: side; padding-top: 3rem; }
   .hero-dag__side .big { font-size: 3.5rem; }
-  .hero-dag__side .squiggle { display: none; }
-  .hero-dag .pill { grid-area: pill; justify-self: start; align-self: start; margin: 1.625rem 0 0 0.25rem; width: 12.5rem; height: 5rem; font-size: 1.625rem; }
   .home-dishes { padding-block: 2.5rem 4rem; }
   .dish-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
 }
