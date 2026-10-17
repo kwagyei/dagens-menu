@@ -74,3 +74,46 @@ test("rejected hours keep what was typed and say what's wrong", async ({ page })
   await expect(page.locator("#date-error")).toHaveText("Datumet har redan varit.");
   await expect(page.getByLabel("Anledning på svenska")).toHaveValue("För sent");
 });
+
+test("two people editing the hours: the second is told, and can overwrite knowingly", async ({ page }) => {
+  await signedInOwner(page);
+  await openHours(page);
+  const other = await page.context().newPage();
+  await other.goto(page.url());
+  await sunday(other).getByLabel("Stängt").uncheck();
+  await sunday(other).getByLabel("Öppnar").fill("12:00");
+  await sunday(other).getByLabel("Stänger").fill("16:00");
+  await other.getByRole("button", { name: "Spara öppettiderna" }).click();
+  await expect(other.getByRole("status")).toHaveText("Sparat.");
+
+  await sunday(page).getByLabel("Stängt").uncheck();
+  await sunday(page).getByLabel("Öppnar").fill("13:00");
+  await sunday(page).getByLabel("Stänger").fill("17:00");
+  await page.getByRole("button", { name: "Spara öppettiderna" }).click();
+  await expect(page.getByRole("alert")).toContainText("Någon annan ändrade öppettiderna nyss");
+  await expect(sunday(page).getByLabel("Öppnar")).toHaveValue("13:00");
+  await page.getByRole("button", { name: "Spara öppettiderna" }).click();
+  await expect(page.getByRole("status")).toHaveText("Sparat.");
+  await expect(sunday(page).getByLabel("Öppnar")).toHaveValue("13:00");
+  await expect(sunday(page).getByLabel("Stänger")).toHaveValue("17:00");
+
+  // Put Sunday back so other runs start from the seeded week.
+  await sunday(page).getByLabel("Stängt").check();
+  await page.getByRole("button", { name: "Spara öppettiderna" }).click();
+  await expect(page.getByRole("status")).toHaveText("Sparat.");
+});
+
+test("saving the hours without changing anything says so, in both languages, and adds no history", async ({ page }) => {
+  await signedInOwner(page);
+  await page.goto("/admin/history/");
+  const newest = () => page.locator("main ol li").first().textContent({ timeout: 1000 }).catch(() => null);
+  const before = await newest();
+  await page.goto("/admin/hours/");
+  await page.getByRole("button", { name: "Spara öppettiderna" }).click();
+  await expect(page.getByRole("status")).toHaveText("Inga ändringar att spara.");
+  await page.goto("/en/admin/hours/");
+  await page.getByRole("button", { name: "Save opening hours" }).click();
+  await expect(page.getByRole("status")).toHaveText("No changes to save.");
+  await page.goto("/admin/history/");
+  expect(await newest()).toBe(before);
+});

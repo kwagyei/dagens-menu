@@ -191,6 +191,8 @@ export default {
   "admin.hours.closes": "Closes",
   "admin.hours.afterMidnight": "Closing after midnight? Enter for example 01:00.",
   "admin.hours.save": "Save opening hours",
+  "admin.hours.unchanged": "No changes to save.",
+  "admin.hours.conflict": "Someone else changed the opening hours just now. Check the days and save again to overwrite.",
   "admin.hours.timesRequired": "Enter when you open and close, or tick Closed.",
   "admin.hours.sameTime": "Opens and closes at the same time.",
   "admin.hours.badTime": "Enter the time as HH:MM, for example 11:30.",
