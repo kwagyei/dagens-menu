@@ -24,10 +24,11 @@ const onlyUnused = Astro.url.searchParams.get("filter") === "unused";
 const shown = onlyUnused ? unusedAll : library;
 
 const done = Astro.url.searchParams.get("done");
-const n = Number(Astro.url.searchParams.get("n") ?? "0");
+// The count comes from our own redirect; a hand-made link shows no number at all (tester F3).
+const n = Astro.url.searchParams.get("n") ?? "";
 const message: Record<string, string> = {
   deleted: t(locale, "admin.photos.deleted"),
-  "deleted-unused": t(locale, "admin.photos.deletedUnused").replace("{n}", String(Number.isInteger(n) ? n : 0)),
+  ...(/^\d{1,3}$/.test(n) ? { "deleted-unused": t(locale, "admin.photos.deletedUnused").replace("{n}", String(Number(n))) } : {}),
   "not-found": t(locale, "admin.photos.notFound"),
   expired: t(locale, "admin.error.form"),
 };

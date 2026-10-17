@@ -6,7 +6,7 @@
 import AdminLayout from "../../../../../layouts/AdminLayout.astro";
 import { describeUses } from "../../../../../admin/library";
 import { adminPage } from "../../../../../admin/page";
-import { deleteImage, getLibraryImage, type ImageUse } from "../../../../../db/library";
+import { deleteImage, getLibraryImage, type ImageUse, isImageId } from "../../../../../db/library";
 import { t } from "../../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
@@ -17,6 +17,8 @@ if (page instanceof Response) return page;
 const { locale, repo } = page;
 const id = Astro.params.id ?? "";
 const library = page.path("/photos/");
+// Anything but an image id is simply not found, before it reaches a header or a query (tester F2).
+if (!isImageId(id)) return Astro.redirect(`${library}?done=not-found`, 303);
 
 let state: "confirm" | "in-use" | "built-in" | "not-found";
 let uses: ImageUse[] = [];

@@ -95,9 +95,12 @@ export async function listLibrary(ctx: RepoContext): Promise<LibraryImage[]> {
   return rows.results.map((r) => toImage(r, uses));
 }
 
+/** Every image id: the SHA-256 of its bytes, as the images table's CHECK has it. */
+export const isImageId = (id: string) => /^[0-9a-f]{64}$/.test(id);
+
 /** One image with its uses, or null if this site has no image by that id. */
 export async function getLibraryImage(ctx: RepoContext, id: string): Promise<LibraryImage | null> {
-  if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) return null;
+  if (!isImageId(id)) return null;
   const [row, uses] = await Promise.all([
     ctx.db.prepare(`SELECT ${IMAGE_COLUMNS} FROM images WHERE site_id = ? AND id = ?`).bind(ctx.siteId, id).first<Row>(),
     usesBySite(ctx),
@@ -126,10 +129,16 @@ export async function updateImageAlt(ctx: RepoContext, id: string, expectedRowVe
   return now ? { ok: false, error: "conflict", current: now.rowVersion } : { ok: false, error: "not-found" };
 }
 
-/** "Nothing uses image i": the same three places as usesBySite. */
+/**
+ * "Nothing references image i": the three places usesBySite shows, plus home_highlights.image_id,
+ * which nothing writes since migration 0005 and M6.11 drops, but which an old row could still
+ * hold (M6.10a tester F1). Every foreign key into images is here, so a delete can only meet a
+ * foreign-key error from a use added in the same instant.
+ */
 const UNUSED = `NOT EXISTS (SELECT 1 FROM menu_items m WHERE m.site_id = i.site_id AND m.image_id = i.id)
   AND NOT EXISTS (SELECT 1 FROM page_content p WHERE p.site_id = i.site_id AND i.id IN (${PAGE_SLOTS.map((s) => `p.${s}_image_id`).join(", ")}))
-  AND NOT EXISTS (SELECT 1 FROM gallery_images g WHERE g.site_id = i.site_id AND g.image_id = i.id)`;
+  AND NOT EXISTS (SELECT 1 FROM gallery_images g WHERE g.site_id = i.site_id AND g.image_id = i.id)
+  AND NOT EXISTS (SELECT 1 FROM home_highlights h WHERE h.site_id = i.site_id AND h.image_id = i.id)`;
 
 /** A use added after the check: SQLite's foreign key refuses the delete. */
 const isForeignKeyError = (error: unknown) => /FOREIGN KEY constraint failed/i.test(String((error as Error)?.message ?? error));

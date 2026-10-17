@@ -10,7 +10,7 @@ import { adminPage } from "../../../../../admin/page";
 import { readAltForm } from "../../../../../admin/upload";
 import { photoSources } from "../../../../../content/images";
 import { TEXT_LIMITS } from "../../../../../content/schema";
-import { getLibraryImage, updateImageAlt } from "../../../../../db/library";
+import { getLibraryImage, isImageId, updateImageAlt } from "../../../../../db/library";
 import { t } from "../../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
@@ -20,8 +20,10 @@ const page = await adminPage(Astro);
 if (page instanceof Response) return page;
 const { locale, repo } = page;
 const id = Astro.params.id ?? "";
-const here = page.path(`/photos/${id}/`);
 const library = page.path("/photos/");
+// Anything but an image id is simply not found, before it reaches a header or a query (tester F2).
+if (!isImageId(id)) return Astro.redirect(`${library}?done=not-found`, 303);
+const here = page.path(`/photos/${id}/`);
 
 const image = await getLibraryImage(repo, id);
 // Unknown, malformed or another site's: the same answer, not found (ADR-014 §4, cross-tenant).
