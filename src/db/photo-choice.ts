@@ -15,6 +15,17 @@ import { stmt } from "./sql";
 export { PAGE_SLOTS, type PageSlot };
 export const isPageSlot = (value: string): value is PageSlot => (PAGE_SLOTS as readonly string[]).includes(value);
 
+/**
+ * The slots each design draws (src/pages/index.astro, about.astro). Classic (Ljus) has no
+ * "see the menu" band; neither design draws a menu-page photo yet. A slot outside this list
+ * can only be cleared, so a choice there is never a silent no-op (M6.10c tester M1, M2).
+ */
+const SHOWN: Record<"classic" | "modern", readonly PageSlot[]> = {
+  classic: ["hero", "story", "kitchen"],
+  modern: ["hero", "cta", "story", "kitchen"],
+};
+export const shownSlots = (style: "classic" | "modern"): readonly PageSlot[] => SHOWN[style];
+
 /** "this site's photo, with its alt" as a SQL condition on the bound site and image id. */
 const PHOTO_OK = "EXISTS (SELECT 1 FROM images WHERE site_id = ? AND id = ? AND alt_sv IS NOT NULL AND alt_en IS NOT NULL)";
 

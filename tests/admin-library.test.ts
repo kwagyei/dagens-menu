@@ -36,3 +36,12 @@ describe("describeUses", () => {
     }
   });
 });
+
+describe("shownSlots", () => {
+  it("classic draws the hero and the two about photos; modern also the menu band; neither the menu page photo", async () => {
+    const { shownSlots } = await import("../src/db/photo-choice");
+    expect(shownSlots("classic")).toEqual(["hero", "story", "kitchen"]);
+    expect(shownSlots("modern")).toEqual(["hero", "cta", "story", "kitchen"]);
+    for (const style of ["classic", "modern"] as const) expect(shownSlots(style)).not.toContain("menu_hero");
+  });
+});
