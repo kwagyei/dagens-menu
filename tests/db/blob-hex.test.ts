@@ -97,10 +97,13 @@ describe("bytes round-trip through unhex(?) and hex()", () => {
 });
 
 describe("the empty array", () => {
-  it("round-trips as zero bytes through SQL", async () => {
-    const row = await db.prepare("SELECT hex(unhex(?)) AS h, typeof(unhex(?)) AS t").bind(bytesParam(new Uint8Array(0)), "").first<{ h: string; t: string }>();
-    expect(row).toEqual({ h: "", t: "blob" });
-    expect(bytesFromHex(row?.h)).toEqual(new Uint8Array(0));
+  it("is written as '', but '' is refused on the way back, as it is also hex(NULL)", async () => {
+    const row = await db
+      .prepare("SELECT hex(unhex(?)) AS h, typeof(unhex(?)) AS t, hex(NULL) AS n")
+      .bind(bytesParam(new Uint8Array(0)), "")
+      .first<{ h: string; t: string; n: string }>();
+    expect(row).toEqual({ h: "", t: "blob", n: "" });
+    expect(() => bytesFromHex(row?.h)).toThrow(TypeError);
   });
 
   it("is refused by image_variants' CHECK", async () => {

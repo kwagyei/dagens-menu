@@ -25,12 +25,13 @@ export function bytesParam(bytes: Uint8Array): string {
  * Bytes from a `hex(column)` result. Refuses anything that is not a string of hex digit
  * pairs, so a wrong column fails here with a clear message, not later.
  *
- * SQLite's hex(NULL) is '', the same as hex() of an empty BLOB, so '' decodes to zero bytes.
- * A query that can find no BLOB (a LEFT JOIN) must check that the row exists; stored
- * variants are never empty (image_variants' CHECK).
+ * Also refuses '': SQLite's hex(NULL) is '', so that is what a LEFT JOIN that found no
+ * variant returns. A stored variant is never empty (image_variants' CHECK), so '' always
+ * means "nothing found", never zero bytes (decided by Kwabena, 2026-10-17).
  */
 export function bytesFromHex(value: unknown): Uint8Array<ArrayBuffer> {
   if (typeof value !== "string") throw new TypeError(`Expected hex text from hex(), got ${value === null ? "null" : typeof value}`);
+  if (value === "") throw new TypeError("Expected hex text from hex(), got '' (hex(NULL): no BLOB was found)");
   try {
     return Uint8Array.fromHex(value);
   } catch {

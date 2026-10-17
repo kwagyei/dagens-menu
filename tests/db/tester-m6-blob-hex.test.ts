@@ -90,10 +90,8 @@ describe("tester: what hex() returns when the value is not the bytes", () => {
   // helper's comment is not true. A LEFT JOIN that finds no variant (M6.8) decodes to zero
   // bytes, and /media would serve an empty image instead of failing. A stored variant can
   // never be empty (CHECK length(bytes) BETWEEN 1 AND …), so '' is never a real answer.
-  // WAIVED by the Lead (2026-10-17): ADR-012 Amendment 1 §3 specifies that '' decodes to zero
-  // bytes. The helper's comment now says so, and that a LEFT JOIN must check the row exists.
-  // Refusing '' instead is a question for Kwabena; this test documents today's behaviour.
-  it.fails("hex(NULL) from a LEFT JOIN with no variant is refused, not decoded to zero bytes", async () => {
+  // Fixed: Kwabena decided (2026-10-17) that bytesFromHex refuses ''.
+  it("hex(NULL) from a LEFT JOIN with no variant is refused, not decoded to zero bytes", async () => {
     const row = await db
       .prepare("SELECT i.mime, hex(v.bytes) AS bytes_hex FROM images i LEFT JOIN image_variants v ON v.site_id = i.site_id AND v.image_id = i.id AND v.width = 800 WHERE i.id = ?")
       .bind(IMAGE)
