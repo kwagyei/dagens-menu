@@ -27,9 +27,11 @@ const todayText = `${t(locale, "hours.today")}: ${today.hours ? `${today.hours.o
 
 // The hero photo sits behind the name and the booking button: decorative (alt="", ADR-015 §4).
 const heroImage = pages.home.heroImage;
-// The CTA strip draws its photo as a CSS background three times, so it takes one fixed size.
+// The CTA strip draws its photo as a CSS background three times, so it takes one fixed size:
+// the slices are up to ~700 px wide (78% of a viewport under 900 px), so 1200 covers 2x screens.
 const ctaImage = pages.home.ctaImage ? Astro.locals.content.images.find((i) => i.ref === pages.home.ctaImage) : undefined;
-const ctaUrl = ctaImage ? (photoSources(ctaImage)?.src ?? ctaImage.ref) : pages.home.ctaImage;
+const ctaSizes = ctaImage ? photoSources(ctaImage)?.sizes : undefined;
+const ctaUrl = ctaSizes ? (ctaSizes.find((s) => s.width >= 1200) ?? ctaSizes[ctaSizes.length - 1]).url : (ctaImage?.ref ?? pages.home.ctaImage);
 
 // Classic shows the lunch list when the menu has a lunch category with something on sale.
 const soldOut = new Set(today.soldOut);

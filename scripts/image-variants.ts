@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import sharp from "sharp";
-import { curatedSizes, curatedVariantUrl } from "../src/content/images";
+import { curatedName, curatedSizes, curatedVariantUrl } from "../src/content/images";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -27,8 +27,14 @@ interface Plan {
 async function plans(site: string): Promise<Plan[]> {
   const library = JSON.parse(readFileSync(join(root, "sites", site, "content", "images.json"), "utf-8")) as Array<{ ref: string }>;
   const out: Plan[] = [];
+  const named = new Map<string, string>();
   for (const { ref } of library) {
     if (!ref.startsWith(`/images/${site}/`)) continue; // uploads live in D1, not here
+    // x.jpg and x.png would both make v/x-400.webp, and one would silently replace the other.
+    const name = curatedName(ref);
+    const other = named.get(name);
+    if (other && other !== ref) throw new Error(`image-variants: ${site}: ${other} and ${ref} would make the same files (v/${name}-*.webp); rename one`);
+    named.set(name, ref);
     const source = join(root, "public", ref);
     const meta = await sharp(source).metadata();
     const swap = (meta.orientation ?? 1) >= 5;

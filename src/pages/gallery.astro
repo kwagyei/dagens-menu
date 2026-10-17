@@ -17,7 +17,7 @@ const photos = Astro.locals.content.gallery.images;
       {photos.map((image, i) => (
         <li>
           <figure>
-            <Photo ref={image.image} slot="gallery" first={i === 0} />
+            <Photo ref={image.image} slot={i === 0 || i === 3 ? "galleryWide" : "gallery"} first={i === 0} />
           </figure>
         </li>
       ))}

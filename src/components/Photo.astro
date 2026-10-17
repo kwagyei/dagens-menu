@@ -10,7 +10,8 @@
  * | card      | home dishes, modern: 3 across wide         | the library's alt   |
  * | thumb     | the menu's round 84 px photo               | the library's alt   |
  * | story     | the about page's two photos                | the library's alt   |
- * | gallery   | the gallery grid                           | the library's alt   |
+ * | gallery   | the gallery grid: one column, 3 from 640px | the library's alt   |
+ * | galleryWide | a gallery tile two columns wide          | the library's alt   |
  *
  * WebP only, with width and height (no layout shift). A reference the library doesn't know
  * renders nothing and logs one line: one missing photo never breaks the page.
@@ -19,7 +20,7 @@ import { localized } from "../content/load";
 import { photoSources } from "../content/images";
 import { getLocale } from "../i18n";
 
-type Slot = "hero" | "cta" | "strip" | "card" | "thumb" | "story" | "gallery";
+type Slot = "hero" | "cta" | "strip" | "card" | "thumb" | "story" | "gallery" | "galleryWide";
 interface Props {
   ref: string | undefined;
   slot: Slot;
@@ -35,7 +36,9 @@ const SIZES: Record<Slot, string> = {
   card: "(min-width: 56.25rem) 30vw, 92vw",
   thumb: "84px",
   story: "(min-width: 56.25rem) 50vw, 92vw",
-  gallery: "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
+  // .gallery-magazine (site.css): one column, then 3 from 40rem, where tiles 1 and 4 span two.
+  gallery: "(min-width: 40rem) 33vw, 100vw",
+  galleryWide: "(min-width: 40rem) 67vw, 100vw",
 };
 const DECORATIVE: ReadonlySet<Slot> = new Set(["hero", "cta"]);
 
@@ -61,5 +64,5 @@ const alt = !image || DECORATIVE.has(slot) ? "" : image.alt ? localized(image.al
     decoding="async"
   />
 ) : (
-  <img class={className} src={image.ref} alt={alt} width={image.width} height={image.height} loading={first ? "eager" : "lazy"} decoding="async" />
+  <img class={className} src={image.ref} alt={alt} width={image.width} height={image.height} loading={first ? "eager" : "lazy"} fetchpriority={first ? "high" : undefined} decoding="async" />
 ))}
