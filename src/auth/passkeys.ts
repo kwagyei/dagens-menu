@@ -17,6 +17,7 @@ import {
 import { prepare, stmt } from "../db/sql";
 import type { D1Database } from "../db/types";
 import { isoSeconds } from "../db/repository";
+import { securityAudit, securityAuditWhere } from "./audit";
 import { fromBase64url, sign, unsign } from "./crypto";
 import { consumeInviteStatement, findInvite } from "./invites";
 import { newSession, type Session, sessionCookie } from "./sessions";
@@ -134,14 +135,25 @@ export async function enrolOptions(ctx: CeremonyContext, inviteToken: string): P
 
 /**
  * Step 2 of enrolment: verify the new passkey, then in one batch use up the invite, store
- * the passkey only if the invite was still unused, and sign in only if the passkey was stored.
+ * the passkey only if the invite was still unused, sign in only if the passkey was stored,
+ * and record it in the audit log only if signed in.
  */
 export async function enrolVerify(ctx: CeremonyContext, inviteToken: string, response: unknown): Promise<ApiResult> {
   const invite = await findInvite(ctx.db, ctx.site, inviteToken, ctx.now);
   if (!invite) return refuse(410, "invite-invalid");
   const verified = await verifiedRegistration(ctx, `enrol:${invite.tokenHash}`, response);
   if (!verified) return refuse(400, "verification-failed");
-  const session = await newSession(invite.userId, ctx.site, ctx.now, true);
+  const session = await newSession(invite.userId, ctx.site, verified.credential.id, ctx.now, true);
+  const who = { site: ctx.site, actor: invite.userId, subject: invite.userId, now: ctx.now, event: { entity: "invite", action: "update" } } as const;
+  // A second passkey from an invite is a recovery: the operator re-invited someone who had lost theirs.
+  const passkeyCount = stmt("(SELECT count(*) FROM passkeys WHERE user_id = ? AND site_id = ?)", invite.userId, ctx.site);
+  const summary = stmt(
+    `? || CASE WHEN ${passkeyCount.sql} > 1 THEN ': passkey created from a new invite (recovery); passkeys now: ' || ${passkeyCount.sql}
+       ELSE ': first passkey created from the invite' END`,
+    invite.email,
+    ...passkeyCount.params,
+    ...passkeyCount.params,
+  );
   let results;
   try {
     results = await ctx.db.batch(
@@ -149,6 +161,7 @@ export async function enrolVerify(ctx: CeremonyContext, inviteToken: string, res
         consumeInviteStatement(ctx.site, invite.tokenHash, ctx.now),
         passkeyInsert(ctx, invite.userId, verified.credential, true),
         session.statement,
+        securityAuditWhere(who, summary, stmt("changes() = 1")),
       ]),
     );
   } catch (error) {
@@ -156,6 +169,12 @@ export async function enrolVerify(ctx: CeremonyContext, inviteToken: string, res
     throw error;
   }
   if (results[0].meta.changes !== 1 || results[2].meta.changes !== 1) return refuse(410, "invite-invalid");
+  // As in commitIf (src/db/repository.ts): should changes() ever not carry across the batch's
+  // statements (reviewer M2), the enrolment still gets its audit row.
+  if (results[3].meta.changes === 0) {
+    console.warn("audit: an enrolment was stored without its audit row; adding it separately");
+    await ctx.db.batch(prepare(ctx.db, [securityAudit(who, `${invite.email}: passkey created from an invite`)]));
+  }
   return ok({ ok: true }, [clearChallenge, sessionCookie(session.token, session.expiresAt)]);
 }
 
@@ -207,7 +226,7 @@ export async function loginVerify(ctx: CeremonyContext, response: unknown): Prom
     // Includes a sign counter that went backwards: a sign of a cloned authenticator.
     return refuse(401, "verification-failed");
   }
-  const session = await newSession(row.user_id, ctx.site, ctx.now);
+  const session = await newSession(row.user_id, ctx.site, row.id, ctx.now);
   try {
     await ctx.db.batch(
       prepare(ctx.db, [
@@ -231,12 +250,70 @@ export async function addPasskeyOptions(ctx: CeremonyContext, session: Session):
 export async function addPasskeyVerify(ctx: CeremonyContext, session: Session, response: unknown): Promise<ApiResult> {
   const verified = await verifiedRegistration(ctx, `add:${session.tokenHash}`, response);
   if (!verified) return refuse(400, "verification-failed");
+  const audit = securityAudit(
+    { site: ctx.site, actor: session.userId, subject: session.userId, now: ctx.now, event: { entity: "passkey", action: "create" } },
+    `${session.email}: another device's passkey added`,
+  );
   try {
-    await ctx.db.batch(prepare(ctx.db, [...redeemChallenge(ctx, verified.challenge), passkeyInsert(ctx, session.userId, verified.credential, false)]));
+    await ctx.db.batch(
+      prepare(ctx.db, [...redeemChallenge(ctx, verified.challenge), passkeyInsert(ctx, session.userId, verified.credential, false), audit]),
+    );
   } catch (error) {
     // A replayed challenge, or a passkey that is already registered.
     if (isConstraintError(error)) return refuse(409, "already-registered");
     throw error;
   }
   return ok({ ok: true }, [clearChallenge]);
+}
+
+export type RemoveResult = "removed" | "signed-out" | "not-removed";
+
+/**
+ * Remove one of the signed-in person's passkeys (Admin → Security), never their last one, and
+ * end the sessions made with it (reviewer M7). The foreign key from sessions.passkey_id
+ * deletes those in the same statement as the passkey.
+ *
+ * Sessions from before migration 0004 have no passkey recorded. Any of them could belong to
+ * the device being removed, so they are ended too, except the one making this request: the
+ * person removing the passkey is plainly at that device. All of them expire by 30 days after
+ * the migration, after which this case no longer arises.
+ *
+ * One batch, and no statement depends on another's changes() (reviewer M2): the audit row
+ * repeats the delete's own condition, and the unattributed sessions go only once the passkey
+ * is gone.
+ */
+export async function removePasskey(db: D1Database, session: Session, passkeyId: string, now: Date): Promise<RemoveResult> {
+  const { userId, siteId } = session;
+  const owned = await db.prepare("SELECT 1 FROM passkeys WHERE id = ? AND user_id = ? AND site_id = ?").bind(passkeyId, userId, siteId).first();
+  if (!owned) return "not-removed";
+  const removable = stmt(
+    "EXISTS (SELECT 1 FROM passkeys WHERE id = ? AND user_id = ? AND site_id = ?) AND (SELECT count(*) FROM passkeys WHERE user_id = ? AND site_id = ?) > 1",
+    passkeyId,
+    userId,
+    siteId,
+    userId,
+    siteId,
+  );
+  const unattributed = stmt("user_id = ? AND site_id = ? AND passkey_id IS NULL AND token_hash != ?", userId, siteId, session.tokenHash);
+  const summary = stmt(
+    `? || ': passkey from ' || (SELECT substr(created_at, 1, 10) FROM passkeys WHERE id = ?) || ' removed; sign-ins ended: ' ||
+       (SELECT count(*) FROM sessions WHERE passkey_id = ? OR (${unattributed.sql}))`,
+    session.email,
+    passkeyId,
+    passkeyId,
+    ...unattributed.params,
+  );
+  const who = { site: siteId, actor: userId, subject: userId, now, event: { entity: "passkey", action: "delete" } } as const;
+  const results = await db.batch(
+    prepare(db, [
+      // The audit row first, so its summary can still read the passkey and count its sessions.
+      securityAuditWhere(who, summary, removable),
+      // The last-passkey check is in the DELETE itself, so two removals at once can't both
+      // pass it and lock the owner out (recovery is an operator invite).
+      stmt(`DELETE FROM passkeys WHERE id = ? AND ${removable.sql}`, passkeyId, ...removable.params),
+      stmt(`DELETE FROM sessions WHERE ${unattributed.sql} AND NOT EXISTS (SELECT 1 FROM passkeys WHERE id = ?)`, ...unattributed.params, passkeyId),
+    ]),
+  );
+  if (results[1].meta.changes === 0) return "not-removed";
+  return session.passkeyId === passkeyId ? "signed-out" : "removed";
 }

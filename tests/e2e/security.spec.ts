@@ -112,6 +112,72 @@ test.describe("sessions", () => {
   });
 });
 
+test.describe("removing a passkey (reviewer M7)", () => {
+  test("ends the sessions made with it in other browsers, and keeps this one", async ({ page, context, request }) => {
+    const { auth, email } = await enrol(page);
+    // The first device's session, held on as if by a lost phone.
+    const lostPhone = await cookieHeader(context);
+    await addSecondDevice(page, auth);
+    // Sign in again with the second device only (the first is no longer in this browser).
+    await context.clearCookies();
+    await page.goto("/admin/");
+    await page.getByRole("button", { name: "Logga in med passkey" }).click();
+    await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
+    const here = await cookieHeader(context);
+    expect(await isSignedIn(request, lostPhone)).toBe(true);
+
+    await page.goto("/admin/security/");
+    const [first] = passkeyIds(email);
+    await page.locator(`form:has(input[name="id"][value="${first}"]) button`).click();
+    await expect(page.getByText("Passkeyn är borttagen, och inloggningarna som gjordes med den är avslutade.")).toBeVisible();
+    expect(await isSignedIn(request, lostPhone)).toBe(false);
+    expect(await isSignedIn(request, here)).toBe(true);
+  });
+});
+
+test.describe("security events in the history (reviewer M3)", () => {
+  test("enrolment, adding and removing a passkey and signing out everywhere are listed, in Swedish and English", async ({ page }) => {
+    const { auth, email } = await enrol(page);
+    await addSecondDevice(page, auth);
+    const [first, second] = passkeyIds(email);
+    await page.locator(`form:has(input[name="id"][value="${second}"]) button`).click();
+    await expect(page.getByText("Passkeyn är borttagen", { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "Logga ut överallt" }).click();
+    await expect(page.getByRole("heading", { name: "Logga in" })).toBeVisible();
+    // The device in this browser lost its passkey: back in through a recovery invite.
+    await page.goto(invite(email));
+    await page.getByRole("button", { name: "Skapa passkey" }).click();
+    await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
+
+    const ours = (where: Page) => where.locator("ol > li").filter({ hasText: email });
+    await page.goto("/admin/history/");
+    await expect(ours(page).locator("p.font-semibold")).toHaveText([
+      "Passkey skapad med inbjudan",
+      "Inbjudan skapad",
+      "Utloggad överallt",
+      "Passkey borttagen",
+      "Passkey tillagd",
+      "Passkey skapad med inbjudan",
+      "Inbjudan skapad",
+    ]);
+    await expect(ours(page).nth(0)).toContainText("passkey created from a new invite (recovery); passkeys now: 2");
+    await expect(ours(page).nth(1)).toContainText("invited again (recovery)");
+    await page.goto("/en/admin/history/");
+    await expect(ours(page).locator("p.font-semibold")).toHaveText([
+      "Passkey created from an invite",
+      "Invite issued",
+      "Signed out everywhere",
+      "Passkey removed",
+      "Passkey added",
+      "Passkey created from an invite",
+      "Invite issued",
+    ]);
+    // Never a credential id on the page.
+    const text = await page.locator("main").textContent();
+    for (const id of [first, second]) expect(text).not.toContain(id);
+  });
+});
+
 test.describe("CSRF and redirects", () => {
   test("logout never redirects off the admin", async ({ request }) => {
     for (const next of ["https://evil.example/", "//evil.example/", "/\\evil.example", "/admin/../../evil", "/en/admin/x"]) {

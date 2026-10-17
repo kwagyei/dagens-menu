@@ -22,6 +22,10 @@ const label = (key: string, fallback: string) => {
   const text = t(locale, key as Key);
   return text === key ? fallback : text;
 };
+// Security events (sign-ins, passkeys, invites) have a phrase of their own; content changes
+// read as "<what> <done>", e.g. "Rätt tillagd".
+const heading = (entity: string, action: string) =>
+  label(`admin.history.event.${entity}.${action}`, `${label(`admin.history.entity.${entity}`, entity)} ${label(`admin.history.action.${action}`, action)}`);
 ---
 
 <AdminLayout title={t(locale, "admin.history.heading")} csrf={page.csrf}>
@@ -45,7 +49,7 @@ const label = (key: string, fallback: string) => {
         {changes.map((c) => (
           <li class="p-4 space-y-1">
             <p class="font-semibold">
-              {label(`admin.history.entity.${c.entity}`, c.entity)} {label(`admin.history.action.${c.action}`, c.action)}
+              {heading(c.entity, c.action)}
             </p>
             <p class="text-sm break-words">{c.summary}</p>
             <p class="text-sm admin-muted">

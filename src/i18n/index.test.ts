@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { SECURITY_EVENTS } from "../auth/audit";
 import en from "./en";
 import { getLocale, localePath, t } from "./index";
 import sv from "./sv";
@@ -52,5 +53,14 @@ describe("allergen labels", () => {
       expect(sv[`allergen.${allergen}` as keyof typeof sv], allergen).toBeTruthy();
       expect(en[`allergen.${allergen}` as keyof typeof en], allergen).toBeTruthy();
     }
+  });
+});
+
+describe("history labels for security events (reviewer M3)", () => {
+  it.each(SECURITY_EVENTS.map((e) => [`${e.entity}.${e.action}`]))("%s has its own phrase in Swedish and English", (event) => {
+    const key = `admin.history.event.${event}` as keyof typeof sv;
+    expect(sv[key]).toBeTruthy();
+    expect(en[key]).toBeTruthy();
+    expect(t("sv", key)).not.toBe(t("en", key));
   });
 });
