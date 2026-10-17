@@ -4,7 +4,10 @@
  * so pages get their headers here.
  */
 
-export type RouteClass = "public" | "admin";
+/** "admin-upload" is the photo upload page: the admin, plus WebAssembly for its encoder (ADR-013). */
+export type RouteClass = "public" | "admin" | "admin-upload";
+
+export const isAdminRoute = (route: RouteClass) => route !== "public";
 
 /**
  * The path as the router sees it: percent-decoded, so /%61dmin/ can't reach the admin while
@@ -24,6 +27,7 @@ export function decodedPath(pathname: string): string {
 
 export function routeClass(pathname: string): RouteClass {
   const path = decodedPath(pathname);
+  if (/^\/(en\/)?admin\/photos\/new\/?$/.test(path)) return "admin-upload";
   return /^\/(en\/)?admin(\/|$)/.test(path) ? "admin" : "public";
 }
 
@@ -59,9 +63,13 @@ const ADMIN_CSP = [
   "frame-ancestors 'none'",
 ].join("; ");
 
+// The upload page alone may compile WebAssembly (the libwebp encoder) and preview a blob: URL.
+// 'wasm-unsafe-eval' allows WebAssembly only, not JavaScript eval (ADR-013, CSP).
+const ADMIN_UPLOAD_CSP = ADMIN_CSP.replace("script-src 'self'", "script-src 'self' 'wasm-unsafe-eval'").replace("img-src 'self' data:", "img-src 'self' data: blob:");
+
 export function securityHeaders(route: RouteClass): Record<string, string> {
   return {
-    "Content-Security-Policy": route === "admin" ? ADMIN_CSP : PUBLIC_CSP,
+    "Content-Security-Policy": route === "admin-upload" ? ADMIN_UPLOAD_CSP : route === "admin" ? ADMIN_CSP : PUBLIC_CSP,
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
@@ -69,7 +77,7 @@ export function securityHeaders(route: RouteClass): Record<string, string> {
     // No "preload": a client's own domain would commit every subdomain to HTTPS for good.
     "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
     // Pages always revalidate (ETag below); the admin is never stored.
-    "Cache-Control": route === "admin" ? "no-store" : "no-cache",
+    "Cache-Control": isAdminRoute(route) ? "no-store" : "no-cache",
   };
 }
 
