@@ -155,7 +155,7 @@ is the seed data the demos are loaded from.
   migrations, deploys both Workers and smoke-tests them, but only after type checks, unit,
   database and build tests, and a Playwright gate: the owner's journeys plus the attacks on
   sign-in. The gate runs in about 5 minutes with no retries, because a retried test hides
-  flakiness that people then learn to merge over. The tester's edge-case sweeps run on every
+  flakiness that people then learn to merge over. The tester's edge-case sweeps (six parallel shards, about 5 minutes) run on every
   PR and nightly (straddling Stockholm midnight) but never block a deploy; a nightly failure
   opens an issue. A merge that changes only Markdown doesn't deploy, since it can't change
   the site. The deploy ships the exact builds CI crawled rather than rebuilding them, and

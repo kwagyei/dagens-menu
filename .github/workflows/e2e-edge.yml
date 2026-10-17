@@ -21,9 +21,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The edge project is split into six shards (Playwright cuts the ordered list of specs into equal-sized chunks, so more shards also means the slow files land apart). Each shard
-  # is its own runner, so it has its own wrangler dev server and its own local D1: the specs
-  # share nothing across shards. Six cut the run from about 12 minutes to about a third of that.
+  # The edge project is split into six shards. Each shard is its own runner, with its own
+  # wrangler dev server and local D1, so the specs share nothing across shards. Playwright cuts
+  # the ordered spec list into equal-sized chunks by test count, not duration: with four shards
+  # one still held the three slowest files, with six they land apart. The run went from about
+  # 14 minutes to about 5.
   edge:
     name: Admin edge cases, shard ${{ matrix.shard }}/6 (non-blocking)
     runs-on: ubuntu-latest
