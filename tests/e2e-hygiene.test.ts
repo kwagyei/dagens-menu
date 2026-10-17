@@ -12,6 +12,16 @@ const specs = readdirSync(dir)
 
 const offending = (pattern: RegExp) => specs.filter((s) => pattern.test(s.text)).map((s) => s.file);
 
+/** file:line for each line that matches `pattern` but not `allowed`. */
+const offendingLines = (pattern: RegExp, allowed: RegExp) =>
+  specs.flatMap((s) =>
+    s.text
+      .split("\n")
+      .map((line, i) => ({ line, at: `${s.file}:${i + 1}` }))
+      .filter(({ line }) => pattern.test(line) && !allowed.test(line))
+      .map(({ at }) => at),
+  );
+
 describe("e2e specs", () => {
   it("exist (so the rules below check something)", () => {
     expect(specs.length).toBeGreaterThan(5);
@@ -31,5 +41,17 @@ describe("e2e specs", () => {
 
   it("take client addresses from freshIp(), so specs can't share one and trip the rate limit", () => {
     expect(offending(/CF-Connecting-IP["']?\s*:\s*`/)).toEqual([]);
+  });
+
+  it("never expect today's hours to be a time range: every day is closed on some site (bistro Sunday, Chez Abena Monday)", () => {
+    // tester-m6-prb-public.spec.ts asserted "Idag: 12:00–22:00"-shaped text and failed on a Sunday (#55).
+    expect(offendingLines(/(Idag|Today):[^\n]*(\d\d:\d\d|\\d)/, /Stängt|Closed/)).toEqual([]);
+  });
+
+  it("a spec that means 'today' across requests waits out midnight with clearOfMidnight() from helpers.ts", () => {
+    // Sold out, today's exceptions and the home badge are all per Stockholm date; the nightly
+    // edge run starts at 23:30 Stockholm time in winter.
+    const today = /stockholmToday\(|Slutsåld idag|Sold out today|admin\.menu\.soldOut|hours-badge/;
+    expect(specs.filter((s) => s.file.endsWith(".spec.ts") && today.test(s.text) && !/test\.beforeEach\(clearOfMidnight\)/.test(s.text)).map((s) => s.file)).toEqual([]);
   });
 });

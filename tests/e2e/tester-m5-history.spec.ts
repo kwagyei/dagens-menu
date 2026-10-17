@@ -10,7 +10,10 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type APIRequestContext, expect, test } from "@playwright/test";
-import { dishRow, signedInOwner } from "./helpers";
+import { clearOfMidnight, dishRow, signedInOwner } from "./helpers";
+
+// Sold out is for today only: the undo needs the same day. Midnight must not fall inside a test.
+test.beforeEach(clearOfMidnight);
 
 const BASE = "http://localhost:8790";
 const dir = mkdtempSync(join(tmpdir(), "tester-m56-"));
