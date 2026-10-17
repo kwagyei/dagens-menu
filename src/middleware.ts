@@ -11,7 +11,7 @@ import { D1ContentSource } from "./content/d1-source";
 import { checkSiteId } from "./content/site-id";
 import { handlePage } from "./server/handler";
 import { decodedPath, isAdminRoute, routeClass, securityHeaders } from "./server/http";
-import { handleMedia, isMediaPath } from "./server/media";
+import { handleMedia, isMediaPath, mediaErrorHeaders } from "./server/media";
 
 declare const __BUILD_SITE__: string;
 declare const __BUILD_ID__: string;
@@ -36,9 +36,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
       site = checkSiteId(env.SITE_ID, __BUILD_SITE__);
     } catch (error) {
       console.error(`site: ${(error as Error).message}`);
-      return new Response("Misconfigured site", { status: 500, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+      return new Response("Misconfigured site", { status: 500, headers: mediaErrorHeaders() });
     }
-    return handleMedia(new Request(new URL(decodedPath(context.url.pathname), context.url), context.request), { db: env.DB, siteId: site });
+    // The request as sent: handleMedia matches the raw path, so an encoded or doubled spelling
+    // is a 404 rather than another URL for the same photo.
+    return handleMedia(context.request, { db: env.DB, siteId: site });
   }
   const admin = isAdminRoute(routeClass(context.url.pathname));
   if (admin) {

@@ -12,10 +12,15 @@
 import { bytesFromHex } from "../db/blob-hex";
 import type { D1Database } from "../db/types";
 
-const MEDIA = /^\/media\/([0-9a-f]{64})-(\d{1,4})\.webp$/;
+// Exactly one spelling per photo: a width without leading zeros, matched against the path as
+// sent (not a decoded or normalised copy), so no second URL caches the same bytes (M6.8 tester F1, F3).
+const MEDIA = /^\/media\/([0-9a-f]{64})-([1-9]\d{0,3})\.webp$/;
 
 /** True for any path under /media/, which belongs to this handler (a bad name there is a 404). */
 export const isMediaPath = (pathname: string) => pathname.startsWith("/media/");
+
+/** The headers for any /media answer, for a response made outside handleMedia (e.g. a misconfigured site). */
+export const mediaErrorHeaders = (): Record<string, string> => ({ ...BASE_HEADERS, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
 
 /** Headers every /media response carries: a fixed type nothing sniffs, sandboxed, not for other sites. */
 const BASE_HEADERS = {
@@ -83,6 +88,13 @@ export async function handleMedia(request: Request, deps: MediaDeps): Promise<Re
   if (!row) return plain(404, "Not found");
 
   if (head) return new Response(null, { status: 200, headers: { ...hit, "Content-Length": String(row.n) } });
-  const bytes = bytesFromHex(row.h);
+  let bytes: Uint8Array<ArrayBuffer>;
+  try {
+    bytes = bytesFromHex(row.h);
+  } catch (error) {
+    // The CHECKs make this unreachable; if it happens, a sandboxed 503 rather than a bare 500 (F5).
+    console.error(`media: unreadable bytes for ${id}-${width}: ${(error as Error).message}`);
+    return plain(503, "Photo temporarily unavailable", { "Retry-After": "5" });
+  }
   return new Response(bytes, { status: 200, headers: { ...hit, "Content-Length": String(bytes.length) } });
 }
