@@ -25,12 +25,12 @@ jobs:
     name: Type check and tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
       - name: Shipped migrations are unchanged
         run: node scripts/check-migrations.mjs "${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -42,8 +42,8 @@ jobs:
     name: Database tests (workerd + D1)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -66,8 +66,8 @@ jobs:
           - site: westafrican
             title: Chez Abena
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -75,6 +75,18 @@ jobs:
       - run: npm run build
         env:
           SITE: ${{ matrix.site }}
+      # On main, this build is the one the deploy ships, so production runs the bytes this job
+      # crawls (review L6). Uploaded before wrangler dev starts, so nothing the local server
+      # writes can reach production. include-hidden-files keeps dist/client/.assetsignore.
+      - name: Keep the build for the deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dist-${{ matrix.site }}
+          path: dist/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
       - name: Local D1 with the site's content
         run: |
           npm run db:migrate:local
@@ -94,8 +106,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -109,7 +121,7 @@ jobs:
         run: npx playwright test --project=gate tests/e2e/a11y.spec.ts tests/e2e/keyboard.spec.ts
         env:
           E2E_SITE: westafrican
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
           name: playwright-report
@@ -117,7 +129,7 @@ jobs:
           retention-days: 7
 
   # ADR-011 plan M3.7. Only main, and only after every check above: merging is deploying. The
-  # production environment (main only) holds the Cloudflare token, which only the two wrangler
+  # production environment (main only) holds the Cloudflare token, which only the wrangler
   # steps see, so no install script from `npm ci` can read a token that writes production D1.
   deploy:
     name: Deploy to production
@@ -131,8 +143,8 @@ jobs:
       group: deploy-production
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -144,25 +156,25 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-      # One site at a time: build (no token), deploy (token), smoke-test the live Worker (no
-      # token). dist/ holds one site, so the second build only starts after the first deploy.
-      - name: Build Bistro Norden
-        run: npx astro build
-        env:
-          SITE: bistro
+      # The builds the build job crawled, one artifact per site, from this run. Nothing is
+      # rebuilt here (review L6): wrangler deploys builds/<site>/ as it is.
+      - name: Fetch the tested builds
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: dist-*
+          path: builds/
+      # One site at a time: deploy (token), then smoke-test the live Worker (no token), so a
+      # broken bistro stops the run before Chez Abena changes. If the second smoke test fails,
+      # docs/deploy-runbook.md covers the half-deployed state.
       - name: Deploy Bistro Norden
-        run: npx wrangler deploy --tag "${GITHUB_SHA::12}" --message "${GITHUB_SHA} run ${GITHUB_RUN_ID}"
+        run: npx wrangler deploy --config builds/dist-bistro/server/wrangler.json --tag "${GITHUB_SHA::12}" --message "${GITHUB_SHA} run ${GITHUB_RUN_ID}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       - name: Smoke-test Bistro Norden
         run: node scripts/smoke.mjs --url https://dagens-menu-bistro.kwabenasasuboakye.workers.dev --title "Bistro Norden" --build "${GITHUB_SHA::12}"
-      - name: Build Chez Abena
-        run: npx astro build
-        env:
-          SITE: westafrican
       - name: Deploy Chez Abena
-        run: npx wrangler deploy --tag "${GITHUB_SHA::12}" --message "${GITHUB_SHA} run ${GITHUB_RUN_ID}"
+        run: npx wrangler deploy --config builds/dist-westafrican/server/wrangler.json --tag "${GITHUB_SHA::12}" --message "${GITHUB_SHA} run ${GITHUB_RUN_ID}"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
@@ -175,5 +187,5 @@ jobs:
             echo "### Deploy of \`${GITHUB_SHA::12}\`"
             echo "- Bistro Norden: https://dagens-menu-bistro.kwabenasasuboakye.workers.dev"
             echo "- Chez Abena: https://dagens-menu-westafrican.kwabenasasuboakye.workers.dev"
-            echo "- Worker versions are tagged \`${GITHUB_SHA::12}\`; roll back with \`wrangler rollback\`."
+            echo "- Worker versions are tagged \`${GITHUB_SHA::12}\`; roll back with \`wrangler rollback\` (docs/deploy-runbook.md)."
           } >> "$GITHUB_STEP_SUMMARY"
