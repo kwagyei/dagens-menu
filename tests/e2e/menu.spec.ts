@@ -5,7 +5,10 @@
  */
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { dishRow, signedInOwner } from "./helpers";
+import { clearOfMidnight, dishRow, signedInOwner } from "./helpers";
+
+// Sold out is for today only: it is read back on later requests. Midnight must not fall inside a test.
+test.beforeEach(clearOfMidnight);
 
 type Menu = { categories: Array<{ items: Array<{ id: string; name: { sv: string; en: string } }> }> };
 const menu: Menu = JSON.parse(readFileSync(new URL("../../sites/bistro/content/menu.json", import.meta.url), "utf-8"));

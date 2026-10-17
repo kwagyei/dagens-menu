@@ -13,7 +13,10 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import sv from "../../src/i18n/sv";
 import en from "../../src/i18n/en";
-import { daysAhead, invite, signedInOwner } from "./helpers";
+import { clearOfMidnight, daysAhead, invite, signedInOwner } from "./helpers";
+
+// Sold out is for today only: the toggles here are read back on later requests. Midnight must not fall inside a test.
+test.beforeEach(clearOfMidnight);
 
 const BASE = "http://localhost:8790";
 

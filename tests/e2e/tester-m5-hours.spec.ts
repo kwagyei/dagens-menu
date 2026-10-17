@@ -4,7 +4,10 @@
  * back, so the order doesn't matter. "Today" tests remove what they add.
  */
 import { expect, type Page, test } from "@playwright/test";
-import { daysAhead, plusDays, signedInOwner, stockholmToday } from "./helpers";
+import { clearOfMidnight, daysAhead, plusDays, signedInOwner, stockholmToday } from "./helpers";
+
+// An exception for today and the home badge are read on later requests. Midnight must not fall inside a test.
+test.beforeEach(clearOfMidnight);
 
 const BASE = "http://localhost:8790";
 const group = (page: Page, name: string) => page.getByRole("group", { name });
