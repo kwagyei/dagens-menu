@@ -35,7 +35,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       # Tester F3: the per-site isolation test in security.spec.ts needs a westafrican Worker on
       # the same local D1 as the bistro one, so the gate skips it; it runs here instead. The
       # Worker stays up in the background until the job ends.

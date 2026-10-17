@@ -69,13 +69,29 @@ const labels: Record<string, string> = { photo: t(locale, "admin.photos.choose")
     </div>
     {done && message[done] && <p class="admin-message" role="status">{message[done]}</p>}
 
-    <form method="post" enctype="multipart/form-data" class="admin-card p-4 space-y-5" id="photo-upload" novalidate>
+    <form
+      method="post"
+      enctype="multipart/form-data"
+      class="admin-card p-4 space-y-5"
+      id="photo-upload"
+      novalidate
+      data-msg-opening={t(locale, "admin.photos.opening")}
+      data-msg-preparing={t(locale, "admin.photos.preparing")}
+      data-msg-sending={t(locale, "admin.photos.sending")}
+      data-msg-cant-open={t(locale, "admin.photos.cantOpen")}
+      data-msg-too-large={t(locale, "admin.photos.tooLarge")}
+      data-msg-file-too-large={t(locale, "admin.photos.fileTooLarge")}
+      data-msg-too-many-pixels={t(locale, "admin.photos.tooManyPixels")}
+      data-msg-too-narrow={t(locale, "admin.photos.tooNarrow")}
+      data-msg-alt-required={t(locale, "admin.photos.altRequired")}
+      data-msg-failed={t(locale, "admin.photos.failed")}
+    >
       <ErrorSummary locale={locale} errors={errors} id="photo-errors" labels={labels} />
       <input type="hidden" name="csrf" value={page.csrf} />
       <noscript><p class="admin-message">{t(locale, "admin.photos.needsScript")}</p></noscript>
       <div class="space-y-1">
         <label class="font-medium block" for="photo">{t(locale, "admin.photos.choose")}</label>
-        {/* No name: the original never leaves the phone. Disabled until the script takes over (M6.7). */}
+        {/* No name: the original never leaves the phone. Disabled until the script takes over. */}
         <input class="admin-input" type="file" id="photo" accept="image/jpeg,image/png,image/webp" disabled aria-invalid={errors.photo ? "true" : undefined} aria-describedby={errors.photo ? "photo-error" : undefined} />
         {errors.photo && <p class="admin-error" id="photo-error">{errors.photo}</p>}
         <input type="file" name="variant" id="photo-variants" multiple hidden />
@@ -93,3 +109,7 @@ const labels: Record<string, string> = { photo: t(locale, "admin.photos.choose")
     </form>
   </section>
 </AdminLayout>
+
+<script>
+  import "../../../../admin/photo-upload";
+</script>
