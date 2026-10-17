@@ -120,7 +120,9 @@ async function rejectedStates(page: Page, prefix: string) {
       },
     },
   ];
-  return states;
+  // Each state ends on a 422 page with its error alert. Wait for it, so the sweeps never read the
+  // page while that response is still loading (seen on CI as a null documentElement).
+  return states.map((s) => ({ ...s, open: async () => { await s.open(); await page.getByRole("alert").first().waitFor(); } }));
 }
 
 /** Make a 409 on a dish, a category and each of the texts forms: returns the open functions. */
