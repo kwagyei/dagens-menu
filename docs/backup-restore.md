@@ -12,6 +12,10 @@ The weekly export leaves out photo bytes (`image_variants`, ADR-012), the change
 every auth table: the list and the reasons are in `scripts/backup-tables.ts`. Uploaded photos
 are therefore backed up only by Time Travel and by the owners' own downloads.
 
+The content files do carry an `updated_by` column (settings, menu items, page text). It holds the
+editor's opaque user id (`ctx.userId`), never an email or a name, and the user table itself is
+not exported, so the ids can't be resolved from the backup alone.
+
 Run every command below from the repo, signed in with `npx wrangler login` on Kwabena's
 Cloudflare account.
 
