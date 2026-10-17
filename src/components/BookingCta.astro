@@ -1,0 +1,20 @@
+---
+/** The page's one booking button, closing the page, with the phone number for those who'd rather call. */
+import { getLocale, localePath, t } from "../i18n";
+
+const settings = Astro.locals.content.settings;
+const style = Astro.locals.content.theme.style;
+const locale = getLocale(Astro.url);
+---
+
+<section class="page-cta" aria-label={t(locale, "nav.book")}>
+  {style === "modern" && (
+    <svg class="squiggle" viewBox="0 0 84 20" aria-hidden="true" focusable="false">
+      <path d="M3 12 q 6.5 -9 13 0 t 13 0 t 13 0 t 13 0 t 13 0 t 13 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+    </svg>
+  )}
+  <a class:list={["btn btn-primary", { pill: style === "modern" }]} href={localePath(locale, "/book/")}>{t(locale, "home.book")}</a>
+  <p class="phone-line">
+    {t(locale, "cta.orCall")} <a href={`tel:${settings.phone.replace(/[\s-]/g, "")}`}>{settings.phone}</a>
+  </p>
+</section>

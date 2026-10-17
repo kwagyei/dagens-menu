@@ -1,6 +1,7 @@
 ---
 // Shown for any path that isn't a page, in the visitor's language and the site's design.
 import Base from "../layouts/Base.astro";
+import PageHero from "../components/PageHero.astro";
 import { getLocale, localePath, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
@@ -8,18 +9,9 @@ Astro.response.status = 404;
 ---
 
 <Base title={t(locale, "notFound.heading")}>
-  <section class="section-dark relative overflow-hidden">
-    <div class="section-container py-24 md:py-32 relative" style="z-index: 1;">
-      <h1 class="font-display text-4xl md:text-5xl lg:text-6xl mb-4" style="color: var(--color-hero-text);">
-        {t(locale, "notFound.heading")}
-      </h1>
-      <p class="text-base md:text-lg max-w-xl font-heading mb-8" style="color: var(--color-hero-muted);">
-        {t(locale, "notFound.text")}
-      </p>
-      <div class="flex flex-wrap gap-4">
-        <a href={localePath(locale, "/")} class="btn btn-primary-on-dark">{t(locale, "nav.home")}</a>
-        <a href={localePath(locale, "/menu/")} class="btn btn-primary-on-dark">{t(locale, "nav.menu")}</a>
-      </div>
-    </div>
-  </section>
+  <PageHero title={t(locale, "notFound.heading")} intro={t(locale, "notFound.text")} />
+  <p class="page-cta not-found-links">
+    <a class="btn btn-primary" href={localePath(locale, "/")}>{t(locale, "nav.home")}</a>
+    <a class="btn btn-secondary" href={localePath(locale, "/menu/")}>{t(locale, "nav.menu")}</a>
+  </p>
 </Base>

@@ -1,175 +1,28 @@
 ---
 import Base from "../layouts/Base.astro";
+import BookingCta from "../components/BookingCta.astro";
+import PageHero from "../components/PageHero.astro";
 import { localized } from "../content/load";
-import { getLocale, t, localePath } from "../i18n";
+import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
 const gallery = Astro.locals.content.gallery;
-const settings = Astro.locals.content.settings;
-const siteName = localized(settings.name, locale);
 ---
 
 <Base title={t(locale, "nav.gallery")}>
-
-  <!-- Hero — massive cropped title -->
-  <section class="section-dark gallery-hero relative overflow-hidden">
-    <div class="section-container relative" style="z-index: 1;">
-      <p class="font-display text-base tracking-widest pt-12 md:pt-16 mb-2" style="color: var(--color-hero-muted);">
-        {siteName}
-      </p>
-    </div>
-    <!-- Title partially cropped at the bottom -->
-    <div class="gallery-title-wrap relative" style="z-index: 1;">
-      <h1 class="gallery-title font-display">
-        {t(locale, "nav.gallery")}
-      </h1>
-    </div>
-  </section>
-
-  <!-- Magazine grid — dark bg, dramatic layout -->
-  <section class="section-dark" style="border-top: 1px solid rgba(255,255,255,0.06);">
-    <div class="section-container pb-16 md:pb-24 pt-8 md:pt-12">
-      {gallery.images.length > 0 ? (
-        <div class="gallery-magazine">
-          {gallery.images.map((image, i) => (
-            <figure class="gallery-mag-item group relative overflow-hidden">
-              <img
-                src={image.src}
-                alt={localized(image.alt, locale)}
-                class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                loading={i < 4 ? "eager" : "lazy"}
-              />
-              <!-- Hover: gold border + caption overlay -->
-              <div class="gallery-mag-overlay">
-                <p class="font-display text-sm md:text-base tracking-wider" style="color: var(--color-hero-text);">
-                  {localized(image.alt, locale)}
-                </p>
-              </div>
-              <div class="gallery-mag-border"></div>
-            </figure>
-          ))}
-        </div>
-      ) : (
-        <p class="text-lg" style="color: var(--color-hero-muted);">{t(locale, "gallery.empty")}</p>
-      )}
-    </div>
-  </section>
-
-  <!-- CTA — dark with starburst -->
-  <section class="section-dark relative overflow-hidden" style="border-top: 1px solid rgba(255,255,255,0.08);">
-    <div class="ghost-text top-1/2 right-0 translate-x-1/4 -translate-y-1/2" style="font-size: clamp(3rem, 10vw, 8rem);">
-      {t(locale, "cta.booknow" as any)}
-    </div>
-    <div class="section-container py-14 md:py-20 relative flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16" style="z-index: 1;">
-      <h2 class="font-display text-3xl md:text-4xl lg:text-5xl" style="color: var(--color-hero-text);">
-        {t(locale, "cta.visit" as any)}
-      </h2>
-      <a href={localePath(locale, "/book/")} class="btn-starburst">
-        {t(locale, "home.book")}
-      </a>
-    </div>
-  </section>
-
+  <PageHero title={t(locale, "nav.gallery")} />
+  {gallery.images.length > 0 ? (
+    <ul class="gallery-magazine">
+      {gallery.images.map((image, i) => (
+        <li>
+          <figure>
+            <img src={image.src} alt={localized(image.alt, locale)} loading={i < 4 ? "eager" : "lazy"} />
+          </figure>
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <p class="band">{t(locale, "gallery.empty")}</p>
+  )}
+  <BookingCta />
 </Base>
-
-<style>
-  /* Hero with title partially cropped at bottom */
-  .gallery-hero {
-    padding-bottom: 0;
-    overflow: hidden;
-  }
-
-  .gallery-title-wrap {
-    overflow: hidden;
-    line-height: 0;
-    max-height: clamp(4rem, 12vw, 10rem);
-  }
-
-  .gallery-title {
-    font-size: clamp(6rem, 22vw, 20rem);
-    color: var(--color-hero-text);
-    letter-spacing: 0.02em;
-    line-height: 0.85;
-    padding-left: 1.5rem;
-    white-space: nowrap;
-  }
-
-  /* Magazine-style masonry grid */
-  .gallery-magazine {
-    display: grid;
-    gap: 0.5rem;
-    grid-template-columns: 1fr;
-    grid-auto-rows: 280px;
-  }
-
-  @media (min-width: 640px) {
-    .gallery-magazine {
-      grid-template-columns: repeat(3, 1fr);
-      grid-auto-rows: 220px;
-      gap: 0.625rem;
-    }
-
-    /* Feature items: span 2 cols or 2 rows */
-    .gallery-mag-item:nth-child(1) {
-      grid-column: span 2;
-      grid-row: span 2;
-    }
-
-    .gallery-mag-item:nth-child(4) {
-      grid-column: span 2;
-    }
-
-    .gallery-mag-item:nth-child(7) {
-      grid-row: span 2;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .gallery-magazine {
-      grid-auto-rows: 260px;
-      gap: 0.75rem;
-    }
-  }
-
-  .gallery-mag-item {
-    border-radius: var(--radius);
-    cursor: pointer;
-  }
-
-  /* Caption overlay on hover */
-  .gallery-mag-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 1.5rem 1rem 1rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);
-    opacity: 0;
-    transform: translateY(0.5rem);
-    transition: opacity 0.35s ease, transform 0.35s ease;
-    display: flex;
-    align-items: flex-end;
-  }
-
-  .gallery-mag-item:hover .gallery-mag-overlay,
-  .gallery-mag-item:focus-within .gallery-mag-overlay {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* Gold border on hover */
-  .gallery-mag-border {
-    position: absolute;
-    inset: 0;
-    border: 3px solid var(--color-secondary);
-    border-radius: var(--radius);
-    opacity: 0;
-    transition: opacity 0.35s ease;
-    pointer-events: none;
-  }
-
-  .gallery-mag-item:hover .gallery-mag-border,
-  .gallery-mag-item:focus-within .gallery-mag-border {
-    opacity: 1;
-  }
-</style>

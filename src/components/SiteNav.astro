@@ -1,0 +1,82 @@
+---
+/**
+ * The site navigation. "hero" sits on the home page's photo: the three pages people want most
+ * stay visible on a phone, the rest are behind the menu button. "bar" is the header on every
+ * other page, next to the restaurant's name. From 900 px up both show every page as a link
+ * and the menu button goes away.
+ *
+ * The menu button is a <details> disclosure, so it opens without JavaScript.
+ */
+import { getLocale, localePath, t } from "../i18n";
+
+interface Props {
+  variant: "hero" | "bar";
+}
+
+const { variant } = Astro.props;
+const locale = getLocale(Astro.url);
+const altLocale = locale === "sv" ? "en" : "sv";
+const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
+const currentPath = Astro.url.pathname.replace(/^\/en/, "") || "/";
+
+type Link = { key: Parameters<typeof t>[1]; path: string; wideOnly?: boolean };
+const links: Link[] =
+  variant === "hero"
+    ? [
+        { key: "nav.menu", path: "/menu/" },
+        { key: "nav.about", path: "/about/" },
+        { key: "nav.gallery", path: "/gallery/", wideOnly: true },
+        { key: "nav.contact", path: "/contact/" },
+      ]
+    : [
+        { key: "nav.menu", path: "/menu/", wideOnly: true },
+        { key: "nav.about", path: "/about/", wideOnly: true },
+        { key: "nav.gallery", path: "/gallery/", wideOnly: true },
+        { key: "nav.contact", path: "/contact/", wideOnly: true },
+      ];
+
+// The menu button holds what the visible links leave out.
+const more: Link[] =
+  variant === "hero"
+    ? [
+        { key: "nav.home", path: "/" },
+        { key: "nav.book", path: "/book/" },
+        { key: "nav.gallery", path: "/gallery/" },
+      ]
+    : [
+        { key: "nav.home", path: "/" },
+        { key: "nav.menu", path: "/menu/" },
+        { key: "nav.book", path: "/book/" },
+        { key: "nav.about", path: "/about/" },
+        { key: "nav.gallery", path: "/gallery/" },
+        { key: "nav.contact", path: "/contact/" },
+      ];
+
+const current = (path: string) => (currentPath === path ? { "aria-current": "page" as const } : {});
+---
+
+<nav class:list={["site-nav", `site-nav--${variant}`]} aria-label={t(locale, "nav.main")}>
+  <ul class="site-nav__links">
+    {links.map(({ key, path, wideOnly }) => (
+      <li class:list={{ "wide-only": wideOnly }}>
+        <a href={localePath(locale, path)} {...current(path)}>{t(locale, key)}</a>
+      </li>
+    ))}
+    <li class="wide-only">
+      <a href={altPath} hreflang={altLocale} lang={altLocale}>{t(altLocale, "site.language")}</a>
+    </li>
+  </ul>
+  <details class="site-nav__more narrow-only">
+    <summary id="menu-toggle" aria-label={t(locale, "nav.open")}>
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M3 7h18M3 12h18M3 17h18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+      </svg>
+    </summary>
+    <ul id="nav-menu">
+      {more.map(({ key, path }) => (
+        <li><a href={localePath(locale, path)} {...current(path)}>{t(locale, key)}</a></li>
+      ))}
+      <li><a href={altPath} hreflang={altLocale} lang={altLocale}>{t(altLocale, "site.language")}</a></li>
+    </ul>
+  </details>
+</nav>

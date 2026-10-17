@@ -1,93 +1,36 @@
 ---
 import Base from "../layouts/Base.astro";
-import { localized } from "../content/load";
-import { getLocale, t, localePath } from "../i18n";
+import PageHero from "../components/PageHero.astro";
+import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
 const settings = Astro.locals.content.settings;
 const hasBooking = settings.booking.provider !== "none";
 const hasMap = !!settings.mapEmbed;
 const hasThirdParty = hasBooking || hasMap;
-const siteName = localized(settings.name, locale);
 ---
 
 <Base title={t(locale, "privacy.heading")}>
-  <!-- Privacy hero — dark section with ghost watermark -->
-  <section class="section-dark relative overflow-hidden">
-    <div class="ghost-text top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="font-size: clamp(3rem, 10vw, 8rem);">
-      {t(locale, "privacy.heading")}
-    </div>
-    <div class="section-container py-16 md:py-24 relative" style="z-index: 1;">
-      <h1 class="font-display text-4xl md:text-5xl lg:text-6xl mb-4" style="color: var(--color-hero-text);">
-        {t(locale, "privacy.heading")}
-      </h1>
-      <p class="text-base md:text-lg max-w-xl font-heading" style="color: var(--color-hero-muted);">
-        {t(locale, "privacy.intro")}
-      </p>
-    </div>
-  </section>
-
-  <!-- Policy content — light section -->
-  <section style="background-color: var(--color-bg);">
-    <div class="section-container py-16 md:py-24 max-w-3xl">
-
-      {!hasThirdParty && (
-        <div class="card-lifted p-6 md:p-8 mb-10">
-          <p class="font-heading font-medium text-base" style="color: var(--color-primary);">
-            {t(locale, "privacy.no-third-party")}
-          </p>
-        </div>
-      )}
-
-      <div class="space-y-10">
-        {hasBooking && (
-          <div class="flex gap-5">
-            <div class="flex-shrink-0 w-1 rounded-full" style="background-color: var(--color-secondary);"></div>
-            <div>
-              <h2 class="font-display text-2xl md:text-3xl mb-3" style="color: var(--color-primary);">
-                {t(locale, "privacy.booking.heading")}
-              </h2>
-              <p class="text-base leading-relaxed" style="color: var(--color-text);">
-                {t(locale, "privacy.booking.text")}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {hasMap && (
-          <div class="flex gap-5">
-            <div class="flex-shrink-0 w-1 rounded-full" style="background-color: var(--color-secondary);"></div>
-            <div>
-              <h2 class="font-display text-2xl md:text-3xl mb-3" style="color: var(--color-primary);">
-                {t(locale, "privacy.map.heading")}
-              </h2>
-              <p class="text-base leading-relaxed" style="color: var(--color-text);">
-                {t(locale, "privacy.map.text")}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div class="flex gap-5">
-          <div class="flex-shrink-0 w-1 rounded-full" style="background-color: var(--color-secondary);"></div>
-          <div>
-            <h2 class="font-display text-2xl md:text-3xl mb-3" style="color: var(--color-primary);">
-              {t(locale, "privacy.cookies.heading")}
-            </h2>
-            <p class="text-base leading-relaxed" style="color: var(--color-text);">
-              {t(locale, "privacy.cookies.text")}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <hr class="divider-decorated my-14" />
-
-      <div class="text-center">
-        <a href={localePath(locale, "/")} class="btn btn-secondary">
-          &larr; {siteName}
-        </a>
-      </div>
-    </div>
-  </section>
+  <PageHero title={t(locale, "privacy.heading")} intro={t(locale, "privacy.intro")} />
+  <div class="legal">
+    {!hasThirdParty && (
+      <p class="card-lifted">{t(locale, "privacy.no-third-party")}</p>
+    )}
+    {hasBooking && (
+      <section>
+        <h2>{t(locale, "privacy.booking.heading")}</h2>
+        <p>{t(locale, "privacy.booking.text")}</p>
+      </section>
+    )}
+    {hasMap && (
+      <section>
+        <h2>{t(locale, "privacy.map.heading")}</h2>
+        <p>{t(locale, "privacy.map.text")}</p>
+      </section>
+    )}
+    <section>
+      <h2>{t(locale, "privacy.cookies.heading")}</h2>
+      <p>{t(locale, "privacy.cookies.text")}</p>
+    </section>
+  </div>
 </Base>

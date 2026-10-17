@@ -1,4 +1,10 @@
 ---
+/**
+ * The footer: the name at normal size, how to reach the restaurant, today's hours with the whole
+ * week behind "Alla öppettider" (a <details>, so it opens without JavaScript), upcoming special
+ * days, and the social links as icons. Upcoming special days stay visible, so a holiday closure
+ * shows on every page.
+ */
 import { dayAndMonth, upcomingExceptions } from "../content/hours";
 import { needsConsent } from "../content/consent";
 import { localized } from "../content/load";
@@ -6,29 +12,42 @@ import { getLocale, t, localePath } from "../i18n";
 
 const settings = Astro.locals.content.settings;
 const hours = Astro.locals.content.hours;
+const today = Astro.locals.today;
+const style = Astro.locals.content.theme.style;
 const locale = getLocale(Astro.url);
+const altLocale = locale === "sv" ? "en" : "sv";
+const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
 const siteName = localized(settings.name, locale);
-const tagline = localized(settings.tagline, locale);
-// The next few special days, so a holiday closure is visible on every page.
-const specialDays = upcomingExceptions(hours, Astro.locals.today.date).slice(0, 3);
+const specialDays = upcomingExceptions(hours, today.date).slice(0, 3);
+const range = (h: { open: string; close: string } | null) => (h ? `${h.open}–${h.close}` : t(locale, "hours.closed"));
 
 const dayKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
-const dayNamesShort: Record<string, Record<string, string>> = {
-  monday: { sv: "Mån", en: "Mon" },
-  tuesday: { sv: "Tis", en: "Tue" },
-  wednesday: { sv: "Ons", en: "Wed" },
-  thursday: { sv: "Tor", en: "Thu" },
-  friday: { sv: "Fre", en: "Fri" },
-  saturday: { sv: "Lör", en: "Sat" },
-  sunday: { sv: "Sön", en: "Sun" },
-};
 
-const socialNames: Record<string, string> = {
-  instagram: "Instagram",
-  facebook: "Facebook",
-  tiktok: "TikTok",
-  twitter: "X",
+// Icons for the networks owners use; any other network gets its name as a text link.
+const networks: Record<string, { name: string; path: string; stroke?: boolean }> = {
+  instagram: {
+    name: "Instagram",
+    stroke: true,
+    path: "M8 3h8a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5zm4 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm5.3-1.6v.1",
+  },
+  facebook: {
+    name: "Facebook",
+    path: "M13.6 21v-7.6h2.6l.4-3h-3V8.5c0-.9.3-1.5 1.6-1.5h1.6V4.3c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H8v3h2.6V21z",
+  },
+  tiktok: {
+    name: "TikTok",
+    path: "M16.6 3c.3 2.1 1.6 3.6 3.9 3.8v3.1c-1.5.1-2.8-.4-3.9-1.1v6.1c0 3.4-2.6 5.9-5.9 5.9S4.8 18.3 4.8 15s2.8-6 6.2-5.7v3.2c-1.6-.4-3.1.8-3.1 2.5 0 1.5 1.2 2.7 2.7 2.7 1.6 0 2.7-1.2 2.7-3V3z",
+  },
+  twitter: {
+    name: "X",
+    path: "M17.8 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.3-8.3L2 3h6.4l4.4 5.8zm-1.1 16.2h1.7L7.4 4.7H5.6z",
+  },
 };
+const socials = Object.entries(settings.socialLinks).map(([network, url]) => ({
+  url,
+  icon: Object.hasOwn(networks, network) ? networks[network] : undefined,
+  name: Object.hasOwn(networks, network) ? networks[network].name : network,
+}));
 ---
 
 <script>
@@ -37,134 +56,76 @@ const socialNames: Record<string, string> = {
   });
 </script>
 
-<div class="wave-divider footer-wave" style="background-color: var(--color-bg);" aria-hidden="true">
-  <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 60px; background: var(--color-hero-bg); clip-path: polygon(0% 60%, 5% 55%, 10% 50%, 15% 48%, 20% 50%, 25% 55%, 30% 58%, 35% 55%, 40% 50%, 45% 48%, 50% 50%, 55% 55%, 60% 58%, 65% 55%, 70% 50%, 75% 48%, 80% 50%, 85% 55%, 90% 58%, 95% 55%, 100% 50%, 100% 100%, 0% 100%);"></div>
-</div>
-<footer class="section-dark relative overflow-hidden">
-  <!-- Decorative top border — gradient bar -->
-  <div class="footer-top-border" aria-hidden="true"></div>
-
-  <!-- Giant ghost watermark name — luxury brand effect -->
-  <div class="ghost-text top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" style="font-size: clamp(6rem, 22vw, 20rem); opacity: 0.03; white-space: nowrap;">
-    {siteName}
-  </div>
-
-  <!-- Main footer content -->
-  <div class="section-container relative py-16 md:py-24" style="z-index: 1;">
-
-    <!-- Big restaurant name as visual anchor -->
-    <div class="mb-12 md:mb-16">
-      <p class="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-none" style="color: var(--color-hero-text);">
-        {siteName}
-      </p>
-      <div class="divider-squiggle mt-5 mb-0" style="margin-left: 0;"></div>
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    {style === "modern" && (
+      <svg class="squiggle site-footer__squiggle" viewBox="0 0 84 20" aria-hidden="true" focusable="false">
+        <path d="M3 12 q 6.5 -9 13 0 t 13 0 t 13 0 t 13 0 t 13 0 t 13 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+      </svg>
+    )}
+    <div class="site-footer__col">
+      <p class="site-footer__name">{siteName}</p>
+      <address>
+        <span>{settings.address}</span>
+        <a href={`tel:${settings.phone.replace(/[\s-]/g, "")}`}>{settings.phone}</a>
+        <a href={`mailto:${settings.email}`}>{settings.email}</a>
+      </address>
     </div>
 
-    <div class="grid gap-10 md:gap-12 md:grid-cols-3">
-      <!-- Column 1: About + CTA -->
-      <div>
-        <p class="text-sm leading-relaxed mb-6 font-heading" style="color: var(--color-hero-muted);">
-          {tagline}
-        </p>
-        <a
-          href={localePath(locale, "/book/")}
-          class="btn btn-primary-on-dark"
-        >
-          {t(locale, "nav.book")}
-          <span aria-hidden="true">&rarr;</span>
-        </a>
-      </div>
-
-      <!-- Column 2: Opening hours -->
-      <div>
-        <h3 class="font-display text-lg tracking-widest mb-5" style="color: var(--color-secondary);">
-          {t(locale, "contact.hours")}
-        </h3>
-        <dl class="space-y-2.5 text-sm">
-          {dayKeys.map((day) => {
-            const h = hours.weekly[day];
-            return (
-              <div class="flex justify-between gap-4">
-                <dt class="font-medium" style="color: var(--color-hero-text);">{dayNamesShort[day][locale]}</dt>
-                <dd style="color: var(--color-hero-muted);">
-                  {h ? `${h.open}–${h.close}` : t(locale, "hours.closed")}
-                </dd>
-              </div>
-            );
-          })}
-        </dl>
-        {specialDays.length > 0 && (
-          <div class="mt-5 pt-4 text-sm" style="border-top: 1px solid rgba(255,255,255,0.12);">
-            <p class="font-medium mb-2" style="color: var(--color-hero-text);">{t(locale, "hours.exception")}</p>
-            <ul class="space-y-1.5" style="color: var(--color-hero-muted);">
-              {specialDays.map((e) => (
-                <li>
-                  <span style="color: var(--color-hero-text);">{dayAndMonth(e.date, locale)}</span>
-                  {" – "}
-                  {localized(e.note, locale)}
-                  {e.hours ? ` (${e.hours.open}–${e.hours.close})` : ` (${t(locale, "hours.closed")})`}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      <!-- Column 3: Contact + Social -->
-      <div>
-        <h3 class="font-display text-lg tracking-widest mb-5" style="color: var(--color-secondary);">
-          {t(locale, "footer.visit")}
-        </h3>
-        <address class="not-italic text-sm space-y-3" style="color: var(--color-hero-muted);">
-          <p>{settings.address}</p>
-          <p>
-            <a href={`tel:${settings.phone}`} class="footer-link">
-              {settings.phone}
-            </a>
-          </p>
-          <p>
-            <a href={`mailto:${settings.email}`} class="footer-link">
-              {settings.email}
-            </a>
-          </p>
-        </address>
-
-        {Object.keys(settings.socialLinks).length > 0 && (
-          <div class="mt-8">
-            <h3 class="font-display text-lg tracking-widest mb-4" style="color: var(--color-secondary);">
-              {t(locale, "footer.follow")}
-            </h3>
-            <div class="flex flex-wrap gap-3">
-              {Object.entries(settings.socialLinks).map(([platform, url]) => (
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="footer-social-badge"
-                  style="font-size: 0.9375rem; padding: 0.625rem 1.25rem;"
-                >
-                  {Object.hasOwn(socialNames, platform) ? socialNames[platform] : platform}
-                </a>
-              ))}
+    <div class="site-footer__col">
+      <p class="site-footer__today">{t(locale, "hours.today")}: {range(today.hours)}</p>
+      <details class="site-footer__week">
+        <summary>{t(locale, "footer.allHours")}</summary>
+        <dl>
+          {dayKeys.map((day) => (
+            <div>
+              <dt>{t(locale, `weekday.${day}` as Parameters<typeof t>[1])}</dt>
+              <dd>{range(hours.weekly[day])}</dd>
             </div>
-          </div>
-        )}
-      </div>
+          ))}
+        </dl>
+      </details>
+      {specialDays.length > 0 && (
+        <div class="site-footer__special">
+          <p>{t(locale, "hours.exception")}</p>
+          <ul>
+            {specialDays.map((e) => (
+              <li>
+                <time datetime={e.date}>{dayAndMonth(e.date, locale)}</time>: {localized(e.note, locale)} ({range(e.hours)})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
-  </div>
 
-  <!-- Bottom bar -->
-  <div class="relative" style={`border-top: 1px solid rgba(255,255,255,0.1); z-index: 1;`}>
-    <div class="section-container py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" style="color: var(--color-hero-muted);">
-      <p>&copy; {new Date().getFullYear()} {siteName}. {t(locale, "footer.rights")}.</p>
-      <p class="flex items-center gap-4">
-        <a href={localePath(locale, "/privacy/")} class="underline hover:opacity-100 transition-opacity" style="color: var(--color-hero-muted);">
-          {t(locale, "nav.privacy")}
-        </a>
+    <div class="site-footer__col">
+      {socials.length > 0 && (
+        <ul class="site-footer__social">
+          {socials.map(({ url, icon, name }) => (
+            <li>
+              {icon ? (
+                <a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${siteName} ${t(locale, "footer.on")} ${name}`}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    {icon.stroke ? (
+                      <path d={icon.path} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                    ) : (
+                      <path d={icon.path} fill="currentColor" />
+                    )}
+                  </svg>
+                </a>
+              ) : (
+                <a class="site-footer__social-text" href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p class="site-footer__links">
+        <a href={altPath} hreflang={altLocale} lang={altLocale}>{t(altLocale, "site.language")}</a>
+        <a href={localePath(locale, "/privacy/")}>{t(locale, "nav.privacy")}</a>
         {needsConsent(settings) && (
-          <button id="change-consent" class="underline hover:opacity-100 cursor-pointer transition-opacity" style="color: var(--color-hero-muted); background: none; border: none; font-size: inherit;">
-            {t(locale, "consent.change")}
-          </button>
+          <button id="change-consent" type="button">{t(locale, "consent.change")}</button>
         )}
       </p>
     </div>

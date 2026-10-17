@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import "../styles/site.css";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import ConsentBanner from "../components/ConsentBanner.astro";
@@ -7,12 +8,14 @@ import { needsConsent } from "../content/consent";
 import { upcomingExceptions } from "../content/hours";
 import { localized } from "../content/load";
 import { serializeJsonLd } from "../server/json-ld";
-import { getLocale } from "../i18n";
+import { getLocale, t } from "../i18n";
 
 interface Props {
   title?: string;
   description?: string;
   jsonLd?: Record<string, unknown>;
+  /** Leave out the header: the home page puts its navigation on the hero photo. */
+  bare?: boolean;
 }
 
 const settings = Astro.locals.content.settings;
@@ -20,8 +23,13 @@ const hours = Astro.locals.content.hours;
 const theme = Astro.locals.content.theme;
 const locale = getLocale(Astro.url);
 const siteName = localized(settings.name, locale);
-const { title = siteName, description = localized(settings.tagline, locale), jsonLd } =
+const { title = siteName, description = localized(settings.tagline, locale), jsonLd, bare = false } =
   Astro.props;
+// The fonts each look shows above the fold, fetched early so the hero doesn't reflow.
+const preloadFonts =
+  theme.style === "classic"
+    ? ["/fonts/CormorantGaramond-SemiBold.woff2", "/fonts/Jost-Medium.woff2"]
+    : ["/fonts/Anton-Regular.woff2"];
 const pageTitle = title === siteName ? siteName : `${title} | ${siteName}`;
 const altLocale = locale === "sv" ? "en" : "sv";
 // One URL per page: /menu and /menu/ both render, the trailing-slash form is canonical.
@@ -70,12 +78,13 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={locale} data-style={theme.style}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
+    {preloadFonts.map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
     <link rel="canonical" href={canonicalPath} />
     <link rel="alternate" hreflang={altLocale} href={altPath} />
     <link rel="alternate" hreflang={locale} href={Astro.url.pathname} />
@@ -113,17 +122,12 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
     >
     </style>
   </head>
-  <body
-    class="min-h-screen flex flex-col"
-    style={`background-color: var(--color-bg); color: var(--color-text); font-family: var(--font-body);`}
-  >
-    <a href="#main-content" class="skip-link">
-      {locale === "sv" ? "Hoppa till innehållet" : "Skip to content"}
-    </a>
+  <body class="site">
+    <a href={bare ? "#page-title" : "#main-content"} class="skip-link">{t(locale, "nav.skip")}</a>
 
-    <Header />
+    {!bare && <Header />}
 
-    <main id="main-content" class="flex-1">
+    <main id="main-content">
       <slot />
     </main>
 
