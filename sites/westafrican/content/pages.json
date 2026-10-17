@@ -4,18 +4,13 @@
       "sv": "Västafrikanskt kök i Göteborg",
       "en": "West African kitchen in Gothenburg"
     },
-    "highlights": ["a9y7jwm2x2kl", "854qfvcuovs3", "2pjpza5dq19y"],
-    "heroImage": "/images/westafrican/hero-buffet-service.jpg",
-    "highlightImages": {
-      "a9y7jwm2x2kl": "/images/westafrican/stew-rice-peppers.jpg",
-      "854qfvcuovs3": "/images/westafrican/egusi-soup.jpg",
-      "2pjpza5dq19y": "/images/westafrican/jollof-grilled-chicken.jpg"
-    },
+    "highlights": ["a9y7jwm2x2kl", "854qfvcuovs3", "bgni9ft9vvbp"],
+    "heroImage": "/images/westafrican/jollof-hero.jpg",
     "pullQuote": {
       "sv": "Smaken av hemma, lagad med kärlek tusen mil hemifrån.",
       "en": "The taste of home, cooked with love a thousand miles from home."
     },
-    "ctaImage": "/images/westafrican/gallery-grilling-skewers.jpg"
+    "ctaImage": "/images/westafrican/suya-flatbread.jpg"
   },
   "menu": {
     "heroImage": "/images/westafrican/gallery-grilled-platter.jpg"

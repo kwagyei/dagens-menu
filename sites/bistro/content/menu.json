@@ -20,7 +20,8 @@
           "price": 15500,
           "tags": [],
           "allergens": ["fish", "mustard", "eggs"],
-          "available": true
+          "available": true,
+          "image": "/images/bistro/lunchsallad-gravad-lax.jpg"
         },
         {
           "id": "agp76r6g49k5",
@@ -29,7 +30,8 @@
           "price": 16500,
           "tags": [],
           "allergens": ["gluten", "milk", "eggs"],
-          "available": true
+          "available": true,
+          "image": "/images/bistro/kroppkakor-dill.jpg"
         }
       ]
     },
@@ -45,7 +47,7 @@
           "tags": [],
           "allergens": ["crustaceans", "gluten", "eggs"],
           "available": true,
-          "image": "/images/bistro/toast-skagen.jpg"
+          "image": "/images/bistro/toast-skagen-roe.jpg"
         },
         {
           "id": "7exio5caff58",
@@ -54,7 +56,8 @@
           "price": 12500,
           "tags": ["vegetarian"],
           "allergens": ["milk", "nuts"],
-          "available": true
+          "available": true,
+          "image": "/images/bistro/rodbetscarpaccio.jpg"
         }
       ]
     },
@@ -62,6 +65,16 @@
       "id": "mains",
       "name": { "sv": "Varmrätter", "en": "Mains" },
       "items": [
+        {
+          "id": "kb7q2mzt0dla",
+          "name": { "sv": "Köttbullar", "en": "Swedish meatballs" },
+          "description": { "sv": "Med gräddsås, potatismos, lingon och pressgurka", "en": "With cream sauce, mashed potatoes, lingonberries and pickled cucumber" },
+          "price": 19500,
+          "tags": [],
+          "allergens": ["gluten", "milk", "eggs"],
+          "available": true,
+          "image": "/images/bistro/kottbullar-hero.jpg"
+        },
         {
           "id": "12k3upowokrb",
           "name": { "sv": "Pannbiff med lök", "en": "Pan-fried beef patty with onions" },
@@ -78,7 +91,8 @@
           "price": 17500,
           "tags": [],
           "allergens": ["fish", "gluten", "milk"],
-          "available": true
+          "available": true,
+          "image": "/images/bistro/stekt-stromming.jpg"
         },
         {
           "id": "e9twuiun6qcy",
@@ -97,7 +111,8 @@
           "price": 22500,
           "tags": [],
           "allergens": ["fish", "milk"],
-          "available": true
+          "available": true,
+          "image": "/images/bistro/gravad-laxfile.jpg"
         }
       ]
     },
@@ -122,7 +137,8 @@
           "price": 9500,
           "tags": ["vegetarian"],
           "allergens": ["milk", "eggs", "gluten"],
-          "available": true
+          "available": true,
+          "image": "/images/bistro/rabarberpaj.jpg"
         }
       ]
     },

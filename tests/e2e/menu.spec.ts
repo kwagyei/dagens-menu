@@ -10,6 +10,7 @@ import { dishRow, signedInOwner } from "./helpers";
 type Menu = { categories: Array<{ items: Array<{ id: string; name: { sv: string; en: string } }> }> };
 const menu: Menu = JSON.parse(readFileSync(new URL("../../sites/bistro/content/menu.json", import.meta.url), "utf-8"));
 const dish = (c: number, i: number) => menu.categories[c].items[i];
+const featured: string[] = JSON.parse(readFileSync(new URL("../../sites/bistro/content/pages.json", import.meta.url), "utf-8")).home.highlights;
 
 test("sold out today, from the menu list, shows on the public menu in both languages", async ({ page }) => {
   await signedInOwner(page);
@@ -124,8 +125,9 @@ test("moving a dish up changes the order on the public menu", async ({ page }) =
 
 test("a fourth home-page dish is refused with an explanation", async ({ page }) => {
   await signedInOwner(page);
-  // The lunch dishes aren't among the seeded three featured dishes.
-  const notFeatured = dishRow(page, dish(0, 2).name.sv);
+  // Any seeded dish that isn't one of the three featured ones; the save is refused, so it changes nothing.
+  const other = menu.categories.flatMap((c) => c.items).find((d) => !featured.includes(d.id))!;
+  const notFeatured = dishRow(page, other.name.sv);
   await notFeatured.getByRole("link", { name: "Ändra" }).click();
   await page.getByLabel("Visa på startsidan").check();
   await page.getByRole("button", { name: "Spara" }).click();

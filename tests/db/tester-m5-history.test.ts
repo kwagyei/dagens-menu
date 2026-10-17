@@ -251,7 +251,7 @@ describe("tampered or wrong files are refused before anything is written", () =>
     expect(rejected(inject('"content": {'))).toBeTruthy();
     expect(rejected(inject('"settings": {'))).toBeTruthy();
     expect(rejected(inject('"socialLinks": {'))).toMatch(/__proto__/);
-    expect(rejected(inject('"highlightImages": {'))).toMatch(/__proto__/);
+    expect(rejected(inject('"weekly": {'))).toMatch(/__proto__/);
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
   });
 

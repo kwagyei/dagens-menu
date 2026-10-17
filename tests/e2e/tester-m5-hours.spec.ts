@@ -301,7 +301,7 @@ test("exceptions are visible in the footer's opening hours as the admin text pro
   const date = daysAhead(61);
   await post("/admin/hours/", exceptionForm(date, { note_sv: "Midsommar", note_en: "Midsummer" }));
   await page.goto("/");
-  const footer = await page.locator("footer.section-dark").innerText();
+  const footer = await page.locator("footer").innerText();
   await post("/admin/hours/", { action: "remove-exception", date });
   expect(footer, "footer ignores exceptions").toContain("Midsommar");
 });

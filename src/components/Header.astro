@@ -1,139 +1,16 @@
 ---
+/** The header on every page but home, where the navigation sits on the hero photo instead. */
+import SiteNav from "./SiteNav.astro";
 import { localized } from "../content/load";
-import { getLocale, t, localePath } from "../i18n";
+import { getLocale, localePath } from "../i18n";
 
 const settings = Astro.locals.content.settings;
 const locale = getLocale(Astro.url);
-const siteName = localized(settings.name, locale);
-const altLocale = locale === "sv" ? "en" : "sv";
-const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
-
-const navItems = [
-  { key: "nav.menu" as const, path: "/menu/" },
-  { key: "nav.about" as const, path: "/about/" },
-  { key: "nav.gallery" as const, path: "/gallery/" },
-  { key: "nav.contact" as const, path: "/contact/" },
-];
-
-const currentPath = Astro.url.pathname.replace(/^\/en/, "") || "/";
 ---
 
-<header
-  id="site-header"
-  class="sticky top-0 z-50 transition-all duration-300"
->
-  <nav class="section-container flex items-center justify-between py-3 md:py-4" aria-label={locale === "sv" ? "Huvudnavigering" : "Main navigation"}>
-
-    <!-- Logo / site name — large Bebas Neue -->
-    <a href={localePath(locale, "/")} class="font-display text-3xl md:text-4xl lg:text-5xl tracking-wider" style={`color: var(--color-hero-text); text-transform: uppercase; letter-spacing: 0.1em; line-height: 1;`}>
-      {siteName}
-    </a>
-
-    <!-- Desktop navigation — bolder, more spaced -->
-    <ul class="hidden md:flex items-center gap-2 lg:gap-3">
-      {navItems.map(({ key, path }) => {
-        const isActive = currentPath === path;
-        return (
-          <li>
-            <a
-              href={localePath(locale, path)}
-              class:list={["nav-link px-3 py-2", { "nav-link-active": isActive }]}
-              {...(isActive ? { "aria-current": "page" } : {})}
-            >
-              {t(locale, key)}
-            </a>
-          </li>
-        );
-      })}
-    </ul>
-
-    <!-- Right side: language toggle + book CTA -->
-    <div class="flex items-center gap-3 md:gap-4">
-      <!-- Language toggle -->
-      <a
-        href={altPath}
-        class="font-display text-sm px-3 py-1.5 rounded-sm tracking-widest"
-        style={`color: var(--color-hero-text); border: 1px solid rgba(255,255,255,0.25); transition: background-color 0.15s ease;`}
-        hreflang={altLocale}
-        lang={altLocale}
-      >
-        {altLocale === "en" ? "EN" : "SV"}
-      </a>
-
-      <!-- Booking CTA from tablet width up; on phones it's in the menu. One button, no sticker:
-           an absolutely placed starburst here covered the menu button on phones. The wrapper
-           carries the visibility, because the unlayered `.btn` display beats Tailwind's `hidden`. -->
-      <div class="hidden md:block">
-        <a href={localePath(locale, "/book/")} class="btn header-cta">
-          {t(locale, "nav.book.short" as any)}
-        </a>
-      </div>
-
-      <!-- Mobile hamburger -->
-      <button
-        id="menu-toggle"
-        class="md:hidden p-2 -mr-2"
-        aria-expanded="false"
-        aria-controls="nav-menu"
-        aria-label={locale === "sv" ? "Öppna meny" : "Open menu"}
-        style="color: var(--color-hero-text);"
-      >
-        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
-    </div>
-  </nav>
-
-  <!-- Mobile navigation menu -->
-  <div id="nav-menu" class="hidden md:hidden" style={`border-top: 1px solid rgba(255,255,255,0.1);`}>
-    <ul class="section-container flex flex-col gap-1 py-4">
-      {[{ key: "nav.home" as const, path: "/" }, ...navItems].map(({ key, path }) => {
-        const isActive = currentPath === path;
-        return (
-          <li>
-            <a
-              href={localePath(locale, path)}
-              class="block py-3 px-4 rounded font-display text-lg tracking-wide transition-colors"
-              style={isActive
-                ? `color: var(--color-secondary); background-color: rgba(255,255,255,0.08); text-transform: uppercase; letter-spacing: 0.06em;`
-                : `color: var(--color-hero-text); text-transform: uppercase; letter-spacing: 0.06em;`}
-              {...(isActive ? { "aria-current": "page" } : {})}
-            >
-              {t(locale, key)}
-            </a>
-          </li>
-        );
-      })}
-      <li class="mt-3 pt-3" style={`border-top: 1px solid rgba(255,255,255,0.1);`}>
-        <a
-          href={localePath(locale, "/book/")}
-          class="btn btn-primary-on-dark w-full text-center text-lg"
-          style="font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.06em;"
-        >
-          {t(locale, "nav.book" as any)}
-        </a>
-      </li>
-    </ul>
+<header class="site-bar">
+  <div class="site-bar__inner">
+    <a class="site-bar__name" href={localePath(locale, "/")}>{localized(settings.name, locale)}</a>
+    <SiteNav variant="bar" />
   </div>
 </header>
-
-<script>
-  const toggle = document.getElementById("menu-toggle");
-  const menu = document.getElementById("nav-menu");
-  if (toggle && menu) {
-    toggle.addEventListener("click", () => {
-      const expanded = toggle.getAttribute("aria-expanded") === "true";
-      toggle.setAttribute("aria-expanded", String(!expanded));
-      menu.classList.toggle("hidden");
-    });
-  }
-
-  // Frosted-glass header once the page scrolls; the styles live in global.css.
-  const header = document.getElementById("site-header");
-  if (header) {
-    const update = () => header.toggleAttribute("data-scrolled", window.scrollY > 60);
-    window.addEventListener("scroll", update, { passive: true });
-    update();
-  }
-</script>

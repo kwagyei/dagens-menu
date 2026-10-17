@@ -242,7 +242,7 @@ describe("invalid input", () => {
     expect(await getMenuItem(bistro, evil)).toBeNull();
     expect(await setSoldOut(bistro, evil, true)).toEqual({ ok: false, error: "not-found" });
     expect(await deleteMenuItem(bistro, evil)).toEqual({ ok: false, error: "not-found" });
-    expect(await db.prepare("SELECT count(*) AS n FROM menu_items WHERE site_id = 'bistro'").first("n")).toBe(13);
+    expect(await db.prepare("SELECT count(*) AS n FROM menu_items WHERE site_id = 'bistro'").first("n")).toBe(14);
   });
 
   it("reports a conflict, not a success, for a row_version from the future", async () => {

@@ -98,7 +98,8 @@ test("a saved link is rendered with noopener, target=_blank and an escaped href"
     const res = await post(page, { ...fresh, social_tiktok: "https://tiktok.com/@x?a=1&b=2#top", social_facebook: "https://biströ.se/meny" });
     expect(res.status()).toBe(303);
     await page.goto("/en/");
-    const tik = page.locator("footer a", { hasText: "TikTok" });
+    // Social links are icons (PR B): find TikTok by its accessible name.
+    const tik = page.getByRole("contentinfo").getByRole("link", { name: /TikTok/ });
     await expect(tik).toHaveAttribute("href", "https://tiktok.com/@x?a=1&b=2#top");
     await expect(tik).toHaveAttribute("rel", /noopener/);
     await expect(tik).toHaveAttribute("target", "_blank");
@@ -197,8 +198,12 @@ test("markup and invisible characters in the name are inert on every public surf
       expect(ld.name, path).toContain(sv ? "<img src=x" : "EN <img src=x");
       expect(await meta(page, "og:site_name"), path).toContain("<img src=x");
       expect(await page.title(), path).toContain("<img src=x");
-      expect(await page.locator("header").first().textContent(), path).toContain("<img src=x");
-      expect(await page.locator("footer.section-dark").textContent(), path).toContain("<img src=x");
+      // Home has no header bar since PR B: the name is the hero's H1 (in an SVG's aria-label on the modern look).
+      const nameSurface = (await page.locator("header").count()) > 0
+        ? await page.locator("header").first().textContent()
+        : await page.locator("#page-title").evaluate((el) => `${el.textContent} ${el.querySelector("[aria-label]")?.getAttribute("aria-label") ?? ""}`);
+      expect(nameSurface, path).toContain("<img src=x");
+      expect(await page.getByRole("contentinfo").textContent(), path).toContain("<img src=x");
     }
     expect(dialogs).toBe(0);
     // The owner's own page escapes it too.
@@ -249,14 +254,19 @@ test("every change shows on the next request, sv and en, in header, footer, titl
       expect(ld.address.streetAddress).toBe("Nygatan 9, 111 22 Stockholm");
       expect(await meta(page, "og:site_name")).toBe(name);
       expect(await page.title()).toContain(name);
-      await expect(page.locator("header")).toContainText(name);
-      const footer = page.locator("footer.section-dark");
+      // Home has no header bar since PR B: the name is the hero's H1.
+      await expect(page.locator("#page-title")).toHaveAccessibleName(name);
+      const footer = page.getByRole("contentinfo");
       await expect(footer).toContainText(name);
       await expect(footer).toContainText("Nygatan 9");
       await expect(footer).toContainText(tagline);
       await expect(footer.locator("a[href='tel:+46 8 765 43 21'], a[href^='tel:']").first()).toContainText("+46 8 765 43 21");
       await expect(footer.locator("a[href='mailto:ny@nytt.se']")).toHaveCount(1);
     }
+    await page.goto("/menu/");
+    await expect(page.locator("header")).toContainText("Nya Namnet");
+    await page.goto("/en/menu/");
+    await expect(page.locator("header")).toContainText("New Name");
     await page.goto("/");
     await expect(page.locator("main")).toContainText("Ny rubrik sv");
     await page.goto("/en/");

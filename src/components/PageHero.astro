@@ -1,0 +1,27 @@
+---
+/**
+ * The top of every page but home: the page's H1 and an optional one-line intro, aligned with the
+ * content below. Classic sets it centred under the arc and dot; modern sets it huge and left.
+ * It replaces the per-page heroes with cropped titles and ghost duplicates (UI review P2-4).
+ */
+interface Props {
+  title: string;
+  intro?: string;
+}
+
+const { title, intro } = Astro.props;
+const style = Astro.locals.content.theme.style;
+// The H1 is sized so its longest word fits the screen ("Integritetspolicy" at full size would not).
+const longestWord = Math.max(4, ...title.split(/\s+/).map((word) => [...word].length));
+---
+
+<div class="page-hero" style={`--len: ${longestWord}`}>
+  {style === "classic" && (
+    <svg class="arc page-hero__arc" viewBox="0 0 360 70" aria-hidden="true" focusable="false">
+      <path d="M8 66 Q180 -14 352 66" fill="none" stroke="currentColor" stroke-width="1.5" />
+      <circle cx="70" cy="40" r="7" fill="currentColor" />
+    </svg>
+  )}
+  <h1 id="page-title">{title}</h1>
+  {intro && <p>{intro}</p>}
+</div>

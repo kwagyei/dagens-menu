@@ -1,23 +1,23 @@
 {
+  "style": "modern",
   "colors": {
-    "primary": "#b5451b",
-    "secondary": "#d4962a",
-    "accent": "#3d6b4f",
-    "background": "#faf3e6",
-    "surface": "#f5ece0",
-    "surfaceAlt": "#ede3d3",
-    "text": "#2a2118",
-    "textMuted": "#716050",
-    "border": "#d4c4ad",
-    "heroBg": "#6b2a0f",
-    "heroText": "#faf3e6",
-    "heroMuted": "#d4b89a"
+    "primary": "#1b4a2c",
+    "secondary": "#13301d",
+    "accent": "#f06a3b",
+    "background": "#eef27a",
+    "surface": "#fff8e7",
+    "surfaceAlt": "#e3e76e",
+    "text": "#1b4a2c",
+    "textMuted": "#3f5a33",
+    "border": "#c3c85a",
+    "heroBg": "#1b4a2c",
+    "heroText": "#fff8e7",
+    "heroMuted": "#dce5cc"
   },
   "fonts": {
-    "heading": "'Palatino Linotype', Palatino, Georgia, serif",
-    "display": "'Bebas Neue', Impact, 'Arial Narrow', sans-serif",
-    "body": "system-ui, -apple-system, sans-serif"
+    "heading": "Anton, 'Arial Narrow', Impact, sans-serif",
+    "display": "Anton, 'Arial Narrow', Impact, sans-serif",
+    "body": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
   },
-  "cornerRadius": "0.5rem",
-  "heroStyle": "image-overlay"
+  "cornerRadius": "0.75rem"
 }

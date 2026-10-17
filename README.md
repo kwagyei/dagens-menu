@@ -67,6 +67,13 @@ is the seed data the demos are loaded from.
   HTML on Cloudflare Pages is free, fast and has nothing to patch.
 - **One codebase, many sites, selected at build time.** A new client is a content folder
   plus a theme file. Nothing forks, so a fix ships to every site.
+- **Two looks, not two colour schemes.** `theme.json` picks `"style": "classic"` (a full-bleed
+  food photo, a spaced serif name, a printed menu) or `"modern"` (one huge condensed word over a
+  rounded photo, pill shapes, an orange oval button). The same pages render either: the looks
+  live in `src/styles/site.css` under `[data-style]`, with markup branches only where the
+  structure differs (the home hero and the menu). Colours and fonts still come from the theme,
+  so a client recolours a look rather than forking it. Each page has one booking button, and
+  the navigation, menu button and footer work without JavaScript.
 - **Prices are integers in öre.** They are never floats, so `145.5 kr` can't appear. They
   are formatted in one place (`formatPrice`), which rejects anything that isn't a
   non-negative integer. A bad edit then fails the build instead of rendering `NaN kr`.
@@ -171,6 +178,9 @@ is the seed data the demos are loaded from.
   themselves, but if every passkey is lost, the operator sends a new invite.
 - **The edge-case suite can be red while `main` deploys.** That's the price of a fast gate:
   an edge case found nightly becomes an issue, not a blocked release.
+- **Some demo photos are look-alikes.** No free photo shows real kroppkakor, rabarberpaj or
+  Toast Skagen with confirmed shrimp, so close substitutes stand in; `docs/photo-credits.md`
+  marks them. Thieboudienne, jordnötssoppa and pannbiff med lök have no photo at all.
 - **Images are served as uploaded JPEGs.** Astro's image pipeline (AVIF/WebP, responsive
   sizes) isn't used yet, which costs page weight on mobile.
 - **Lighthouse performance is 75–88 on mobile, below the 95 target.** Measured 2026-10-16:

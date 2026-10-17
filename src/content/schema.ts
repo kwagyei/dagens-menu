@@ -250,7 +250,11 @@ const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "must be a six-digit hex colour"
 // Fonts and radius are interpolated into CSS: allow only what a font stack or length needs.
 const fontStack = z.string().regex(/^[\w\s,'"-]+$/, "must be a plain font stack");
 
+/** The site's look (UI review PR B): classic (Ljus, serif and photo-led) or modern (Dag, loud condensed type). */
+export const THEME_STYLES = ["classic", "modern"] as const;
+
 export const themeSchema = z.strictObject({
+  style: z.enum(THEME_STYLES),
   colors: z.strictObject({
     primary: hex,
     secondary: hex,
@@ -267,7 +271,6 @@ export const themeSchema = z.strictObject({
   }),
   fonts: z.strictObject({ heading: fontStack, display: fontStack, body: fontStack }),
   cornerRadius: z.string().regex(/^\d+(\.\d+)?(rem|px|em)$|^0$/, "must be a CSS length"),
-  heroStyle: z.enum(["image-overlay", "side-by-side", "text-only"]),
 });
 
 /** A whole site's content, with the rules that span files. */

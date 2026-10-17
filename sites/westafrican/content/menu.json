@@ -12,7 +12,7 @@
           "tags": ["vegan", "gluten-free", "spicy"],
           "allergens": [],
           "available": true,
-          "image": "/images/westafrican/gallery-kelewele-plate.jpg"
+          "image": "/images/westafrican/kelewele-bowl.jpg"
         },
         {
           "id": "qhbzr0ta9mxk",
@@ -21,7 +21,8 @@
           "price": 11500,
           "tags": ["spicy", "gluten-free"],
           "allergens": ["peanuts"],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/suya-flatbread.jpg"
         },
         {
           "id": "1og59rqyhq12",
@@ -30,7 +31,8 @@
           "price": 9500,
           "tags": ["vegan"],
           "allergens": [],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/akara.jpg"
         }
       ]
     },
@@ -46,7 +48,7 @@
           "tags": ["spicy"],
           "allergens": [],
           "available": true,
-          "image": "/images/westafrican/jollof-grilled-chicken.jpg"
+          "image": "/images/westafrican/jollof-plate.jpg"
         },
         {
           "id": "ev01jipfxwwl",
@@ -55,7 +57,8 @@
           "price": 18500,
           "tags": ["spicy", "gluten-free"],
           "allergens": [],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/egusi-red-bowl.jpg"
         },
         {
           "id": "12aeh1zxepu7",
@@ -73,7 +76,8 @@
           "price": 16500,
           "tags": ["spicy"],
           "allergens": ["gluten"],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/waakye.jpg"
         },
         {
           "id": "2pjpza5dq19y",
@@ -98,7 +102,7 @@
           "tags": ["vegetarian"],
           "allergens": ["gluten", "eggs"],
           "available": true,
-          "image": "/images/westafrican/gallery-puff-puff.jpg"
+          "image": "/images/westafrican/puff-puff-basket.jpg"
         },
         {
           "id": "2iamxkixhpxn",

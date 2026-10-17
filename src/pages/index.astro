@@ -1,230 +1,176 @@
 ---
+/**
+ * Home. One booking button, in the hero, next to today's hours. The navigation sits on the hero
+ * photo, so the layout leaves out the header (`bare`).
+ *
+ * Classic: full-bleed food photo, the name in spaced capitals under the arc, a swipe strip of the
+ * highlighted dishes, the owner's own line, and the lunch list when the menu has one.
+ * Modern: the name as one huge two-line word biting into a rounded photo, the orange oval, the
+ * tagline beside it, pill slices of a dish photo on phones, and the highlights as cards.
+ */
 import Base from "../layouts/Base.astro";
-import { localized, formatPrice, resolveHighlights } from "../content/load";
-import { getLocale, t, localePath } from "../i18n";
+import MenuRow from "../components/MenuRow.astro";
+import SiteNav from "../components/SiteNav.astro";
+import { formatPrice, localized, resolveHighlights } from "../content/load";
+import { getLocale, localePath, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const settings = Astro.locals.content.settings;
-const pages = Astro.locals.content.pages;
-const menu = Astro.locals.content.menu;
-const tagline = localized(pages.home.tagline, locale);
-const siteName = localized(settings.name, locale);
-const cuisine = localized(settings.cuisine, locale);
+const { settings, pages, menu, theme } = Astro.locals.content;
 const today = Astro.locals.today;
+const siteName = localized(settings.name, locale);
+const tagline = localized(pages.home.tagline, locale);
+const voice = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
 const highlights = resolveHighlights(menu, pages.home.highlights, today.soldOut);
-const pullQuote = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
-const ctaImage = pages.home.ctaImage;
+const todayText = `${t(locale, "hours.today")}: ${today.hours ? `${today.hours.open}–${today.hours.close}` : t(locale, "hours.closed")}`;
+
+// The hero photo is described when it is one of the menu's dishes; a room or table photo is
+// decoration (alt="").
+const allItems = menu.categories.flatMap((c) => c.items);
+const heroImage = pages.home.heroImage;
+const heroDish = heroImage ? allItems.find((item) => item.image === heroImage) : undefined;
+const heroAlt = heroDish ? localized(heroDish.name, locale) : "";
+
+// Classic shows the lunch list when the menu has a lunch category with something on sale.
+const soldOut = new Set(today.soldOut);
+const lunch = menu.categories.find((c) => c.id === "lunch");
+const lunchItems = lunch ? lunch.items.filter((item) => item.available && !soldOut.has(item.id)) : [];
+
+// Modern sets the name as two lines, each stretched to the full width (SVG textLength), with the
+// shorter line set larger so both stretch by a similar amount. Anton's capitals average about
+// 0.55 em wide, so a line of n letters needs about 100 / (0.55 n) units to fill 100.
+const words = siteName.toUpperCase().split(/\s+/).filter(Boolean);
+const lines = words.length === 2 ? words : [words.join(" ")];
+let y = 0;
+const wordLines = lines.map((text) => {
+  const size = Math.min(60, Math.max(14, 100 / (0.55 * [...text].length)));
+  y += size * (y === 0 ? 0.87 : 0.95);
+  return { text, size: Math.round(size * 10) / 10, y: Math.round(y * 10) / 10 };
+});
+const wordHeight = Math.ceil(y + 1);
 ---
 
-<Base title={siteName} description={tagline}>
+<Base title={siteName} description={tagline} bare>
+  {theme.style === "classic" ? (
+    <>
+      <section class="hero-ljus" aria-labelledby="page-title">
+        {heroImage && <img class="hero-ljus__img" src={heroImage} alt={heroAlt} loading="eager" fetchpriority="high" />}
+        <div class="hero-ljus__nav"><SiteNav variant="hero" /></div>
+        <svg class="arc" viewBox="0 0 360 120" aria-hidden="true" focusable="false">
+          <path d="M8 112 Q180 -22 352 112" fill="none" stroke="currentColor" stroke-width="1.5" />
+          <circle cx="70" cy="72" r="7" fill="currentColor" />
+        </svg>
+        <h1 id="page-title">{siteName}</h1>
+        <p class="hero-ljus__tagline">{tagline}</p>
+        <a class="btn btn-light" href={localePath(locale, "/book/")}>{t(locale, "home.book")}</a>
+        <p class="hours-badge">{todayText}</p>
+      </section>
 
-  <!-- ============================================================
-       HERO — Duotone image + viewport-filling typography
-       ============================================================ -->
-  <section class="relative overflow-hidden min-h-[85vh] flex items-end" style="background-color: var(--color-hero-bg);">
-    {pages.home.heroImage && (
-      <img
-        src={pages.home.heroImage}
-        alt=""
-        class="absolute inset-0 w-full h-full object-cover"
-        style="z-index: 0;"
-        loading="eager"
-      />
-    )}
-    <!-- Duotone: brand-colour multiply blend -->
-    <div class="img-overlay-duotone"></div>
-    <!-- Bottom gradient fade -->
-    <div class="img-overlay-duotone-gradient"></div>
-
-    <!-- Ghost watermark — massive, fills width -->
-    <div class="absolute inset-0 flex items-center justify-center overflow-hidden" style="z-index: 1;">
-      <span class="font-display whitespace-nowrap select-none pointer-events-none" style="font-size: clamp(8rem, 20vw, 22rem); line-height: 0.8; color: rgba(255,255,255,0.04); letter-spacing: 0.05em;">
-        {cuisine}
-      </span>
-    </div>
-
-    <div class="section-container relative w-full pb-12 md:pb-16 lg:pb-20 pt-32 md:pt-40" style="z-index: 3;">
-      <!-- Cuisine label — small, tracked, uppercase -->
-      <p class="font-display text-xs sm:text-sm tracking-[0.3em] mb-4 md:mb-6" style="color: var(--color-secondary);">
-        {cuisine}
-      </p>
-
-      <!-- Restaurant name — THE visual, fills viewport width -->
-      <h1 class="font-display text-viewport mb-4 md:mb-6 -ml-1" style="color: var(--color-hero-text); letter-spacing: -0.02em;">
-        {siteName}
-      </h1>
-
-      <!-- Tagline — serif contrast -->
-      <p class="font-heading text-lg sm:text-xl md:text-2xl max-w-lg mb-8 md:mb-10" style="color: var(--color-hero-muted); font-style: italic;">
-        {tagline}
-      </p>
-
-      <div class="flex flex-col sm:flex-row items-start gap-4">
-        <a href={localePath(locale, "/book/")} class="btn btn-primary-on-dark">
-          {t(locale, "home.book")}
-        </a>
-
-        <!-- Today's hours, worked out on the server for each request in Stockholm time
-             (src/content/today.ts), so they are right without JavaScript. -->
-        <div class="hours-badge">
-          {t(locale, "hours.today")}: {today.hours ? `${today.hours.open}\u2013${today.hours.close}` : t(locale, "hours.closed")}
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Wave divider: hero → highlights (dark → dark, subtle) -->
-  <div class="relative" style="background-color: var(--color-hero-bg); margin-top: -1px;">
-    <svg class="wave-divider" viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={`fill: var(--color-hero-bg);`}>
-      <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z" style="opacity: 0.15; fill: var(--color-secondary);" />
-    </svg>
-  </div>
-
-  <!-- ============================================================
-       HIGHLIGHTS — Broken grid, asymmetric, images bleed to edge
-       ============================================================ -->
-  {highlights.length > 0 && (
-    <section class="section-dark relative overflow-hidden">
-      <div class="section-container py-16 md:py-24 relative" style="z-index: 1;">
-        <div class="mb-12 md:mb-20">
-          <p class="font-display text-xs sm:text-sm tracking-[0.3em] mb-3" style="color: var(--color-secondary);">
-            {t(locale, "home.highlights")}
-          </p>
-          <h2 class="font-display text-viewport-sm" style="color: var(--color-hero-text);">
-            {t(locale, "nav.menu")}
-          </h2>
-        </div>
-
-        <div class="space-y-16 md:space-y-28">
-          {highlights.map(({ id, item }, i) => {
-            // The dish's own photo, the same one the menu shows. The separate highlightImages map
-            // had drifted from the dishes (jollof showed egusi), so it is no longer read.
-            const imgSrc = item.image;
-            const isEven = i % 2 === 0;
-            const tiltClass = isEven ? 'img-tilt-right' : 'img-tilt-left';
-            const bleedClass = isEven ? 'bleed-left' : 'bleed-right';
-            return (
-              <div class={`flex flex-col ${isEven ? 'md:flex-row' : 'md:flex-row-reverse'} gap-4 md:gap-8 items-start`}>
-                {/* Image — larger than container, bleeds to edge, tilted */}
-                {/* A dish without a photo is shown as text only: an empty box looked broken. */}
-                {imgSrc && (
-                  <div class={`w-full md:w-[55%] lg:w-[58%] ${bleedClass}`}>
-                    <img
-                      src={imgSrc}
-                      alt={localized(item.name, locale)}
-                      class={`w-full aspect-[4/3] object-cover shadow-food ${tiltClass}`}
-                      style={`border-radius: var(--radius);`}
-                      loading="lazy"
-                    />
-                  </div>
-                )}
-
-                {/* Text — offset vertically for asymmetry */}
-                <div class={imgSrc ? `w-full md:w-[45%] lg:w-[42%] highlight-offset-down ${isEven ? 'md:text-left' : 'md:text-right'}` : "w-full max-w-2xl"}>
-                  <p class="font-display text-xs tracking-[0.2em] mb-2" style="color: var(--color-secondary);">
-                    {formatPrice(item.price)}
-                  </p>
-                  <h3 class="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-4" style="color: var(--color-hero-text);">
-                    {localized(item.name, locale)}
-                  </h3>
-                  <p class="font-heading text-base md:text-lg leading-relaxed" style="color: var(--color-hero-muted);">
-                    {localized(item.description, locale)}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div class="mt-12 md:mt-16">
-          <a href={localePath(locale, "/menu/")} class="btn btn-primary-on-dark">
-            {t(locale, "nav.menu")} &rarr;
-          </a>
-        </div>
-      </div>
-    </section>
-  )}
-
-  <!-- Wave divider: highlights → gold -->
-  <div class="relative" style="margin-top: -1px;">
-    <svg class="wave-divider" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M0,0 L0,30 Q360,60 720,30 Q1080,0 1440,30 L1440,0 Z" style="fill: var(--color-hero-bg);" />
-      <path d="M0,30 Q360,60 720,30 Q1080,0 1440,30 L1440,60 L0,60 Z" style="fill: var(--color-secondary);" />
-    </svg>
-  </div>
-
-  <!-- ============================================================
-       GOLD ACCENT — Pull quote, visual landmark
-       ============================================================ -->
-  {pullQuote && (
-    <section class="section-gold">
-      <div class="section-container py-16 md:py-24 lg:py-32 text-center">
-        <blockquote class="max-w-3xl mx-auto">
-          <p class="font-heading text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-snug" style="font-style: italic; color: var(--color-hero-bg);">
-            &ldquo;{pullQuote}&rdquo;
-          </p>
-          <footer class="mt-6 md:mt-8">
-            <span class="font-display text-sm tracking-[0.2em]" style="color: var(--color-hero-bg); opacity: 0.7;">
-              {t(locale, "home.quote.attribution")}
-            </span>
-          </footer>
-        </blockquote>
-      </div>
-    </section>
-  )}
-
-  <!-- Wave divider: gold → CTA dark -->
-  <div class="relative" style="margin-top: -1px;">
-    <svg class="wave-divider" viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M0,0 L0,20 C480,60 960,0 1440,40 L1440,0 Z" style="fill: var(--color-secondary);" />
-      <path d="M0,20 C480,60 960,0 1440,40 L1440,60 L0,60 Z" style="fill: var(--color-hero-bg);" />
-    </svg>
-  </div>
-
-  <!-- ============================================================
-       CTA — Overlapping photo + starburst badge
-       ============================================================ -->
-  <section class="section-dark relative overflow-hidden">
-    <div class="section-container py-16 md:py-24 relative" style="z-index: 1;">
-      <div class="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-        {/* Overlapping photo — pulls up into previous section */}
-        {ctaImage && (
-          <div class="w-full md:w-1/2 relative overlap-up">
-            <img
-              src={ctaImage}
-              alt=""
-              class="w-full aspect-[4/5] object-cover shadow-food img-tilt-left"
-              style={`border-radius: var(--radius);`}
-              loading="lazy"
-            />
-            <a
-              href={localePath(locale, "/book/")}
-              class="btn-starburst absolute -bottom-4 -right-4 md:-right-8"
-              style="z-index: 3;"
-            >
-              {t(locale, "home.book")}
-            </a>
+      {highlights.length > 0 && (
+        <section class="taste" aria-labelledby="taste-title">
+          <div class="taste__head">
+            <h2 class="stag" id="taste-title">
+              <span>{t(locale, "home.taste.1")}</span>
+              <span class="stag__two"><small>{localized(settings.cuisine, locale)}</small>{t(locale, "home.taste.2")}</span>
+            </h2>
           </div>
-        )}
+          <ul class="strip" style={`--n: ${highlights.length}`} tabindex="0" aria-label={t(locale, "home.dishes")}>
+            {highlights.map(({ item }) => (
+              <li>
+                <figure class:list={{ strip__plain: !item.image }}>
+                  {item.image && <img src={item.image} alt={localized(item.name, locale)} loading="lazy" />}
+                  <figcaption>{localized(item.name, locale)}<span>{formatPrice(item.price)}</span></figcaption>
+                </figure>
+              </li>
+            ))}
+          </ul>
+          {highlights.length > 1 && <p class="swipe-hint narrow-only">{t(locale, "home.swipe")}</p>}
+        </section>
+      )}
 
-        {/* CTA text */}
-        <div class={`w-full ${ctaImage ? 'md:w-1/2' : ''} ${ctaImage ? '' : 'text-center max-w-2xl mx-auto'}`}>
-          <p class="font-display text-xs tracking-[0.3em] mb-3" style="color: var(--color-secondary);">
-            {t(locale, "cta.booknow" as any)}
-          </p>
-          <h2 class="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl mb-6" style="color: var(--color-hero-text);">
-            {t(locale, "cta.visit" as any)}
-          </h2>
-          <p class="font-heading text-base md:text-lg mb-8" style="color: var(--color-hero-muted); font-style: italic;">
-            {localized(settings.tagline, locale)}
-          </p>
-          <a href={localePath(locale, "/book/")} class="btn btn-primary-on-dark">
-            {t(locale, "home.book")}
-          </a>
+      <section class="home-intro" aria-label={t(locale, "nav.menu")}>
+        {voice && <p class="home-intro__voice">{voice}</p>}
+        <a class="btn btn-primary" href={localePath(locale, "/menu/")}>{t(locale, "home.fullMenu")}</a>
+      </section>
+
+      {lunch && lunchItems.length > 0 && (
+        <section class="home-lunch" aria-labelledby="lunch-title">
+          <svg class="arc" viewBox="0 0 360 70" aria-hidden="true" focusable="false">
+            <path d="M8 66 Q180 -14 352 66" fill="none" stroke="currentColor" stroke-width="1.5" />
+            <circle cx="290" cy="40" r="7" fill="currentColor" />
+          </svg>
+          <h2 class="section-title" id="lunch-title">{localized(lunch.name, locale)}</h2>
+          <ul class="plain home-lunch__list">
+            {lunchItems.map((item) => <MenuRow item={item} brief />)}
+          </ul>
+        </section>
+      )}
+    </>
+  ) : (
+    <>
+      <section class="hero-dag" aria-labelledby="page-title">
+        <div class="hero-dag__photo">
+          {heroImage ? (
+            <img class="hero-dag__img" src={heroImage} alt={heroAlt} loading="eager" fetchpriority="high" />
+          ) : (
+            <div class="hero-dag__img" />
+          )}
+          <div class="hero-dag__nav"><SiteNav variant="hero" /></div>
+          <a class="star wide-only" href={localePath(locale, "/menu/")}>{t(locale, "home.seeMenu")}</a>
         </div>
-      </div>
-    </div>
-  </section>
+        <h1 class="hero-dag__word" id="page-title">
+          <svg viewBox={`0 0 100 ${wordHeight}`} role="img" aria-label={siteName}>
+            {wordLines.map((line) => (
+              <text x="0" y={line.y} font-size={line.size} textLength="100" lengthAdjust="spacingAndGlyphs">{line.text}</text>
+            ))}
+          </svg>
+        </h1>
+        <a class="btn btn-primary pill" href={localePath(locale, "/book/")}>{t(locale, "home.book")}</a>
+        <div class="hero-dag__side">
+          <svg class="squiggle" viewBox="0 0 84 20" aria-hidden="true" focusable="false">
+            <path d="M3 12 q 6.5 -9 13 0 t 13 0 t 13 0 t 13 0 t 13 0 t 13 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+          </svg>
+          <p class="big">{tagline}</p>
+          {voice && <p>{voice}</p>}
+          <p class="hours-badge">{todayText}</p>
+        </div>
+      </section>
 
+      {pages.home.ctaImage && (
+        <div class="slices-band narrow-only">
+          <div class="slices">
+            <i style={`background-image: url("${pages.home.ctaImage}")`}></i>
+            <i style={`background-image: url("${pages.home.ctaImage}")`}></i>
+            <i style={`background-image: url("${pages.home.ctaImage}")`}></i>
+            <a class="star" href={localePath(locale, "/menu/")}>{t(locale, "home.seeMenu")}</a>
+          </div>
+        </div>
+      )}
+
+      {highlights.length > 0 && (
+        <section class="home-dishes" aria-labelledby="dishes-title">
+          <div class="home-dishes__head">
+            <h2 class="section-title" id="dishes-title">{t(locale, "home.fromKitchen")}</h2>
+            <a class="link-strong" href={localePath(locale, "/menu/")}>{t(locale, "home.fullMenu")}</a>
+          </div>
+          <ul class="dish-cards">
+            {highlights.map(({ item }) => (
+              <li>
+                <figure class="dish-card">
+                  {item.image ? (
+                    <img src={item.image} alt={localized(item.name, locale)} loading="lazy" />
+                  ) : (
+                    <div class="dish-card__plain" />
+                  )}
+                  <figcaption>
+                    <span>{localized(item.name, locale)}</span>
+                    <span class="dish-card__price">{formatPrice(item.price)}</span>
+                  </figcaption>
+                </figure>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  )}
 </Base>
-
