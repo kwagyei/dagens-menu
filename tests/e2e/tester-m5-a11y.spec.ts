@@ -13,35 +13,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 import sv from "../../src/i18n/sv";
 import en from "../../src/i18n/en";
-import { invite } from "./helpers";
+import { daysAhead, invite, signedInOwner } from "./helpers";
 
-let ipn = 100;
 const BASE = "http://localhost:8790";
-
-/** Sign in as a fresh owner. Like the shared helper, but if the ceremony fails it records why, waits out the rate limit and tries again. */
-async function signedInOwner(page: Page): Promise<string> {
-  await page.context().setExtraHTTPHeaders({ "CF-Connecting-IP": `192.0.2.${100 + (ipn++ % 150)}` });
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send("WebAuthn.enable");
-  await cdp.send("WebAuthn.addVirtualAuthenticator", {
-    options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
-  });
-  const email = `a11y-${Date.now().toString(36)}-${ipn}@example.se`;
-  const link = invite(email);
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await page.goto(link);
-    await page.getByRole("button", { name: "Skapa passkey" }).click();
-    try {
-      await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible({ timeout: 8000 });
-      return email;
-    } catch {
-      const status = await page.locator("#status").innerText().catch(() => "?");
-      test.info().annotations.push({ type: "sign-in retry", description: `attempt ${attempt + 1}: ${status}` });
-      await page.waitForTimeout(61_000);
-    }
-  }
-  throw new Error("could not sign in");
-}
 
 /** A POST the way the browser sends it (the admin refuses writes without a matching Origin). */
 const post = (page: Page, path: string, form: Record<string, string>) => page.request.post(path, { form, headers: { Origin: BASE }, maxRedirects: 0 });
@@ -308,7 +282,7 @@ test("axe: empty category, every menu status message, special days list, many hi
   await post(page, "/admin/menu/category/new/", { csrf, name_sv: "Tom avdelning", name_en: "Empty section" });
   // A special day.
   const hoursCsrf = await csrfFrom(page, "/admin/hours/");
-  const date = new Date(Date.now() + 40 * 86400_000).toISOString().slice(0, 10);
+  const date = daysAhead(140); // its own day: hours.spec.ts uses 40
   await post(page, "/admin/hours/", { csrf: hoursCsrf, action: "add-exception", date, closed: "on", exception_open: "", exception_close: "", note_sv: "Privat fest", note_en: "Private party" });
   // Many history entries: toggle one dish 55 times.
   await page.goto("/admin/");
@@ -432,6 +406,7 @@ test("every link in every error summary lands on a visible field, in both langua
         expect.soft(exists, `${where}: ${href} exists`).toBe(1);
         if (exists !== 1) continue;
         await links.nth(i).click();
+        await expect.poll(() => page.evaluate(() => document.activeElement?.id), { timeout: 3000 }).toBe(href.slice(1)).catch(() => {});
         const focused = await page.evaluate(() => ({ id: document.activeElement?.id, tag: document.activeElement?.tagName }));
         expect.soft(focused.id, `${where}: clicking ${href} focuses it (got ${focused.tag})`).toBe(href.slice(1));
         await expect.soft(target, `${where}: ${href} visible`).toBeVisible();
@@ -452,6 +427,8 @@ test("focus after a rejected save (422) and a conflict (409): the keyboard user 
   for (const prefix of ["", "/en"]) {
     for (const s of [...(await rejectedStates(page, prefix)), ...(await conflictStates(page, prefix))]) {
       await s.open();
+      // Chromium applies autofocus after load, a beat later on a slow runner: poll, don't read once.
+      await expect.poll(landing, { timeout: 3000 }).toMatch(sensible).catch(() => {});
       const at = await landing();
       expect.soft(at, `${prefix} ${s.name}: focus after the response is ${at}; it should be the error summary, the conflict notice or the first invalid field`).toMatch(sensible);
     }
