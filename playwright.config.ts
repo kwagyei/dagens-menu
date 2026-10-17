@@ -9,10 +9,10 @@ import { defineConfig, devices } from "@playwright/test";
 // Two projects, split by what a test protects:
 // - gate: the owner's journeys and the security model. CI's deploy job needs it, so it must
 //   stay fast (under 5 minutes) and deterministic. `npm run test:e2e`.
-// - edge: the tester's edge-case sweeps (tester-m5-*). They run on every PR and nightly but
+// - edge: the tester's edge-case sweeps (tester-m<N>-*). They run on every PR and nightly but
 //   never block a deploy. `npm run test:e2e:edge`.
 // No retries: a test that needs one is flaky, and a retry would hide it.
-const EDGE = /tester-m5.*\.spec\.ts$/;
+const EDGE = /tester-m\d+.*\.spec\.ts$/;
 const PORT = 8790;
 const SITE = process.env.E2E_SITE ?? "bistro";
 if (!/^[a-z]+$/.test(SITE)) throw new Error(`E2E_SITE must be a site id, got "${SITE}"`);
