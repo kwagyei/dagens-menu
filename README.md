@@ -13,7 +13,9 @@ next page load.
 - **Chez Abena**, a West African kitchen in Göteborg: https://dagens-menu-westafrican.kwabenasasuboakye.workers.dev
 
 The earlier static versions on Cloudflare Pages (`dagens-menu-bistro.pages.dev`, `-westafrican`)
-stay up until the move is complete, then redirect here.
+now answer every path with a 301 to the same path on the Worker, so old links keep working.
+Each Pages project holds only a `_redirects` file from `pages-redirect/<site>/`, deployed by
+hand with `npx wrangler pages deploy pages-redirect/<site> --project-name dagens-menu-<site> --branch main`.
 
 ## The problem
 
