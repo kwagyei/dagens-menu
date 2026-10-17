@@ -8,7 +8,7 @@ import { defineConfig, devices } from "@playwright/test";
 //
 // Two projects, split by what a test protects:
 // - gate: the owner's journeys and the security model. CI's deploy job needs it, so it must
-//   stay fast (under 5 minutes) and deterministic. `npm run test:e2e`.
+//   stay fast and deterministic (CI shards it across runners, about 5 minutes). `npm run test:e2e`.
 // - edge: the tester's edge-case sweeps (tester-m<N>-*). They run on every PR and nightly but
 //   never block a deploy. `npm run test:e2e:edge`.
 // No retries: a test that needs one is flaky, and a retry would hide it.

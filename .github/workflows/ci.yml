@@ -105,11 +105,25 @@ jobs:
         run: node scripts/check-images.mjs --url http://localhost:8788
 
   # The deploy gate: the owner's journeys and the security model, no retries. The tester's
-  # edge-case sweeps run in e2e-edge.yml, which never blocks a deploy.
-  e2e:
-    name: Admin end to end (Chromium, virtual passkeys)
+  # edge-case sweeps run in e2e-edge.yml, which never blocks a deploy. The gate is split into
+  # four shards of the bistro run plus one job for the West African accessibility specs. Each is
+  # its own runner with its own build, wrangler dev server and local D1, so nothing is shared.
+  # Playwright cuts the ordered spec list into equal chunks by test count. Run as one job the
+  # gate took about 9 minutes of specs and hit its time limit as the suite grew.
+  e2e-shard:
+    name: Admin end to end, ${{ matrix.name }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: "bistro shard 1/4", site: bistro, args: "--shard=1/4" }
+          - { name: "bistro shard 2/4", site: bistro, args: "--shard=2/4" }
+          - { name: "bistro shard 3/4", site: bistro, args: "--shard=3/4" }
+          - { name: "bistro shard 4/4", site: bistro, args: "--shard=4/4" }
+          # The admin takes each site's colours, so its accessibility is checked on both demos.
+          - { name: "West African accessibility", site: westafrican, args: "tests/e2e/a11y.spec.ts tests/e2e/keyboard.spec.ts" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -118,20 +132,34 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      # The Playwright config builds the bistro, seeds a local D1 and serves it with a
+      # The Playwright config builds the site, seeds a local D1 and serves it with a
       # throwaway session secret.
-      - run: npm run test:e2e
-      # The admin takes each site's colours, so its accessibility is checked on both demos.
-      - name: Accessibility and keyboard on the West African admin
-        run: npx playwright test --project=gate tests/e2e/a11y.spec.ts tests/e2e/keyboard.spec.ts
+      - run: npx playwright test --project=gate ${{ matrix.args }}
         env:
-          E2E_SITE: westafrican
+          E2E_SITE: ${{ matrix.site }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-gate-${{ strategy.job-index }}
           path: playwright-report/
           retention-days: 7
+
+  # One check for the whole gate, under the name branch protection, the README and the merge
+  # script know. It fails unless every shard passed (a cancelled or skipped shard counts as a
+  # failure), and the deploy job needs it.
+  e2e:
+    name: Admin end to end (Chromium, virtual passkeys)
+    needs: [e2e-shard]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every shard passed
+        env:
+          RESULT: ${{ needs.e2e-shard.result }}
+        run: |
+          echo "Gate shards: $RESULT"
+          [ "$RESULT" = "success" ]
 
   # ADR-011 plan M3.7. Only main, and only after every check above: merging is deploying. The
   # production environment (main only) holds the Cloudflare token, which only the wrangler

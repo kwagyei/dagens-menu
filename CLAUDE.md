@@ -32,7 +32,7 @@ npm run test:db          # database tests in workerd with a local D1 (migrations
 npm run db:migrate:local # apply migrations/ to the local D1 (d1.local.jsonc); again after a database_id change
 npm run seed -- --site bistro [--reset]   # load a demo's JSON into the local D1
 npm run admin -- invite --site bistro --email x@y.se  # owner invite link (also: revoke, list; --remote)
-npm run test:e2e         # Playwright deploy gate: admin journeys + sign-in attacks (~5 min)
+npm run test:e2e         # Playwright deploy gate: admin journeys + sign-in attacks (~9 min on one runner; CI shards it, ~5 min)
 npm run test:e2e:edge    # Playwright edge-case sweeps (tester-m<N>-*); non-blocking, also nightly
 ```
 
