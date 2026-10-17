@@ -75,9 +75,8 @@ the new schema while at least one site runs older code.
    before the deploy (the run's start time is on the Actions page). It also discards every
    owner edit made since, on both sites, so it's the last resort.
 
-   ```sh
-   npx wrangler d1 time-travel restore dagens-menu --timestamp <RFC3339 time before the deploy>
-   ```
+   Follow [the restore runbook](backup-restore.md#restore-with-time-travel): it records an
+   undo bookmark first and moves the content version forward afterwards.
 
 After any rollback or restore, re-run the smoke test against each site with the build it
 now serves, e.g.
