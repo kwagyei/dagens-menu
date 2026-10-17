@@ -28,8 +28,8 @@ async function signIn(page: Page, browserName: string) {
   const cookies = await other.context().cookies();
   await helper.close();
   const header = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
-  // One way only. Sending it as an extra header and again through a route signed every WebKit
-  // spec out on Linux CI (the upload page answered 303 to the sign-in page), never on macOS.
+  // Sent once, as a header (a route that set it again was redundant). These specs run on macOS:
+  // Linux's WebKit build answers as signed out however the cookie is sent (see e2e-edge.yml).
   await page.context().setExtraHTTPHeaders({ cookie: header });
 }
 

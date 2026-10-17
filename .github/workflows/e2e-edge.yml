@@ -53,7 +53,7 @@ jobs:
         env:
           WESTAFRICAN_URL: http://localhost:8792
           PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-isolation
-      - run: npm run test:e2e:edge
+      - run: npx playwright test --project=edge
         if: ${{ !cancelled() }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
@@ -76,4 +76,44 @@ jobs:
             gh issue comment "$open" --body "Failed again: $RUN"
           else
             gh issue create --title "$title" --body "The non-blocking edge-case specs failed on \`main\`: $RUN. The report is attached to the run for 7 days."
+          fi
+
+  # The WebKit specs (the browser photo pipeline, standing in for iPhone Safari) run on macOS.
+  # On Linux's WebKit build every one of them was signed out, though the same specs pass on macOS;
+  # macOS WebKit is also the closer stand-in for iOS. macOS runners are free on a public repo.
+  webkit:
+    name: Photo pipeline in WebKit, macOS (non-blocking)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Chromium too: an owner signs in there (virtual passkeys) and the session is handed to WebKit.
+      - run: npx playwright install chromium webkit
+      - run: npx playwright test --project=webkit
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-report-webkit
+          path: playwright-report/
+          retention-days: 7
+      - name: File the nightly failure as an issue
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Nightly e2e edge cases failed"
+          open=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "Failed again (WebKit on macOS): $RUN"
+          else
+            gh issue create --title "$title" --body "The non-blocking WebKit specs failed on \`main\` (macOS): $RUN. The report is attached to the run for 7 days."
           fi
