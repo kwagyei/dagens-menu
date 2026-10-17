@@ -132,7 +132,8 @@ export const isUploadRef = (ref: string) => UPLOAD_ID.test(ref);
 export const libraryImageSchema = (site: string) =>
   z.strictObject({
     ref: imageRef(site),
-    alt: localizedText(TEXT_LIMITS.short).optional(),
+    // One line: alt text is read as a phrase, and a line break in it reads as a pause.
+    alt: localizedLine(TEXT_LIMITS.short).optional(),
     width: z.number().int().min(1).max(10000).optional(),
     height: z.number().int().min(1).max(10000).optional(),
   });

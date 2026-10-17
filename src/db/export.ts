@@ -52,7 +52,9 @@ export async function exportSite(db: D1Database, site: string): Promise<Exported
   const imagePath = (id: unknown) => (id === null || id === undefined ? undefined : refOf.get(str(id)));
   // Until the operator re-seeds after migration 0005, curated rows have no alt of their own;
   // a gallery photo's alt is still on its gallery row, so the live gallery keeps its text.
-  const galleryAlt = new Map(gallery.results.map((g) => [str(g.image_id), { sv: str(g.alt_sv), en: str(g.alt_en) }]));
+  // The first row wins when a photo is in the gallery twice (M6.3 tester F5).
+  const galleryAlt = new Map<string, { sv: string; en: string }>();
+  for (const g of gallery.results) if (!galleryAlt.has(str(g.image_id))) galleryAlt.set(str(g.image_id), { sv: str(g.alt_sv), en: str(g.alt_en) });
 
   const content: StoredContent = {
     settings: {

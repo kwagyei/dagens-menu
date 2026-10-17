@@ -74,19 +74,28 @@ function upgradeFromV1(content: Raw, repository: LibraryImage[]): { content: Raw
   const home = (pages.home ?? {}) as Raw;
   const { highlightImages, ...homeRest } = home;
   const highlightImagesDropped = highlightImages && typeof highlightImages === "object" ? Object.keys(highlightImages).length : 0;
-  const gallery = (content.gallery ?? {}) as { images?: Array<{ src?: unknown; alt?: unknown }> };
-  const galleryAlt = new Map<unknown, unknown>();
-  const images = Array.isArray(gallery.images) ? gallery.images : [];
-  for (const g of images) galleryAlt.set(g.src, g.alt);
-  const upgraded: Raw = {
-    ...content,
-    pages: { ...pages, home: homeRest },
-    gallery: { ...gallery, images: images.map((g) => ({ image: g.src })) },
-  };
+  const gallery = (content.gallery ?? {}) as { images?: unknown };
+  const upgraded: Raw = { ...content, pages: { ...pages, home: homeRest } };
+  // Only a well-formed list is rewritten; anything else is left for the schema to refuse, so a
+  // broken file is never restored as an empty gallery (M6.3 tester F1, F2).
+  const galleryAlt = new Map<string, unknown>();
+  if (Array.isArray(gallery.images)) {
+    upgraded.gallery = {
+      ...gallery,
+      images: gallery.images.map((g) => {
+        if (typeof g !== "object" || g === null || Array.isArray(g)) return g;
+        const { src, alt, ...rest } = g as Raw;
+        // The first alt wins if a photo is in the gallery twice (F5); a missing alt keeps the
+        // repository's (F6). Unknown keys stay, so the strict schema refuses them (F3).
+        if (typeof src === "string" && alt !== undefined && !galleryAlt.has(src)) galleryAlt.set(src, alt);
+        return { ...rest, image: src };
+      }),
+    };
+  }
   // The library: the repository's entries, with this file's gallery alts, plus any referenced
   // file the repository no longer lists (kept without alt; the schema decides if that's valid).
   const library = new Map<string, Raw>(repository.map((i) => [i.ref, { ...i }]));
-  for (const [ref, alt] of galleryAlt) if (typeof ref === "string") library.set(ref, { ...(library.get(ref) ?? { ref }), alt });
+  for (const [ref, alt] of galleryAlt) library.set(ref, { ...(library.get(ref) ?? { ref }), alt });
   try {
     for (const { ref } of imageReferences(upgraded as never)) if (!library.has(ref)) library.set(ref, { ref });
   } catch {
@@ -123,7 +132,10 @@ export function readExportFile(text: string, site: string, operator: OperatorCon
 
   let highlightImagesDropped = 0;
   let fileContent = file.content as Raw;
-  if (file.formatVersion === 1) ({ content: fileContent, highlightImagesDropped } = upgradeFromV1(fileContent, operator.images ?? []));
+  if (file.formatVersion === 1) {
+    if ("images" in fileContent) return { ok: false, error: "a format 1 file has no image library, but this one has an images list" };
+    ({ content: fileContent, highlightImagesDropped } = upgradeFromV1(fileContent, operator.images ?? []));
+  }
   const fromFile = fileContent as { settings?: Record<string, unknown> };
   const operatorFieldsReplaced =
     JSON.stringify({ booking: fromFile.settings?.booking, mapEmbed: fromFile.settings?.mapEmbed }) !==
