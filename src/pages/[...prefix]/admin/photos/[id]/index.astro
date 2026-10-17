@@ -1,0 +1,114 @@
+---
+// One photo of the library (plan M6.10; ADR-014 §4): its description, saved with the same
+// row_version guard as every other form, where it is used (each place a link to where it can
+// be changed), and the way to delete it when it's the owner's and nothing uses it.
+import AdminLayout from "../../../../../layouts/AdminLayout.astro";
+import ErrorSummary from "../../../../../admin/ErrorSummary.astro";
+import { type FieldErrors, inputMaxLength, rowVersionOf } from "../../../../../admin/forms";
+import { describeUses } from "../../../../../admin/library";
+import { adminPage } from "../../../../../admin/page";
+import { readAltForm } from "../../../../../admin/upload";
+import { photoSources } from "../../../../../content/images";
+import { TEXT_LIMITS } from "../../../../../content/schema";
+import { getLibraryImage, updateImageAlt } from "../../../../../db/library";
+import { t } from "../../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const id = Astro.params.id ?? "";
+const here = page.path(`/photos/${id}/`);
+const library = page.path("/photos/");
+
+const image = await getLibraryImage(repo, id);
+// Unknown, malformed or another site's: the same answer, not found (ADR-014 §4, cross-tenant).
+if (!image) return Astro.redirect(`${library}?done=not-found`, 303);
+
+let values = { alt_sv: image.alt?.sv ?? "", alt_en: image.alt?.en ?? "" };
+let errors: FieldErrors = {};
+let rowVersion = image.rowVersion;
+let conflict = false;
+
+if (Astro.request.method === "POST") {
+  const form = await page.postedForm();
+  if (!form) return Astro.redirect(`${here}?done=expired`, 303);
+  const parsed = readAltForm(form, locale);
+  values = parsed.values;
+  errors = parsed.errors;
+  rowVersion = rowVersionOf(form) ?? -1;
+  if (parsed.alt) {
+    const result = await updateImageAlt(repo, id, rowVersion, parsed.alt);
+    if (result.ok) return Astro.redirect(`${here}?done=saved`, 303);
+    if (result.error === "not-found") return Astro.redirect(`${library}?done=not-found`, 303);
+    if (result.error === "conflict") {
+      conflict = true;
+      rowVersion = result.current; // saving again now overwrites, knowingly
+    }
+  }
+  Astro.response.status = conflict ? 409 : 422;
+}
+
+const done = Astro.url.searchParams.get("done");
+const message: Record<string, string> = { saved: t(locale, "admin.photos.altSaved"), expired: t(locale, "admin.error.form") };
+const labels: Record<string, string> = { alt_sv: t(locale, "admin.photos.altSv"), alt_en: t(locale, "admin.photos.altEn") };
+// The 800 px size (or the master), as the public pages use; the original file if the size is unknown.
+const preview = image.width && image.height ? photoSources({ ref: image.ref, width: image.width, height: image.height }) : null;
+const uses = describeUses(image.uses, locale);
+const shownAlt = image.alt ? image.alt[locale] : "";
+---
+
+<AdminLayout title={shownAlt || t(locale, "admin.photos.photoHeading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <a class="admin-target underline" href={library}>{t(locale, "admin.photos.back")}</a>
+    <h1 class="text-3xl font-bold">{t(locale, "admin.photos.photoHeading")}</h1>
+    {done && message[done] && <p class="admin-message" role="status">{message[done]}</p>}
+    <img
+      src={preview?.src ?? image.path ?? ""}
+      alt={shownAlt}
+      width={image.width ?? undefined}
+      height={image.height ?? undefined}
+      class="rounded max-w-full h-auto"
+      style="max-height: 20rem; width: auto;"
+    />
+    {image.kind === "static" && <p class="text-sm admin-muted">{t(locale, "admin.photos.builtIn")}</p>}
+
+    <form method="post" class="admin-card p-4 space-y-5" id="photo-alt" novalidate>
+      <h2 class="text-xl font-semibold">{t(locale, "admin.photos.altHeading")}</h2>
+      {conflict && <p class="admin-message" role="alert" tabindex="-1" autofocus>{t(locale, "admin.photos.altConflict")}</p>}
+      {!conflict && <ErrorSummary locale={locale} errors={errors} id="photo-alt-errors" labels={labels} />}
+      <input type="hidden" name="csrf" value={page.csrf} />
+      <input type="hidden" name="row_version" value={rowVersion} />
+      <p class="text-sm admin-muted" id="alt-hint">{t(locale, "admin.photos.altHint")}</p>
+      {(["alt_sv", "alt_en"] as const).map((name) => (
+        <div class="space-y-1">
+          <label class="font-medium block" for={name}>{labels[name]}</label>
+          <input class="admin-input" type="text" id={name} name={name} lang={name.slice(-2)} value={values[name]} required maxlength={inputMaxLength(TEXT_LIMITS.short)} aria-invalid={errors[name] ? "true" : undefined} aria-describedby={["alt-hint", errors[name] ? `${name}-error` : undefined].filter(Boolean).join(" ")} />
+          {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
+        </div>
+      ))}
+      <button class="admin-button" type="submit">{t(locale, "admin.photos.altSave")}</button>
+    </form>
+
+    <section class="space-y-2" aria-labelledby="uses-heading">
+      <h2 class="text-xl font-semibold" id="uses-heading">{t(locale, "admin.photos.usesHeading")}</h2>
+      {uses.length === 0 ? (
+        <p>{t(locale, "admin.photos.usesNone")}</p>
+      ) : (
+        <ul class="list-disc pl-5" id="photo-uses">
+          {uses.map((u) => <li><a class="admin-target underline" href={u.href}>{u.label}</a></li>)}
+        </ul>
+      )}
+    </section>
+
+    {image.kind === "upload" && (
+      <div class="flex flex-wrap gap-3">
+        {image.width && <a class="admin-button admin-button-quiet inline-flex" href={`/media/${image.id}-${image.width}.webp`} download={`${image.id}.webp`}>{t(locale, "admin.photos.download")}</a>}
+        {uses.length === 0 && <a class="admin-button admin-button-quiet inline-flex" href={page.path(`/photos/${image.id}/delete/`)}>{t(locale, "admin.photos.deleteLink")}</a>}
+      </div>
+    )}
+    {image.kind === "static" && <p class="text-sm admin-muted">{t(locale, "admin.photos.builtInRefused")}</p>}
+  </section>
+</AdminLayout>

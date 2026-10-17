@@ -55,13 +55,25 @@ function altError(locale: Locale, value: string): string | undefined {
 /** The 32-byte digest as hex; a plain loop, so it runs in Node tests too (toHex is workerd-only there). */
 const hex = (buffer: ArrayBuffer) => Array.from(new Uint8Array(buffer), (b) => b.toString(16).padStart(2, "0")).join("");
 
-export async function readUploadForm(form: FormData, locale: Locale): Promise<ReadUpload> {
+/** Alt text as one line, the way the library stores it. */
+const oneLine = (v: string) => cleanText(v).replace(/\s+/g, " ").trim();
+
+/**
+ * The two alt fields of a form (the upload form and the photo's own page, M6.10): the values
+ * as typed, an error per field, and the cleaned alt when both are fine.
+ */
+export function readAltForm(form: FormData, locale: Locale): { values: UploadFormValues; errors: FieldErrors; alt: { sv: string; en: string } | null } {
   const values: UploadFormValues = { alt_sv: text(form, "alt_sv"), alt_en: text(form, "alt_en") };
   const errors: FieldErrors = {};
   for (const name of ["alt_sv", "alt_en"] as const) {
     const error = altError(locale, values[name]);
     if (error) errors[name] = error;
   }
+  return { values, errors, alt: errors.alt_sv || errors.alt_en ? null : { sv: oneLine(values.alt_sv), en: oneLine(values.alt_en) } };
+}
+
+export async function readUploadForm(form: FormData, locale: Locale): Promise<ReadUpload> {
+  const { values, errors } = readAltForm(form, locale);
 
   const parts = form.getAll("variant").filter((p): p is File => typeof p !== "string" && p.size > 0);
   if (parts.length === 0) {
@@ -102,6 +114,5 @@ export async function readUploadForm(form: FormData, locale: Locale): Promise<Re
 
   const master = variants[variants.length - 1];
   const id = hex(await crypto.subtle.digest("SHA-256", master.bytes as Uint8Array<ArrayBuffer>));
-  const one = (v: string) => cleanText(v).replace(/\s+/g, " ").trim();
-  return { values, errors, upload: { id, variants, alt: { sv: one(values.alt_sv), en: one(values.alt_en) } } };
+  return { values, errors, upload: { id, variants, alt: { sv: oneLine(values.alt_sv), en: oneLine(values.alt_en) } } };
 }

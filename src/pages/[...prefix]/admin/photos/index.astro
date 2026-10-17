@@ -1,10 +1,13 @@
 ---
-// "Your photos" (plan M6.4; ADR-014 §5): every uploaded photo, with a link to download it at
-// full size. This is the owner's way out with their own photos, as plain links, no JavaScript.
-// Choosing, describing and removing photos come with the photo library (M6.10).
+// The photo library (plan M6.10; ADR-014 §4, §6): every photo of the site, the owner's and the
+// built-in ones, where each is used, a filter for the unused ones and a way to delete them
+// all. Uploads keep their "download at full size" link (M6.4): the owner's way out with their
+// own photos. Plain links and forms, no JavaScript.
 import AdminLayout from "../../../../layouts/AdminLayout.astro";
 import { adminPage } from "../../../../admin/page";
-import { listUploads } from "../../../../db/photos";
+import { photoUsage, SITE_PHOTO_BYTES, SITE_PHOTO_LIMIT } from "../../../../db/photos";
+import { listLibrary } from "../../../../db/library";
+import { describeUses, thumbnail } from "../../../../admin/library";
 import { localized } from "../../../../content/load";
 import { t } from "../../../../i18n";
 
@@ -14,30 +17,84 @@ if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return ne
 const page = await adminPage(Astro);
 if (page instanceof Response) return page;
 const { locale, repo } = page;
-const uploads = await listUploads(repo);
-const media = (id: string, width: number) => `/media/${id}-${width}.webp`;
+const [library, usage] = await Promise.all([listLibrary(repo), photoUsage(repo)]);
+const unusedUploads = library.filter((i) => i.kind === "upload" && i.uses.length === 0);
+const unusedAll = library.filter((i) => i.uses.length === 0);
+const onlyUnused = Astro.url.searchParams.get("filter") === "unused";
+const shown = onlyUnused ? unusedAll : library;
+
+const done = Astro.url.searchParams.get("done");
+const n = Number(Astro.url.searchParams.get("n") ?? "0");
+const message: Record<string, string> = {
+  deleted: t(locale, "admin.photos.deleted"),
+  "deleted-unused": t(locale, "admin.photos.deletedUnused").replace("{n}", String(Number.isInteger(n) ? n : 0)),
+  "not-found": t(locale, "admin.photos.notFound"),
+  expired: t(locale, "admin.error.form"),
+};
+const mb = (bytes: number) => (bytes / 1_000_000).toFixed(1).replace(".", locale === "sv" ? "," : ".");
+const here = page.path("/photos/");
 ---
 
 <AdminLayout title={t(locale, "admin.photos.yours")} csrf={page.csrf}>
   <section class="space-y-6">
     <div class="space-y-2">
       <h1 class="text-3xl font-bold">{t(locale, "admin.photos.yours")}</h1>
+      {done && message[done] && <p class="admin-message" role="status">{message[done]}</p>}
       <p class="admin-muted">{t(locale, "admin.photos.yoursLead")}</p>
-      <a class="admin-button inline-flex" href={page.path("/photos/new/")}>{t(locale, "admin.photos.heading")}</a>
+      <p class="text-sm admin-muted" id="photo-usage">
+        {t(locale, "admin.photos.usage")
+          .replace("{count}", String(usage.count))
+          .replace("{limit}", String(SITE_PHOTO_LIMIT))
+          .replace("{mb}", mb(usage.bytes))
+          .replace("{limitMb}", mb(SITE_PHOTO_BYTES))}
+      </p>
+      <div class="flex flex-wrap gap-3">
+        <a class="admin-button inline-flex" href={page.path("/photos/new/")}>{t(locale, "admin.photos.heading")}</a>
+        {unusedUploads.length > 0 && (
+          <a class="admin-button admin-button-quiet inline-flex" href={page.path("/photos/unused/delete/")}>
+            {t(locale, "admin.photos.deleteUnusedLink").replace("{n}", String(unusedUploads.length))}
+          </a>
+        )}
+      </div>
     </div>
-    {uploads.length === 0 ? (
-      <p class="admin-muted">{t(locale, "admin.photos.none")}</p>
+
+    <nav aria-label={t(locale, "admin.photos.filterLabel")} class="flex flex-wrap gap-x-5 gap-y-2">
+      <a class="admin-target underline" href={here} aria-current={onlyUnused ? undefined : "page"}>
+        {t(locale, "admin.photos.filterAll").replace("{n}", String(library.length))}
+      </a>
+      <a class="admin-target underline" href={`${here}?filter=unused`} aria-current={onlyUnused ? "page" : undefined}>
+        {t(locale, "admin.photos.filterUnused").replace("{n}", String(unusedAll.length))}
+      </a>
+    </nav>
+
+    {library.filter((i) => i.kind === "upload").length === 0 && !onlyUnused && <p class="admin-muted">{t(locale, "admin.photos.none")}</p>}
+    {shown.length === 0 ? (
+      <p class="admin-muted">{t(locale, "admin.photos.noneUnused")}</p>
     ) : (
       <ul class="space-y-3" id="uploads">
-        {uploads.map((u) => {
-          const master = u.widths[u.widths.length - 1];
+        {shown.map((image) => {
+          const thumb = thumbnail(image);
+          const alt = image.alt ? localized(image.alt, locale) : "";
+          const uses = describeUses(image.uses, locale);
           return (
-            <li class="admin-card p-3 flex gap-3 items-center" id={`photo-${u.id.slice(0, 12)}`}>
-              <img src={media(u.id, u.widths[0])} alt={localized(u.alt, locale)} width="96" height={Math.round((96 * u.height) / u.width)} loading="lazy" class="rounded" />
+            <li class="admin-card p-3 flex gap-3 items-center" id={`photo-${image.id.slice(0, 12)}`}>
+              {thumb ? (
+                <img src={thumb.src} alt={alt} width="96" height={Math.round((96 * thumb.height) / thumb.width)} loading="lazy" class="rounded shrink-0" />
+              ) : (
+                <img src={image.path ?? ""} alt={alt} width="96" loading="lazy" class="rounded shrink-0" />
+              )}
               <div class="space-y-1 min-w-0">
-                <p class="font-medium">{localized(u.alt, locale)}</p>
-                <p class="text-sm admin-muted">{u.width} × {u.height}</p>
-                <a href={media(u.id, master)} download={`${u.id}.webp`}>{t(locale, "admin.photos.download")}</a>
+                <p class="font-medium">{alt}</p>
+                <p class="text-sm admin-muted">
+                  {image.kind === "static" && <span>{t(locale, "admin.photos.builtIn")} · </span>}
+                  {uses.length > 0 ? t(locale, "admin.photos.inUse").replace("{places}", uses.map((u) => u.label).join(", ")) : t(locale, "admin.photos.notUsed")}
+                </p>
+                <div class="flex flex-wrap gap-x-5 gap-y-1">
+                  <a class="admin-target underline" href={page.path(`/photos/${image.id}/`)}>{t(locale, "admin.photos.edit")}</a>
+                  {image.kind === "upload" && image.width && (
+                    <a class="admin-target underline" href={`/media/${image.id}-${image.width}.webp`} download={`${image.id}.webp`}>{t(locale, "admin.photos.download")}</a>
+                  )}
+                </div>
               </div>
             </li>
           );
