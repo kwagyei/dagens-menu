@@ -265,10 +265,10 @@ test("a closed exception for today wins on the home badge, in sv and en, and goe
   const { post } = await withAuth(page);
   const today = stockholmToday();
   await post("/admin/hours/", { action: "remove-exception", date: today });
-  // What the badge says without an exception: the weekly hours, or "Stängt" on the site's closed
-  // weekday. Comparing with it keeps this true on any day of the week.
+  // What today's weekly hours say without the exception: on a day the restaurant is closed
+  // anyway (bistro: Sunday) that is "Stängt" too, so compare with it, not with "not closed".
   await page.goto("/");
-  const before = await page.locator(".hours-badge").innerText();
+  const ordinary = (await page.locator(".hours-badge").textContent())!.trim();
   expect((await post("/admin/hours/", exceptionForm(today, { note_sv: "Privat fest", note_en: "Private party" }))).status()).toBe(303);
   await page.goto("/");
   await expect(page.locator(".hours-badge")).toContainText("Idag: Stängt");
@@ -278,7 +278,7 @@ test("a closed exception for today wins on the home badge, in sv and en, and goe
   await expect(page.locator("main li", { has: page.locator(`time[datetime="${today}"]`) })).toContainText("Private party");
   await post("/admin/hours/", { action: "remove-exception", date: today });
   await page.goto("/");
-  await expect(page.locator(".hours-badge")).toHaveText(before);
+  await expect(page.locator(".hours-badge")).toHaveText(ordinary);
 });
 
 test("special hours past midnight for today show on the home badge", async ({ page }) => {

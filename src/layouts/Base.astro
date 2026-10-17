@@ -8,6 +8,7 @@ import { needsConsent } from "../content/consent";
 import { upcomingExceptions } from "../content/hours";
 import { localized } from "../content/load";
 import { serializeJsonLd } from "../server/json-ld";
+import { ogImage } from "../server/og-image";
 import { pageLinks } from "../server/page-links";
 import { getLocale, t } from "../i18n";
 
@@ -33,6 +34,9 @@ const preloadFonts =
     : ["/fonts/Anton-Regular.woff2"];
 const pageTitle = title === siteName ? siteName : `${title} | ${siteName}`;
 const links = pageLinks(Astro.url, locale);
+// Every page previews with the home page's hero photo: one picture that says "this restaurant".
+const homeHero = Astro.locals.content.pages.home.heroImage;
+const preview = ogImage(Astro.locals.content.images.find((i) => i.ref === homeHero), Astro.url.origin);
 
 const dayMap: Record<string, string> = {
   monday: "Mo", tuesday: "Tu", wednesday: "We",
@@ -94,6 +98,16 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
     <meta property="og:locale" content={locale === "sv" ? "sv_SE" : "en_GB"} />
     <meta property="og:locale:alternate" content={locale === "sv" ? "en_GB" : "sv_SE"} />
     <meta property="og:site_name" content={siteName} />
+    <meta property="og:url" content={links.canonical} />
+    {preview && (
+      <>
+        <meta property="og:image" content={preview.url} />
+        <meta property="og:image:width" content={String(preview.width)} />
+        <meta property="og:image:height" content={String(preview.height)} />
+        <meta property="og:image:alt" content={siteName} />
+      </>
+    )}
+    <meta name="twitter:card" content={preview ? "summary_large_image" : "summary"} />
 
     <!-- JSON-LD -->
     <script type="application/ld+json" set:html={serializeJsonLd(effectiveJsonLd)} />

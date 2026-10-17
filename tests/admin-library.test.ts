@@ -25,9 +25,9 @@ describe("describeUses", () => {
     expect(describeUses(uses, "sv")).toEqual([
       { label: "rätten Köttbullar", href: "/admin/menu/item/abcdefghijkl/" },
       { label: "menysidans översta foto", href: "/admin/texts/" },
-      { label: "galleriet, foto 3", href: "/gallery/" },
+      { label: "galleriet, foto 3", href: "/admin/gallery/" },
     ]);
-    expect(describeUses(uses, "en").map((u) => u.href)).toEqual(["/en/admin/menu/item/abcdefghijkl/", "/en/admin/texts/", "/en/gallery/"]);
+    expect(describeUses(uses, "en").map((u) => u.href)).toEqual(["/en/admin/menu/item/abcdefghijkl/", "/en/admin/texts/", "/en/admin/gallery/"]);
     expect(describeUses(uses, "en")[0].label).toBe("the dish Meatballs");
   });
   it("every page slot has words in both languages", () => {
