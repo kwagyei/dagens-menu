@@ -15,6 +15,7 @@ const FILES = {
   menu: "content/menu.json",
   pages: "content/pages.json",
   gallery: "content/gallery.json",
+  images: "content/images.json",
   theme: "theme.json",
 } as const;
 

@@ -16,6 +16,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { parseArgs } from "node:util";
+import sharp from "sharp";
 import { JsonContentSource } from "../src/content/json-source";
 import { readExportFile } from "../src/db/export-file";
 import { type ImageResolver, resetStatements, seedStatements } from "../src/db/seed";
@@ -48,6 +49,9 @@ if (values.remote) {
   console.warn("seed: note: a remote import makes the database unavailable to every site while it runs (seconds); prefer off-peak hours.");
 }
 
+/** Pixel sizes of the library's curated files, read with sharp before the statements are built. */
+const sizes = new Map<string, { width: number; height: number }>();
+
 /** Hash the real file; only JPEG and WebP are accepted (ADR-011 §7). */
 const resolveImage: ImageResolver = (path) => {
   let bytes: Buffer;
@@ -59,7 +63,7 @@ const resolveImage: ImageResolver = (path) => {
   const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   const isWebp = bytes.subarray(0, 4).toString("latin1") === "RIFF" && bytes.subarray(8, 12).toString("latin1") === "WEBP";
   if (!isJpeg && !isWebp) fail(`image ${path} is not a JPEG or WebP file`);
-  return { id: createHash("sha256").update(bytes).digest("hex"), mime: isJpeg ? "image/jpeg" : "image/webp" };
+  return { id: createHash("sha256").update(bytes).digest("hex"), mime: isJpeg ? "image/jpeg" : "image/webp", ...sizes.get(path) };
 };
 
 let full;
@@ -79,9 +83,10 @@ if (values.from) {
     fail(`can't read ${values.from}`);
   }
   // Booking and the map are operator-only (ADR-011 §8): they come from the repository.
-  const read = readExportFile(text, site, { theme, settings: fromRepository.settings });
+  const read = readExportFile(text, site, { theme, settings: fromRepository.settings, images: fromRepository.images });
   if (!read.ok) fail(`${values.from}: ${read.error}`);
   if (read.operatorFieldsReplaced) console.warn(`seed: the file's booking and map settings differ from sites/${site}/; keeping the repository's (operator-only).`);
+  if (read.highlightImagesDropped > 0) console.warn(`seed: the file is format 1; dropped ${read.highlightImagesDropped} per-highlight photo(s), which the content model no longer has.`);
   content = read.content;
   summary = `Restored from ${basename(values.from).replace(/[^\w.-]/g, "_").slice(0, 80)} (exported ${read.exportedAt})`;
   console.log(`seed: restoring "${site}" from ${values.from} (exported ${read.exportedAt}).`);
@@ -89,6 +94,17 @@ if (values.from) {
 
 const [{ n: existing }] = query<{ n: number }>("seed", target, `SELECT count(*) AS n FROM settings WHERE site_id = '${site}'`);
 if (existing > 0 && !values.reset) fail(`site "${site}" already has content in the ${targetName(target)} database; pass --reset to replace it`);
+
+for (const { ref } of content.images) {
+  try {
+    const meta = await sharp(join(root, "public", ref)).metadata();
+    // Width and height as displayed: EXIF orientations 5–8 swap them.
+    const swap = (meta.orientation ?? 1) >= 5;
+    if (meta.width && meta.height) sizes.set(ref, swap ? { width: meta.height, height: meta.width } : { width: meta.width, height: meta.height });
+  } catch {
+    // An upload id or a missing file: seedStatements reports it with a clear message.
+  }
+}
 
 let statements;
 try {

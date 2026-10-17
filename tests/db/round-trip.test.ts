@@ -5,12 +5,14 @@
 import { env } from "cloudflare:workers";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import bistroGallery from "../../sites/bistro/content/gallery.json";
+import bistroImages from "../../sites/bistro/content/images.json";
 import bistroHours from "../../sites/bistro/content/hours.json";
 import bistroMenu from "../../sites/bistro/content/menu.json";
 import bistroPages from "../../sites/bistro/content/pages.json";
 import bistroSettings from "../../sites/bistro/content/settings.json";
 import bistroTheme from "../../sites/bistro/theme.json";
 import waGallery from "../../sites/westafrican/content/gallery.json";
+import waImages from "../../sites/westafrican/content/images.json";
 import waHours from "../../sites/westafrican/content/hours.json";
 import waMenu from "../../sites/westafrican/content/menu.json";
 import waPages from "../../sites/westafrican/content/pages.json";
@@ -18,13 +20,13 @@ import waSettings from "../../sites/westafrican/content/settings.json";
 import waTheme from "../../sites/westafrican/theme.json";
 import { siteContentSchema } from "../../src/content/schema";
 import { exportSite } from "../../src/db/export";
-import { type ImageResolver, imagePathsOf, resetStatements, seedStatements, type StoredContent } from "../../src/db/seed";
+import { type ImageResolver, resetStatements, seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare, type Statement } from "../../src/db/sql";
 
 const db = env.DB;
 const raw = {
-  bistro: { settings: bistroSettings, hours: bistroHours, menu: bistroMenu, pages: bistroPages, gallery: bistroGallery, theme: bistroTheme },
-  westafrican: { settings: waSettings, hours: waHours, menu: waMenu, pages: waPages, gallery: waGallery, theme: waTheme },
+  bistro: { settings: bistroSettings, hours: bistroHours, menu: bistroMenu, pages: bistroPages, gallery: bistroGallery, images: bistroImages, theme: bistroTheme },
+  westafrican: { settings: waSettings, hours: waHours, menu: waMenu, pages: waPages, gallery: waGallery, images: waImages, theme: waTheme },
 };
 
 // Stand-in for hashing the real files (no file system in workerd): the SHA-256 of each path.
@@ -37,7 +39,7 @@ const fakeImages: ImageResolver = (path) => {
 
 beforeAll(async () => {
   for (const site of ["bistro", "westafrican"] as const) {
-    for (const path of imagePathsOf(stored(site))) {
+    for (const path of (stored(site)).images.map((i) => i.ref)) {
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(path));
       hashes.set(path, Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join(""));
     }

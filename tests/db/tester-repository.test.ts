@@ -6,11 +6,13 @@
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
 import bistroGallery from "../../sites/bistro/content/gallery.json";
+import bistroImages from "../../sites/bistro/content/images.json";
 import bistroHours from "../../sites/bistro/content/hours.json";
 import bistroMenu from "../../sites/bistro/content/menu.json";
 import bistroPages from "../../sites/bistro/content/pages.json";
 import bistroSettings from "../../sites/bistro/content/settings.json";
 import waGallery from "../../sites/westafrican/content/gallery.json";
+import waImages from "../../sites/westafrican/content/images.json";
 import waHours from "../../sites/westafrican/content/hours.json";
 import waMenu from "../../sites/westafrican/content/menu.json";
 import waPages from "../../sites/westafrican/content/pages.json";
@@ -44,10 +46,11 @@ const noImages = (c: StoredContent): StoredContent => ({
     about: { story: c.pages.about.story, chef: c.pages.about.chef },
   },
   gallery: { images: [] },
+  images: [],
 });
 const content = {
-  bistro: noImages({ settings: bistroSettings, hours: bistroHours, menu: bistroMenu, pages: bistroPages, gallery: bistroGallery } as StoredContent),
-  westafrican: noImages({ settings: waSettings, hours: waHours, menu: waMenu, pages: waPages, gallery: waGallery } as StoredContent),
+  bistro: noImages({ settings: bistroSettings, hours: bistroHours, menu: bistroMenu, pages: bistroPages, gallery: bistroGallery, images: bistroImages } as StoredContent),
+  westafrican: noImages({ settings: waSettings, hours: waHours, menu: waMenu, pages: waPages, gallery: waGallery, images: waImages } as StoredContent),
 };
 const none = () => {
   throw new Error("no images expected");

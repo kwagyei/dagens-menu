@@ -39,7 +39,7 @@ test("the export downloads as a file and restores the site with the seed CLI", a
   expect(response.headers()["cache-control"]).toBe("no-store");
   expect(response.headers()["content-disposition"]).toMatch(/^attachment; filename="bistro-content-/);
   const exported = await response.json();
-  expect(exported).toMatchObject({ format: "dagens-menu-export", formatVersion: 1, site: "bistro" });
+  expect(exported).toMatchObject({ format: "dagens-menu-export", formatVersion: 2, site: "bistro" });
 
   // Change the site after exporting, then restore: the change is gone.
   const tagline = exported.content.pages.home.tagline.sv as string;

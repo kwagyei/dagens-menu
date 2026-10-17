@@ -7,6 +7,7 @@
 import { env } from "cloudflare:workers";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import gallery from "../../sites/bistro/content/gallery.json";
+import imageLibrary from "../../sites/bistro/content/images.json";
 import hours from "../../sites/bistro/content/hours.json";
 import menu from "../../sites/bistro/content/menu.json";
 import pages from "../../sites/bistro/content/pages.json";
@@ -15,18 +16,18 @@ import theme from "../../sites/bistro/theme.json";
 import { D1ContentSource } from "../../src/content/d1-source";
 import { siteContentSchema, type SiteSettings, type Theme } from "../../src/content/schema";
 import type { D1Database } from "../../src/db/types";
-import { type ImageResolver, imagePathsOf, seedStatements, type StoredContent } from "../../src/db/seed";
+import { type ImageResolver, seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare } from "../../src/db/sql";
 import { handlePage, type HandlerDeps, type PageState } from "../../src/server/handler";
 
 const db = env.DB;
-const { theme: _t, ...content } = siteContentSchema("bistro").parse({ settings, hours, menu, pages, gallery, theme });
+const { theme: _t, ...content } = siteContentSchema("bistro").parse({ settings, hours, menu, pages, gallery, images: imageLibrary, theme });
 const hashes = new Map<string, string>();
 const images: ImageResolver = (path) => ({ id: hashes.get(path)!, mime: "image/jpeg" });
 const ITEM = menu.categories[0].items[0].id;
 
 beforeAll(async () => {
-  for (const path of imagePathsOf(content as StoredContent)) {
+  for (const path of (content as StoredContent).images.map((i) => i.ref)) {
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(path));
     hashes.set(path, Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join(""));
   }

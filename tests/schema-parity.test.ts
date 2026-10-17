@@ -36,8 +36,22 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ["dish name over 80", (c) => (firstItem(c).name.sv = "x".repeat(81)), `${item}.name.sv`, "at most 80"],
   ["description over 300", (c) => (firstItem(c).description.en = "x".repeat(301)), `${item}.description.en`, "at most 300"],
   ["story over 3000", (c) => (c.pages.about.story.sv = "x".repeat(3001)), "pages.about.story.sv", "at most 3000"],
-  // Images: a file directly under the site's own folder
-  ["another site's image", (c) => (c.gallery.images[0].src = "/images/westafrican/x.jpg"), "gallery.images.0.src", "under /images/bistro/"],
+  // Images (ADR-014 §1): a curated file directly under the site's own folder, or an upload id,
+  // listed once in the library with sv and en alt; every reference must be listed.
+  ["another site's image", (c) => (c.gallery.images[0].image = "/images/westafrican/x.jpg"), "gallery.images.0.image", "under /images/bistro/"],
+  ["an upload id in uppercase hex", (c) => (c.images[0].ref = "A".repeat(64)), "images.0.ref", "or an upload id"],
+  ["an image alt without English", (c) => delete c.images[0].alt.en, "images.0.alt.en", "expected string"],
+  ["an image alt that is only spaces", (c) => (c.images[0].alt.sv = "   "), "images.0.alt.sv", "must not be empty"],
+  ["an unknown key on an image", (c) => (c.images[0].caption = "x"), "images.0", "Unrecognized key"],
+  ["the same image listed twice", (c) => (c.images[1].ref = c.images[0].ref), "images.1.ref", "duplicate image"],
+  ["a reference that isn't in the library", (c) => (firstItem(c).image = "/images/bistro/not-listed.jpg"), `${item}.image`, "not in the image library"],
+  [
+    "a gallery photo whose library entry has no alt",
+    (c) => delete c.images.find((i: { ref: string }) => i.ref === c.gallery.images[0].image).alt,
+    "gallery.images.0.image",
+    "needs alt text",
+  ],
+  ["highlightImages, gone from the model", (c) => (c.pages.home.highlightImages = {}), "pages.home", "Unrecognized key"],
   ["image path traversal", (c) => (c.pages.home.heroImage = "/images/bistro/../secret.jpg"), "pages.home.heroImage", "under /images/bistro/"],
   ["image path that is a directory", (c) => (c.pages.home.heroImage = "/images/bistro/.."), "pages.home.heroImage", "under /images/bistro/"],
   // Unique, URL-safe category ids
@@ -60,13 +74,6 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   // Highlights exist (an unavailable one is fine: the page skips it)
   ["highlight of a missing item", (c) => (c.pages.home.highlights[0] = "zzzzzzzzzzzz"), "pages.home.highlights.0", "does not exist"],
   ["repeated highlight", (c) => (c.pages.home.highlights = [c.pages.home.highlights[0], c.pages.home.highlights[0]]), "pages.home.highlights", "repeat a highlight"],
-  [
-    "highlight image for an item that isn't highlighted",
-    (c) => (c.pages.home.highlightImages = { ...c.pages.home.highlightImages, zzzzzzzzzzzz: "/images/bistro/x.jpg" }),
-    "pages.home.highlightImages.zzzzzzzzzzzz",
-    "not highlighted",
-  ],
-  ["highlight image with a malformed id", (c) => (c.pages.home.highlightImages = { "lunch-0": "/images/bistro/x.jpg" }), "pages.home.highlightImages.lunch-0", "Invalid key"],
   // Seven weekdays, nothing else
   ["a weekday missing", (c) => delete c.hours.weekly.sunday, "hours.weekly.sunday", "expected object"],
   ["an extra weekday", (c) => (c.hours.weekly.funday = null), "hours.weekly", "Unrecognized key"],

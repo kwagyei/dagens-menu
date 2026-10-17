@@ -33,7 +33,8 @@ export async function exportSite(db: D1Database, site: string): Promise<Exported
   const [sites, settings, images, categories, items, highlights, weekly, exceptions, pages, gallery] = await db.batch<Row>([
     q("SELECT content_version FROM sites WHERE id = ?"),
     q("SELECT * FROM settings WHERE site_id = ?"),
-    q("SELECT id, path FROM images WHERE site_id = ?"),
+    // Library order: curated files by path, then uploads by id (the JSON fixtures are sorted the same way).
+    q("SELECT id, kind, path, width, height, alt_sv, alt_en FROM images WHERE site_id = ? ORDER BY kind = 'upload', coalesce(path, id)"),
     q("SELECT * FROM menu_categories WHERE site_id = ? ORDER BY position, id"),
     q("SELECT * FROM menu_items WHERE site_id = ? ORDER BY position, id"),
     q("SELECT * FROM home_highlights WHERE site_id = ? ORDER BY position, item_id"),
@@ -46,16 +47,12 @@ export async function exportSite(db: D1Database, site: string): Promise<Exported
   const p = pages.results[0];
   if (!sites.results[0] || !s || !p) return null;
 
-  const pathOf = new Map(images.results.map((r) => [str(r.id), str(r.path)]));
-  // Uploads have no static path yet; they get a media URL with the upload feature (M6).
-  const imagePath = (id: unknown) => (id === null || id === undefined ? undefined : pathOf.get(str(id)));
-
-  const highlightImages = Object.fromEntries(
-    highlights.results.flatMap((h) => {
-      const path = imagePath(h.image_id);
-      return path ? [[str(h.item_id), path]] : [];
-    }),
-  );
+  // A curated image is referred to by its path, an upload by its id (ADR-014 §1).
+  const refOf = new Map(images.results.map((r) => [str(r.id), r.kind === "static" ? str(r.path) : str(r.id)]));
+  const imagePath = (id: unknown) => (id === null || id === undefined ? undefined : refOf.get(str(id)));
+  // Until the operator re-seeds after migration 0005, curated rows have no alt of their own;
+  // a gallery photo's alt is still on its gallery row, so the live gallery keeps its text.
+  const galleryAlt = new Map(gallery.results.map((g) => [str(g.image_id), { sv: str(g.alt_sv), en: str(g.alt_en) }]));
 
   const content: StoredContent = {
     settings: {
@@ -111,7 +108,6 @@ export async function exportSite(db: D1Database, site: string): Promise<Exported
         tagline: { sv: str(p.home_tagline_sv), en: str(p.home_tagline_en) },
         highlights: highlights.results.map((h) => str(h.item_id)),
         heroImage: imagePath(p.hero_image_id),
-        highlightImages: Object.keys(highlightImages).length > 0 ? highlightImages : undefined,
         pullQuote: p.pull_quote_sv === null ? undefined : { sv: str(p.pull_quote_sv), en: str(p.pull_quote_en) },
         ctaImage: imagePath(p.cta_image_id),
       }),
@@ -124,11 +120,16 @@ export async function exportSite(db: D1Database, site: string): Promise<Exported
       }),
     },
     gallery: {
-      images: gallery.results.map((g) => ({
-        src: imagePath(g.image_id) ?? "",
-        alt: { sv: str(g.alt_sv), en: str(g.alt_en) },
-      })),
+      images: gallery.results.map((g) => ({ image: imagePath(g.image_id)! })),
     },
+    images: images.results.map((r) =>
+      compact({
+        ref: refOf.get(str(r.id))!,
+        alt: r.alt_sv === null || r.alt_en === null ? galleryAlt.get(str(r.id)) : { sv: str(r.alt_sv), en: str(r.alt_en) },
+        width: optional(r.width as number | null),
+        height: optional(r.height as number | null),
+      }),
+    ),
   };
   const soldOutOn = Object.fromEntries(items.results.filter((i) => i.sold_out_on !== null).map((i) => [str(i.id), str(i.sold_out_on)]));
   return { content, version: sites.results[0].content_version as number, soldOutOn };

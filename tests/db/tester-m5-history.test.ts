@@ -7,12 +7,14 @@
 import { env } from "cloudflare:workers";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import bistroGallery from "../../sites/bistro/content/gallery.json";
+import bistroImages from "../../sites/bistro/content/images.json";
 import bistroHours from "../../sites/bistro/content/hours.json";
 import bistroMenu from "../../sites/bistro/content/menu.json";
 import bistroPages from "../../sites/bistro/content/pages.json";
 import bistroSettings from "../../sites/bistro/content/settings.json";
 import bistroTheme from "../../sites/bistro/theme.json";
 import waGallery from "../../sites/westafrican/content/gallery.json";
+import waImages from "../../sites/westafrican/content/images.json";
 import waHours from "../../sites/westafrican/content/hours.json";
 import waMenu from "../../sites/westafrican/content/menu.json";
 import waPages from "../../sites/westafrican/content/pages.json";
@@ -25,7 +27,7 @@ import { exportFile, type OperatorContent, readExportFile } from "../../src/db/e
 import { addException, adminHours, removeException, saveWeeklyHours } from "../../src/db/hours";
 import { adminMenu, createCategory, createMenuItem, deleteCategory, moveCategory, moveMenuItem, setFeatured } from "../../src/db/menu";
 import { deleteMenuItem, getMenuItem, type RepoContext, setSoldOut, updateMenuItem } from "../../src/db/repository";
-import { type ImageResolver, imagePathsOf, resetStatements, seedStatements, type StoredContent } from "../../src/db/seed";
+import { type ImageResolver, resetStatements, seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare, type Statement } from "../../src/db/sql";
 import { adminTexts, updatePageTexts, updateSettings } from "../../src/db/texts";
 
@@ -37,8 +39,8 @@ const ctx = (siteId: string, userId: string | null = OWNER): RepoContext => ({ d
 const bistro = ctx("bistro");
 
 const raw = {
-  bistro: { settings: bistroSettings, hours: bistroHours, menu: bistroMenu, pages: bistroPages, gallery: bistroGallery, theme: bistroTheme },
-  westafrican: { settings: waSettings, hours: waHours, menu: waMenu, pages: waPages, gallery: waGallery, theme: waTheme },
+  bistro: { settings: bistroSettings, hours: bistroHours, menu: bistroMenu, pages: bistroPages, gallery: bistroGallery, images: bistroImages, theme: bistroTheme },
+  westafrican: { settings: waSettings, hours: waHours, menu: waMenu, pages: waPages, gallery: waGallery, images: waImages, theme: waTheme },
 };
 const themes = { bistro: bistroTheme as Theme, westafrican: waTheme as Theme };
 const repoSettings = { bistro: bistroSettings, westafrican: waSettings } as unknown as Record<string, OperatorContent["settings"]>;
@@ -60,7 +62,7 @@ const fakeImages: ImageResolver = (path) => {
 };
 beforeAll(async () => {
   for (const site of ["bistro", "westafrican"] as const) {
-    for (const path of imagePathsOf(stored(site))) {
+    for (const path of (stored(site)).images.map((i) => i.ref)) {
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(path));
       hashes.set(path, Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join(""));
     }

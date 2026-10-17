@@ -4,7 +4,7 @@
  *
  * The theme is not stored: it stays a developer-edited file (ADR-011 §5).
  */
-import type { SiteContent } from "../content/schema";
+import { imageReferences, isUploadRef, type SiteContent } from "../content/schema";
 import { WEEKDAYS } from "../content/vocabulary";
 import { newId } from "./ids";
 import { type Statement, stmt } from "./sql";
@@ -16,6 +16,9 @@ export interface StaticImage {
   /** SHA-256 of the file's bytes, hex. */
   id: string;
   mime: "image/jpeg" | "image/webp";
+  /** Pixel size, read from the file by the CLI (sharp); a test resolver may leave it out. */
+  width?: number;
+  height?: number;
 }
 
 /** Looks up a curated image by its path; the CLI hashes the real file, tests fake it. */
@@ -40,20 +43,9 @@ export function resetStatements(site: string): Statement[] {
   return CONTENT_TABLES.map((table) => stmt(`DELETE FROM ${table} WHERE site_id = ?`, site));
 }
 
-/** Every image path the content refers to, in first-use order. */
-export function imagePathsOf(content: StoredContent): string[] {
-  const { home, menu, about } = content.pages;
-  const paths = [
-    home.heroImage,
-    home.ctaImage,
-    menu.heroImage,
-    about.storyImage,
-    about.kitchenImage,
-    ...Object.values(home.highlightImages ?? {}),
-    ...content.menu.categories.flatMap((c) => c.items.map((i) => i.image)),
-    ...content.gallery.images.map((g) => g.src),
-  ];
-  return [...new Set(paths.filter((p): p is string => typeof p === "string"))];
+/** Every image reference the content shows, once each, in first-use order. */
+export function imageRefsOf(content: StoredContent): string[] {
+  return [...new Set(imageReferences(content).map((r) => r.ref))];
 }
 
 /**
@@ -80,17 +72,33 @@ export function seedStatements(
     ),
   );
 
+  // The whole library is registered, used or not, so an owner can switch back to a built-in
+  // photo (ADR-014 §3). Uploads only come back through a restore with their bytes (M6.4).
   const imageIds = new Map<string, string>();
   const pathOfId = new Map<string, string>();
-  for (const path of imagePathsOf(content)) {
-    const image = resolveImage(path);
+  for (const entry of content.images) {
+    if (isUploadRef(entry.ref)) throw new Error(`${entry.ref} is an upload; JSON content can only list curated files.`);
+    const image = resolveImage(entry.ref);
     const other = pathOfId.get(image.id);
-    if (other) throw new Error(`${path} and ${other} are the same file; refer to one of them.`);
-    pathOfId.set(image.id, path);
-    imageIds.set(path, image.id);
-    out.push(stmt("INSERT INTO images (site_id, id, kind, path, mime) VALUES (?, ?, 'static', ?, ?)", site, image.id, path, image.mime));
+    if (other) throw new Error(`${entry.ref} and ${other} are the same file; list one of them.`);
+    pathOfId.set(image.id, entry.ref);
+    imageIds.set(entry.ref, image.id);
+    out.push(
+      stmt(
+        "INSERT INTO images (site_id, id, kind, path, mime, width, height, alt_sv, alt_en) VALUES (?, ?, 'static', ?, ?, ?, ?, ?, ?)",
+        site,
+        image.id,
+        entry.ref,
+        image.mime,
+        entry.width ?? image.width ?? null,
+        entry.height ?? image.height ?? null,
+        entry.alt?.sv ?? null,
+        entry.alt?.en ?? null,
+      ),
+    );
   }
-  const imageId = (path: string | undefined) => (path === undefined ? null : (imageIds.get(path) ?? null));
+  const imageId = (ref: string | undefined) => (ref === undefined ? null : (imageIds.get(ref) ?? null));
+  const altOf = new Map(content.images.map((i) => [i.ref, i.alt]));
 
   const s = content.settings;
   out.push(
@@ -156,11 +164,10 @@ export function seedStatements(
   content.pages.home.highlights.forEach((itemId, position) => {
     out.push(
       stmt(
-        "INSERT INTO home_highlights (site_id, item_id, position, image_id) VALUES (?, ?, ?, ?)",
+        "INSERT INTO home_highlights (site_id, item_id, position, image_id) VALUES (?, ?, ?, NULL)",
         site,
         itemId,
         position,
-        imageId(content.pages.home.highlightImages?.[itemId]),
       ),
     );
   });
@@ -209,15 +216,19 @@ export function seedStatements(
     ),
   );
 
+  // gallery_images still has its own NOT NULL alt until the contract migration: fill it with
+  // the image's alt (the schema guarantees a gallery photo has one).
   content.gallery.images.forEach((g, position) => {
+    const alt = altOf.get(g.image);
+    if (!alt) throw new Error(`gallery photo ${g.image} has no alt text in the image library`);
     out.push(
       stmt(
         "INSERT INTO gallery_images (site_id, id, image_id, alt_sv, alt_en, position) VALUES (?, ?, ?, ?, ?, ?)",
         site,
         newId(),
-        imageId(g.src),
-        g.alt.sv,
-        g.alt.en,
+        imageId(g.image),
+        alt.sv,
+        alt.en,
         position,
       ),
     );

@@ -1,44 +1,34 @@
 {
   "images": [
     {
-      "src": "/images/bistro/gallery-table-wine.jpg",
-      "alt": { "sv": "Elegant dukning med vinglas, ljus och blommor", "en": "Elegant table setting with wine glasses, candles and flowers" }
+      "image": "/images/bistro/gallery-table-wine.jpg"
     },
     {
-      "src": "/images/bistro/gallery-candlelight.jpg",
-      "alt": { "sv": "Vinflaska och glas i levande ljus", "en": "Wine bottle and glasses by candlelight" }
+      "image": "/images/bistro/gallery-candlelight.jpg"
     },
     {
-      "src": "/images/bistro/gallery-grilled-fish.jpg",
-      "alt": { "sv": "Hel grillad fisk på skärbräda", "en": "Whole grilled fish on cutting board" }
+      "image": "/images/bistro/gallery-grilled-fish.jpg"
     },
     {
-      "src": "/images/bistro/gallery-salmon-broccoli.jpg",
-      "alt": { "sv": "Lax med broccoli och örtsås", "en": "Salmon with broccoli and herb sauce" }
+      "image": "/images/bistro/gallery-salmon-broccoli.jpg"
     },
     {
-      "src": "/images/bistro/gallery-mushroom-risotto.jpg",
-      "alt": { "sv": "Svamprisotto på svart tallrik", "en": "Mushroom risotto on black plate" }
+      "image": "/images/bistro/gallery-mushroom-risotto.jpg"
     },
     {
-      "src": "/images/bistro/gallery-shrimp-sandwich.jpg",
-      "alt": { "sv": "Räksmörgås med ägg och krasse", "en": "Shrimp sandwich with egg and cress" }
+      "image": "/images/bistro/gallery-shrimp-sandwich.jpg"
     },
     {
-      "src": "/images/bistro/gallery-blini-salmon.jpg",
-      "alt": { "sv": "Blini med lax, rom och gräddfil", "en": "Blini with salmon, roe and sour cream" }
+      "image": "/images/bistro/gallery-blini-salmon.jpg"
     },
     {
-      "src": "/images/bistro/gallery-kanelbullar.jpg",
-      "alt": { "sv": "Nybakade kanelbullar på plåt", "en": "Freshly baked cinnamon buns on a tray" }
+      "image": "/images/bistro/gallery-kanelbullar.jpg"
     },
     {
-      "src": "/images/bistro/gallery-busy-dining.jpg",
-      "alt": { "sv": "Restaurangens matsal fylld med gäster", "en": "Dining room filled with guests" }
+      "image": "/images/bistro/gallery-busy-dining.jpg"
     },
     {
-      "src": "/images/bistro/gallery-industrial-interior.jpg",
-      "alt": { "sv": "Restaurangens industriella interiör", "en": "Industrial restaurant interior" }
+      "image": "/images/bistro/gallery-industrial-interior.jpg"
     }
   ]
 }

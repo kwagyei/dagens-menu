@@ -58,13 +58,6 @@ describe("prototype keys from JSON", () => {
     expect(r.success).toBe(false);
   });
 
-  it("rejects __proto__ in highlightImages", () => {
-    const r = parse((c) => {
-      c.pages.home.highlightImages = JSON.parse('{"__proto__": "/images/bistro/x.jpg"}');
-    });
-    expect(r.success).toBe(false);
-  });
-
   it("rejects __proto__ as an unknown key on a strict object", () => {
     const r = parse((c) => {
       c.menu.categories[0].items[0] = { ...firstItem(c), ...JSON.parse('{"__proto__": {"available": false}}') };

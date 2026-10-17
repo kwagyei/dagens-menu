@@ -31,6 +31,7 @@ const content = {
   menu: { categories: menu.categories.map((c) => ({ ...c, items: c.items.map(({ image: _i, ...i }) => i) })) },
   pages: { home: { tagline: pages.home.tagline, highlights: pages.home.highlights }, menu: {}, about: { story: pages.about.story, chef: pages.about.chef } },
   gallery: { images: [] },
+  images: [],
 } as unknown as StoredContent;
 
 beforeEach(async () => {
@@ -68,7 +69,7 @@ describe("export file", () => {
     const exported = (await exportSite(db, "bistro"))!;
     expect(exportFile("bistro", exported, new Date("2026-10-16T08:00:00.123Z"))).toMatchObject({
       format: "dagens-menu-export",
-      formatVersion: 1,
+      formatVersion: 2,
       site: "bistro",
       exportedAt: "2026-10-16T08:00:00Z",
       contentVersion: exported.version,
@@ -81,13 +82,57 @@ describe("export file", () => {
     const read = (value: unknown) => readExportFile(typeof value === "string" ? value : JSON.stringify(value), "bistro", op(theme as Theme));
     expect(read({ ...good, site: "westafrican" })).toEqual({ ok: false, error: 'the file is for site "westafrican", not "bistro"' });
     expect(read({ ...good, format: "something-else" })).toMatchObject({ ok: false, error: "not a dagens-menu-export file" });
-    expect(read({ ...good, formatVersion: 2 })).toMatchObject({ ok: false, error: expect.stringContaining("format version 2") });
+    expect(read({ ...good, formatVersion: 3 })).toMatchObject({ ok: false, error: expect.stringContaining("format version 3") });
     expect(read("{ not json")).toMatchObject({ ok: false, error: expect.stringContaining("not valid JSON") });
     expect(read([])).toEqual({ ok: false, error: "not an export file" });
     expect(read({ ...good, content: null })).toEqual({ ok: false, error: "the file has no content" });
     const bad = structuredClone(good);
     bad.content.settings.socialLinks = { instagram: "http://instagram.com/x" };
     expect(read(bad)).toMatchObject({ ok: false, error: expect.stringContaining("settings.socialLinks.instagram") });
+  });
+});
+
+describe("format 1 files (before the image library, M6.3)", () => {
+  /** A format 1 file as the previous release wrote it: gallery { src, alt }, highlightImages, no library. */
+  async function v1File() {
+    const current = exportFile("bistro", (await exportSite(db, "bistro"))!, now);
+    const alts = new Map(current.content.images.map((i) => [i.ref, i.alt]));
+    const { images: _library, ...content } = structuredClone(current.content) as typeof current.content & { images?: unknown };
+    const gallery = { images: current.content.gallery.images.map((g) => ({ src: g.image, alt: alts.get(g.image) ?? { sv: "Bild", en: "Image" } })) };
+    const home = { ...content.pages.home, highlightImages: { [content.pages.home.highlights[0]]: current.content.images[0]?.ref ?? "/images/bistro/x.jpg" } };
+    return { ...current, formatVersion: 1, content: { ...content, gallery, pages: { ...content.pages, home } } };
+  }
+
+  it("upgrades on reading: the gallery's alt moves to the library, highlightImages is dropped and counted", async () => {
+    const file = await v1File();
+    const read = readExportFile(JSON.stringify(file), "bistro", { ...op(theme as Theme), images: [] });
+    if (!read.ok) throw new Error(read.error);
+    expect(read.highlightImagesDropped).toBe(1);
+    expect("highlightImages" in read.content.pages.home).toBe(false);
+    for (const [index, g] of file.content.gallery.images.entries()) {
+      expect(read.content.gallery.images[index]).toEqual({ image: g.src });
+      expect(read.content.images.find((i) => i.ref === g.src)?.alt).toEqual(g.alt);
+    }
+  });
+
+  it("other curated images take their alt from the repository's library", async () => {
+    const file = await v1File();
+    const photo = "/images/bistro/kottbullar-hero.jpg";
+    file.content.menu.categories[0].items[0].image = photo; // this fixture's dishes have no photos
+    const read = readExportFile(JSON.stringify(file), "bistro", {
+      ...op(theme as Theme),
+      images: [{ ref: photo, alt: { sv: "Från repot", en: "From the repository" } }],
+    });
+    if (!read.ok) throw new Error(read.error);
+    expect(read.content.images.find((i) => i.ref === photo)?.alt).toEqual({ sv: "Från repot", en: "From the repository" });
+  });
+
+  it("restores to the same content as a format 2 file of the same site", async () => {
+    const before = (await exportSite(db, "bistro"))!;
+    const read = readExportFile(JSON.stringify(await v1File()), "bistro", { ...op(theme as Theme), images: before.content.images });
+    if (!read.ok) throw new Error(read.error);
+    await db.batch(prepare(db, [...resetStatements("bistro"), ...seedStatements("bistro", read.content, images)]));
+    expect((await exportSite(db, "bistro"))!.content).toEqual(before.content);
   });
 });
 

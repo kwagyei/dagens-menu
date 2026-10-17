@@ -6,17 +6,20 @@ import { localized } from "../content/load";
 import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const gallery = Astro.locals.content.gallery;
+const { gallery, images } = Astro.locals.content;
+// Alt text lives on the library image (ADR-014 §1); the schema guarantees a gallery photo has one.
+const altOf = new Map(images.map((i) => [i.ref, i.alt]));
+const photos = gallery.images.map((g) => ({ src: g.image, alt: altOf.get(g.image) }));
 ---
 
 <Base title={t(locale, "nav.gallery")}>
   <PageHero title={t(locale, "nav.gallery")} />
-  {gallery.images.length > 0 ? (
+  {photos.length > 0 ? (
     <ul class="gallery-magazine">
-      {gallery.images.map((image, i) => (
+      {photos.map((image, i) => (
         <li>
           <figure>
-            <img src={image.src} alt={localized(image.alt, locale)} loading={i < 4 ? "eager" : "lazy"} />
+            <img src={image.src} alt={image.alt ? localized(image.alt, locale) : t(locale, "gallery.alt.missing")} loading={i < 4 ? "eager" : "lazy"} />
           </figure>
         </li>
       ))}
