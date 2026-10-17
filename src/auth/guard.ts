@@ -7,7 +7,8 @@
  * - Rate limiting: opening invite links and the passkey endpoints (enrolment, sign-in, adding
  *   a device) share a per-site, per-IP budget, as ADR-011 §6 specifies. Ordinary admin
  *   writes are not limited, so an owner can mark a dozen dishes sold out in a minute.
- *   Public pages are never limited.
+ *   Public pages are never limited. Without the limiter binding these paths fail closed with
+ *   a 503 rather than run unlimited (review L2): a config slip must not quietly drop the limit.
  * - Forms posted while signed in carry a token tied to the session (formToken), checked by
  *   the page that handles the post.
  */
@@ -32,7 +33,11 @@ export async function guardAdminRequest(request: Request, site: string, limiter:
   if (changes(request.method) && request.headers.get("Origin") !== url.origin) {
     return refusal(403, "Cross-site request refused");
   }
-  if (limiter && AUTH_PATH.test(decodedPath(url.pathname))) {
+  if (AUTH_PATH.test(decodedPath(url.pathname))) {
+    if (!limiter) {
+      console.error("admin: the AUTH_LIMITER binding is missing; sign-in and invite links are refused until it is configured.");
+      return refusal(503, "Sign-in is not available right now.", { "Retry-After": "60" });
+    }
     const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
     const { success } = await limiter.limit({ key: `${site}:${ip}` });
     if (!success) return refusal(429, "Too many attempts. Wait a minute and try again.", { "Retry-After": "60" });

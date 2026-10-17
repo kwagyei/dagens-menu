@@ -70,6 +70,7 @@ export default {
   "admin.signIn.heading": "Sign in",
   "admin.signIn.lead": "Sign in with the passkey you created on this device.",
   "admin.signIn.button": "Sign in with a passkey",
+  "admin.signIn.expired": "Your sign-in had expired, so the change wasn't saved. Sign in and try again.",
   "admin.noScript": "Signing in with a passkey needs JavaScript. Turn it on in your browser and reload the page.",
   "admin.invite.heading": "Welcome",
   "admin.invite.lead": "Create a passkey to manage {site}. You approve it with Face ID, a fingerprint or your device's PIN. No password needed.",

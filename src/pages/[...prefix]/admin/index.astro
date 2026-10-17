@@ -3,7 +3,7 @@
 // sold-out toggle and up/down on every dish. Quick actions post back here and land on the
 // same dish (post/redirect/get).
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-import { adminPage } from "../../../admin/page";
+import { adminPage, signInRedirect } from "../../../admin/page";
 import { restaurantDay } from "../../../content/hours";
 import { formatPrice } from "../../../content/load";
 import { adminMenu, type Direction, moveCategory, moveMenuItem } from "../../../db/menu";
@@ -48,6 +48,9 @@ if (Astro.locals.session) {
 
   menu = await adminMenu(page.repo);
   today = restaurantDay(page.repo.now).date;
+} else if (Astro.request.method === "POST") {
+  // A quick action posted after the session ended: say it wasn't saved (review L1).
+  return signInRedirect(Astro);
 }
 
 const done = Astro.url.searchParams.get("done");
@@ -175,7 +178,10 @@ const message: Record<string, string> = {
         data-failed={t(locale, "admin.error.failed")}
       >{t(locale, "admin.signIn.button")}</button>
       <p class="admin-message" data-needs-js>{t(locale, "admin.noScript")}</p>
-      <p id="status" role="status" aria-live="polite"></p>
+      {/* The passkey script replaces this text once the owner tries to sign in. */}
+      <p id="status" role="status" aria-live="polite" class:list={[done === "expired" && "admin-message"]}>
+        {done === "expired" && t(locale, "admin.signIn.expired")}
+      </p>
     </section>
   )}
 </AdminLayout>

@@ -4,8 +4,9 @@
  * security model, not an edge of the UI.
  *
  * The westafrican isolation block needs a second Worker and runs only when WESTAFRICAN_URL is
- * set (see the tester report for how it was started); the missing-secret block starts its own
- * wrangler dev on port 8791 without SESSION_SECRET.
+ * set: scripts/serve-westafrican.sh starts one, and the edge workflow (e2e-edge.yml) runs the
+ * block on every PR and nightly. The missing-secret block starts its own wrangler dev on port
+ * 8791 without SESSION_SECRET.
  */
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { type APIRequestContext, type BrowserContext, expect, type Page, test } from "@playwright/test";
@@ -19,7 +20,7 @@ function cli(args: string[]): string {
 }
 function invite(email: string, site = "bistro"): string {
   const out = cli(["invite", "--site", site, "--email", email, "--url", BASE]);
-  const link = out.match(/\/admin\/invite\/[A-Za-z0-9_-]{43}/)?.[0];
+  const link = out.match(/\/admin\/invite\/#[A-Za-z0-9_-]{43}/)?.[0];
   if (!link) throw new Error(`no invite link in: ${out}`);
   return link;
 }
@@ -269,7 +270,7 @@ test.describe("headers and paths", () => {
   test("admin pages are no-store with a CSP that still lets the bundled script run", async ({ page }) => {
     const violations: string[] = [];
     page.on("console", (m) => /Content Security Policy/i.test(m.text()) && violations.push(m.text()));
-    for (const path of ["/admin/", "/en/admin/", `/admin/invite/${"A".repeat(43)}`]) {
+    for (const path of ["/admin/", "/en/admin/", `/admin/invite/#${"A".repeat(43)}`, `/admin/invite/${"A".repeat(43)}`]) {
       const res = (await page.goto(path))!;
       const h = res.headers();
       expect(h["cache-control"], path).toBe("no-store");
@@ -285,7 +286,34 @@ test.describe("headers and paths", () => {
     expect(violations).toEqual([]);
   });
 
-  test("the invite page loads nothing from another origin (the token is in its URL)", async ({ page }) => {
+  test("the invite token never reaches the server in a URL, so no request log holds it (review L8)", async ({ page }) => {
+    await authenticator(page);
+    const link = invite(freshEmail());
+    const token = link.split("#").pop()!;
+    const urls: string[] = [];
+    page.on("request", (r) => urls.push(r.url()));
+    const bodies: string[] = [];
+    page.on("request", (r) => r.method() === "POST" && bodies.push(r.postData() ?? ""));
+    await page.goto(link);
+    await page.getByRole("button", { name: "Skapa passkey" }).click();
+    await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
+    // Playwright reports the navigation with its fragment; the fragment is never sent, so strip it.
+    const sent = urls.map((u) => u.split("#")[0]);
+    expect(sent.filter((u) => u.includes(token))).toEqual([]);
+    expect(bodies.filter((b) => b.includes(token)).length).toBeGreaterThanOrEqual(3); // check, options, verify
+  });
+
+  test("a link in the old form (token in the path) is refused without a lookup", async ({ request }) => {
+    const link = invite(freshEmail());
+    const res = await request.get(link.replace("#", ""));
+    expect(res.status()).toBe(410);
+    expect(res.headers()["cache-control"]).toBe("no-store");
+    // The invite itself is untouched and still works through the fragment form.
+    const check = await request.post("/admin/api/invite-check", { data: { token: link.split("#").pop() }, headers: SAME });
+    expect(check.status()).toBe(200);
+  });
+
+  test("the invite page loads nothing from another origin (the token is in its fragment)", async ({ page }) => {
     const link = invite(freshEmail());
     const foreign: string[] = [];
     page.on("request", (r) => new URL(r.url()).origin !== BASE && foreign.push(r.url()));
@@ -298,7 +326,7 @@ test.describe("headers and paths", () => {
   test("a percent-encoded /admin path is still treated as the admin (headers, rate limit)", async ({ request }) => {
     const token = "A".repeat(43);
     const res = await request.get(`/%61dmin/invite/${token}`);
-    // Today this renders the invite page as a *public* page: no-cache, no rate limit.
+    // Once this rendered the invite page as a *public* page: no-cache, no rate limit.
     expect(res.headers()["cache-control"]).toBe("no-store");
     const headers = { "CF-Connecting-IP": "203.0.113.77" };
     const statuses: number[] = [];
@@ -318,12 +346,12 @@ test.describe("headers and paths", () => {
 });
 
 test.describe("rate limiting", () => {
-  test("opening invite links is limited too, and a 429 says nothing about the client", async ({ request }) => {
-    const headers = { "CF-Connecting-IP": "203.0.113.201" };
+  test("checking invite links is limited too, and a 429 says nothing about the client", async ({ request }) => {
+    const headers = { ...SAME, "CF-Connecting-IP": "203.0.113.201" };
     const statuses: number[] = [];
     let last = "";
     for (let i = 0; i < 11; i++) {
-      const res = await request.get(`/en/admin/invite/${"B".repeat(43)}`, { headers });
+      const res = await request.post("/admin/api/invite-check", { data: { token: "B".repeat(43) }, headers });
       statuses.push(res.status());
       last = await res.text();
     }
@@ -333,7 +361,68 @@ test.describe("rate limiting", () => {
     expect(last).not.toMatch(/bistro|limit|10/i);
     // The sign-in page itself (GET) is not limited, nor is another visitor.
     expect((await request.get("/admin/", { headers })).status()).toBe(200);
-    expect((await request.get(`/admin/invite/${"B".repeat(43)}`, { headers: { "CF-Connecting-IP": "203.0.113.202" } })).status()).toBe(410);
+    expect((await request.get("/admin/", { headers })).status()).toBe(200);
+    const other = { ...SAME, "CF-Connecting-IP": "203.0.113.202" };
+    expect((await request.post("/admin/api/invite-check", { data: { token: "B".repeat(43) }, headers: other })).status()).toBe(410);
+  });
+});
+
+test.describe("user verification (review L9)", () => {
+  test("a passkey made without verifying the user (no PIN or biometric) is refused; the invite stays usable", async ({ page }) => {
+    // A built-in authenticator that can't verify the user. With "preferred" it enrols; with "required" it must not.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("WebAuthn.enable");
+    const { authenticatorId } = await cdp.send("WebAuthn.addVirtualAuthenticator", {
+      options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: false, automaticPresenceSimulation: true },
+    });
+    const email = freshEmail();
+    const link = invite(email);
+    await page.goto(link);
+    await page.getByRole("button", { name: "Skapa passkey" }).click();
+    await expect(page.getByRole("status")).toContainText("Det gick inte");
+    expect(passkeyIds(email)).toEqual([]);
+    const check = await page.request.post("/admin/api/invite-check", { data: { token: link.split("#").pop() }, headers: SAME });
+    expect(check.status()).toBe(200);
+    // A device that verifies the user then enrols with the same link.
+    await cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
+    await authenticator(page);
+    await page.goto(link);
+    await page.getByRole("button", { name: "Skapa passkey" }).click();
+    await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
+  });
+});
+
+test.describe("a form posted after the session ended (review L1)", () => {
+  test("lands on sign-in with a message instead of silently dropping the change", async ({ page, context }) => {
+    await enrol(page);
+    await page.goto("/admin/texts/");
+    await context.clearCookies(); // the session ends (expired, or signed out elsewhere) while the form is open
+    await page.getByRole("button", { name: "Spara restaurangen" }).click();
+    await expect(page).toHaveURL(/\/admin\/\?done=expired$/);
+    await expect(page.getByRole("heading", { name: "Logga in" })).toBeVisible();
+    await expect(page.getByRole("status")).toHaveText("Din inloggning hade gått ut, så ändringen sparades inte. Logga in och försök igen.");
+  });
+
+  test("every admin form answers 303 to the sign-in page in its own language, never 200", async ({ request }) => {
+    for (const [path, home] of [
+      ["/admin/", "/admin/"],
+      ["/admin/hours/", "/admin/"],
+      ["/admin/security/", "/admin/"],
+      ["/en/admin/texts/", "/en/admin/"],
+      ["/en/admin/menu/new/", "/en/admin/"],
+    ]) {
+      const res = await request.post(path, { form: { action: "sold-out", id: "x", csrf: "x" }, headers: SAME, maxRedirects: 0 });
+      expect(res.status(), path).toBe(303);
+      expect(res.headers().location, path).toBe(`${home}?done=expired`);
+    }
+    // A plain visit while signed out is just the sign-in page, with no message.
+    const visit = await request.get("/admin/hours/", { maxRedirects: 0 });
+    expect(visit.headers().location).toBe("/admin/");
+  });
+
+  test("the English sign-in page says it in English", async ({ page }) => {
+    await page.goto("/en/admin/?done=expired");
+    await expect(page.getByRole("status")).toHaveText("Your sign-in had expired, so the change wasn't saved. Sign in and try again.");
   });
 });
 
@@ -409,7 +498,7 @@ test.describe("without SESSION_SECRET", () => {
 
 const WEST = process.env.WESTAFRICAN_URL;
 test.describe("per-site isolation against a westafrican Worker (answer 7)", () => {
-  test.skip(!WEST, "set WESTAFRICAN_URL to a westafrican build on the same local D1");
+  test.skip(!WEST, "set WESTAFRICAN_URL to a westafrican Worker on the same local D1 (scripts/serve-westafrican.sh)");
 
   test("a bistro session, invite and passkey get nothing on westafrican", async ({ page, context, request }) => {
     const { link, email } = await enrol(page);
@@ -424,10 +513,15 @@ test.describe("per-site isolation against a westafrican Worker (answer 7)", () =
 
     // Invite: a bistro invite (even an unused one) is not valid there.
     const unused = invite(freshEmail());
-    expect((await request.get(`${WEST}${unused}`)).status()).toBe(410);
-    expect((await request.get(`${WEST}${link}`)).status()).toBe(410);
-    const opts = await request.post(`${WEST}/admin/api/enrol-options`, { data: { token: unused.split("/").pop() }, headers: { Origin: WEST! } });
+    const there = { Origin: WEST! };
+    for (const token of [unused, link].map((l) => l.split("#").pop())) {
+      expect((await request.post(`${WEST}/admin/api/invite-check`, { data: { token }, headers: there })).status()).toBe(410);
+    }
+    const opts = await request.post(`${WEST}/admin/api/enrol-options`, { data: { token: unused.split("#").pop() }, headers: there });
     expect(opts.status()).toBe(410);
+    // ...and the page says so.
+    await page.goto(`${WEST}${unused}`);
+    await expect(page.getByText("Den här länken har redan använts eller har gått ut")).toBeVisible();
 
     // Passkey: both Workers are on "localhost", so the browser offers the bistro passkey; the server must refuse it.
     await page.goto(`${WEST}/admin/`);

@@ -21,11 +21,20 @@ export interface AdminPage {
   postedForm: () => Promise<FormData | null>;
 }
 
+/**
+ * Where a request without a session goes: the sign-in page. A form posted after the session
+ * ended can't be saved, so the sign-in page says so instead of dropping it silently (review L1).
+ */
+export function signInRedirect(astro: AstroGlobal): Response {
+  const home = localePath(getLocale(astro.url), "/admin/");
+  return astro.redirect(astro.request.method === "POST" ? `${home}?done=expired` : home, 303);
+}
+
 export async function adminPage(astro: AstroGlobal): Promise<AdminPage | Response> {
   const locale = getLocale(astro.url);
   const path = (p: string) => localePath(locale, `/admin${p}`);
   const session = astro.locals.session;
-  if (!session) return astro.redirect(path("/"), 303);
+  if (!session) return signInRedirect(astro);
   const secret = adminSecret();
   return {
     session,

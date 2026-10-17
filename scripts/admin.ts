@@ -50,7 +50,8 @@ if (command === "invite") {
   }
   execute("admin", target, issued.statements);
   const base = (values.url ?? (values.remote ? "" : "http://localhost:4321")).replace(/\/$/, "");
-  const path = `/admin/invite/${issued.token}`;
+  // The token goes in the fragment, which browsers never send: it stays out of request logs.
+  const path = `/admin/invite/#${issued.token}`;
   console.log(`admin: invited ${values.email.trim().toLowerCase()} as owner of "${site}" (${targetName(target)}).`);
   console.log(`admin: single-use link, valid ${INVITE_TTL_MS / 3_600_000} hours, shown only now:\n\n  ${base}${path}\n`);
   if (!base) console.log("admin: (pass --url https://<the site's address> to print the full link)");

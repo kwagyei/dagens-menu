@@ -16,7 +16,9 @@
       "migrations_dir": "migrations"
     }
   ],
-  // Sign-in and admin writes: 10 per minute per IP (ADR-011 §6).
+  // Opening invite links and the passkey ceremonies (enrolment, sign-in, adding a device):
+  // 10 per minute per site and IP, counted per Cloudflare location (ADR-011 §6). Other admin
+  // writes are not limited. Without this binding those paths answer 503 (src/auth/guard.ts).
   "ratelimits": [{ "name": "AUTH_LIMITER", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } }],
   "observability": { "enabled": true }
 }

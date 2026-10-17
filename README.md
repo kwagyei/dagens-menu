@@ -120,8 +120,12 @@ is the seed data the demos are loaded from.
 - **Passkeys, no passwords, no sign-up.** A password hash strong enough to matter doesn't
   fit the Workers free plan's 10 ms of CPU, and magic links need an email domain. Passkeys
   verify with one signature check and can't be phished. The operator issues a single-use
-  link (`npm run admin -- invite`, valid 72 hours, stored only as a hash). Each passkey is
-  bound to its site's address, so a Bistro Norden passkey can't sign in to Chez Abena.
+  link (`npm run admin -- invite`, valid 72 hours, stored only as a hash). The token sits in
+  the link's `#fragment`, which browsers never send, so it never appears in a request log;
+  the page posts it in a request body. Each passkey is bound to its site's address, so a
+  Bistro Norden passkey can't sign in to Chez Abena. The device must verify the owner (Face
+  ID, fingerprint or PIN), not just be present: the passkey is the only factor, so a
+  security key without a PIN isn't enough.
 - **Sessions can't outlive their owner's access.** The cookie is `__Host-`, HttpOnly and
   SameSite=Lax, and the database keeps only its hash. A session ends after 30 days, after
   14 days unused, the moment the operator revokes the owner, or the moment the passkey it
@@ -134,6 +138,8 @@ is the seed data the demos are loaded from.
 - **Admin writes are guarded:** an Origin check on every write (form or fetch) and a form
   token tied to the session. Sign-in, enrolment and invite links are limited to 10 a minute
   per IP; ordinary edits aren't, so an owner can mark a dozen dishes sold out in a minute.
+  Without the limiter binding those paths refuse (503) rather than run unlimited. A form
+  posted after the session ended lands on sign-in saying the change wasn't saved.
   Each sign-in challenge works once, even for synced passkeys that don't count signatures.
   The admin has its own stricter CSP: no inline scripts at all.
 - **Merging deploys, so the gate has to be trusted.** Every merge to `main` applies

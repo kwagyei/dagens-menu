@@ -4,6 +4,7 @@
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { env } from "cloudflare:workers";
 import { adminSecret } from "../../../admin/context";
+import { signInRedirect } from "../../../admin/page";
 import { checkFormToken, formToken } from "../../../auth/guard";
 import { removePasskey } from "../../../auth/passkeys";
 import { clearSessionCookie, signOutEverywhere } from "../../../auth/sessions";
@@ -15,7 +16,7 @@ if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return ne
 const locale = getLocale(Astro.url);
 const here = localePath(locale, "/admin/security/");
 const session = Astro.locals.session;
-if (!session) return Astro.redirect(localePath(locale, "/admin/"), 303);
+if (!session) return signInRedirect(Astro);
 
 const secret = adminSecret();
 if (Astro.request.method === "POST") {

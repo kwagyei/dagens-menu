@@ -53,6 +53,8 @@ export class SoftAuthenticator {
   counter: number;
   userHandle = "";
   private keys!: CryptoKeyPair;
+  /** false acts like a security key with no PIN or biometric: user present (UP), never verified (UV). */
+  verified = true;
   constructor(counter = 0) {
     this.counter = counter;
   }
@@ -75,7 +77,7 @@ export class SoftAuthenticator {
     );
     const authData = concat(
       await sha256(enc.encode(rpID)),
-      Uint8Array.of(0x45), // UP, UV, AT
+      Uint8Array.of(this.verified ? 0x45 : 0x41), // UP, UV (if verified), AT
       u32(this.counter),
       new Uint8Array(16),
       Uint8Array.of(0, this.credentialId.length),
@@ -102,7 +104,7 @@ export class SoftAuthenticator {
   async assert(challenge: string, origin: string, rpID: string, opts: { counter?: number; userHandle?: string } = {}) {
     if (opts.counter !== undefined) this.counter = opts.counter;
     else if (this.counter > 0) this.counter++;
-    const authData = concat(await sha256(enc.encode(rpID)), Uint8Array.of(0x05), u32(this.counter));
+    const authData = concat(await sha256(enc.encode(rpID)), Uint8Array.of(this.verified ? 0x05 : 0x01), u32(this.counter)); // UP, UV (if verified)
     const clientData = enc.encode(JSON.stringify({ type: "webauthn.get", challenge, origin, crossOrigin: false }));
     const raw = new Uint8Array(
       await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, this.keys.privateKey, concat(authData, await sha256(clientData))),
