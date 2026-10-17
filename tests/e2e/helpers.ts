@@ -2,6 +2,19 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page } from "@playwright/test";
 
+/**
+ * Today's date in Stockholm, as YYYY-MM-DD: the date the Worker means by "today". Never take the date from
+ * an ISO timestamp, which gives the UTC date and is wrong between midnight and 01:00
+ * or 02:00 Stockholm time (tests/e2e-hygiene.test.ts checks for it).
+ */
+export const stockholmToday = (): string => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm" }).format(new Date());
+
+/** A calendar date n days after an ISO date (n may be negative), computed at noon UTC so DST can't shift it. */
+export const plusDays = (iso: string, n: number): string => new Date(Date.parse(`${iso}T12:00:00Z`) + n * 86_400_000).toISOString().split("T")[0];
+
+/** A Stockholm date n days from today. */
+export const daysAhead = (n: number): string => plusDays(stockholmToday(), n);
+
 let n = 0;
 let ip = 0;
 

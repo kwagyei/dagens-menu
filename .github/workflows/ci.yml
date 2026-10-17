@@ -81,9 +81,12 @@ jobs:
       - name: All 14 routes render, and nothing third-party loads before consent
         run: node scripts/check-no-third-party.mjs --url http://localhost:8788 --title "${{ matrix.title }}"
 
+  # The deploy gate: the owner's journeys and the security model, no retries. The tester's
+  # edge-case sweeps run in e2e-edge.yml, which never blocks a deploy.
   e2e:
     name: Admin end to end (Chromium, virtual passkeys)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
