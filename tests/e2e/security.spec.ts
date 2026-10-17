@@ -328,10 +328,13 @@ test.describe("headers and paths", () => {
     const res = await request.get(`/%61dmin/invite/${token}`);
     // Once this rendered the invite page as a *public* page: no-cache, no rate limit.
     expect(res.headers()["cache-control"]).toBe("no-store");
-    const headers = { "CF-Connecting-IP": "203.0.113.77" };
+    // A fresh address, and up to 21 tries: the limit counts per minute, so 11 tries that straddle
+    // a minute boundary can split 5 + 6 and never be refused. 21 always puts 11 in one minute.
+    const headers = { "CF-Connecting-IP": freshIp() };
     const statuses: number[] = [];
-    for (let i = 0; i < 11; i++) statuses.push((await request.get(`/%61dmin/invite/${token}`, { headers })).status());
-    expect(statuses[10]).toBe(429);
+    for (let i = 0; i < 21 && !statuses.includes(429); i++) statuses.push((await request.get(`/%61dmin/invite/${token}`, { headers })).status());
+    expect(statuses).toContain(429);
+    expect(statuses.length).toBeGreaterThanOrEqual(11); // not refused before the limit
   });
 
   test("a percent-encoded admin endpoint can't be used to skip the guard", async ({ request }) => {
