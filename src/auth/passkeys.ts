@@ -279,8 +279,8 @@ export type RemoveResult = "removed" | "signed-out" | "not-removed";
  * the migration, after which this case no longer arises.
  *
  * One batch, and no statement depends on another's changes() (reviewer M2): the audit row
- * repeats the delete's own condition, and the unattributed sessions go only once the passkey
- * is gone.
+ * and the delete of unattributed sessions repeat the passkey delete's own condition, and run
+ * before it while that condition still reads the same.
  */
 export async function removePasskey(db: D1Database, session: Session, passkeyId: string, now: Date): Promise<RemoveResult> {
   const { userId, siteId } = session;
@@ -308,12 +308,14 @@ export async function removePasskey(db: D1Database, session: Session, passkeyId:
     prepare(db, [
       // The audit row first, so its summary can still read the passkey and count its sessions.
       securityAuditWhere(who, summary, removable),
+      // Under the same condition as the passkey DELETE, and before it: a removal that loses a
+      // race to another one ends nothing, not even the winner's session.
+      stmt(`DELETE FROM sessions WHERE ${unattributed.sql} AND ${removable.sql}`, ...unattributed.params, ...removable.params),
       // The last-passkey check is in the DELETE itself, so two removals at once can't both
       // pass it and lock the owner out (recovery is an operator invite).
       stmt(`DELETE FROM passkeys WHERE id = ? AND ${removable.sql}`, passkeyId, ...removable.params),
-      stmt(`DELETE FROM sessions WHERE ${unattributed.sql} AND NOT EXISTS (SELECT 1 FROM passkeys WHERE id = ?)`, ...unattributed.params, passkeyId),
     ]),
   );
-  if (results[1].meta.changes === 0) return "not-removed";
+  if (results[2].meta.changes === 0) return "not-removed";
   return session.passkeyId === passkeyId ? "signed-out" : "removed";
 }

@@ -81,6 +81,17 @@ const cookieHeader = async (context: BrowserContext) => `__Host-dm_admin=${(awai
 const isSignedIn = async (request: APIRequestContext, cookie: string, base = BASE) =>
   (await (await request.get(`${base}/admin/`, { headers: { Cookie: cookie } })).text()).includes("Inloggad som");
 
+/**
+ * Remove the one passkey this browser is not signed in with (Admin → Security, two passkeys).
+ * Picked by the page's own marker, not by created_at: both passkeys are usually made in the
+ * same second, and the tie-break on the random id made the choice a coin toss.
+ */
+async function removeOtherPasskey(page: Page) {
+  const others = page.locator("main li").filter({ has: page.locator('input[name="action"][value="remove"]') }).filter({ hasNotText: "du är inloggad med den här" });
+  await expect(others).toHaveCount(1);
+  await others.getByRole("button").click();
+}
+
 // ---------------------------------------------------------------------------------------
 
 test.describe("sessions", () => {
@@ -114,7 +125,7 @@ test.describe("sessions", () => {
 
 test.describe("removing a passkey (reviewer M7)", () => {
   test("ends the sessions made with it in other browsers, and keeps this one", async ({ page, context, request }) => {
-    const { auth, email } = await enrol(page);
+    const { auth } = await enrol(page);
     // The first device's session, held on as if by a lost phone.
     const lostPhone = await cookieHeader(context);
     await addSecondDevice(page, auth);
@@ -127,8 +138,7 @@ test.describe("removing a passkey (reviewer M7)", () => {
     expect(await isSignedIn(request, lostPhone)).toBe(true);
 
     await page.goto("/admin/security/");
-    const [first] = passkeyIds(email);
-    await page.locator(`form:has(input[name="id"][value="${first}"]) button`).click();
+    await removeOtherPasskey(page);
     await expect(page.getByText("Passkeyn är borttagen, och inloggningarna som gjordes med den är avslutade.")).toBeVisible();
     expect(await isSignedIn(request, lostPhone)).toBe(false);
     expect(await isSignedIn(request, here)).toBe(true);
@@ -140,7 +150,7 @@ test.describe("security events in the history (reviewer M3)", () => {
     const { auth, email } = await enrol(page);
     await addSecondDevice(page, auth);
     const [first, second] = passkeyIds(email);
-    await page.locator(`form:has(input[name="id"][value="${second}"]) button`).click();
+    await removeOtherPasskey(page);
     await expect(page.getByText("Passkeyn är borttagen", { exact: false })).toBeVisible();
     await page.getByRole("button", { name: "Logga ut överallt" }).click();
     await expect(page.getByRole("heading", { name: "Logga in" })).toBeVisible();

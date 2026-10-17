@@ -85,7 +85,8 @@ export async function signOutEverywhere(db: D1Database, session: Session, now: D
   const audit = securityAuditWhere(
     { site: session.siteId, actor: session.userId, subject: session.userId, now, event: { entity: "sessions", action: "delete" } },
     stmt("? || ': signed out everywhere; sign-ins ended: ' || (SELECT count(*) FROM sessions WHERE user_id = ? AND site_id = ?)", session.email, session.userId, session.siteId),
-    stmt("1"),
+    // Only if this session is still there: a second tab or a double submit records nothing.
+    stmt("EXISTS (SELECT 1 FROM sessions WHERE token_hash = ?)", session.tokenHash),
   );
   await db.batch(prepare(db, [audit, endAllSessionsStatement(session.userId, session.siteId)]));
 }
