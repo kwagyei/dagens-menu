@@ -58,6 +58,9 @@ const PRICE_MESSAGES: Record<PriceError, Parameters<typeof t>[1]> = {
 };
 
 function textError(locale: Locale, value: string, max: number): string | undefined {
+  // Before cleaning or counting graphemes, which costs CPU per character: the form's own
+  // maxlength allows twice the limit, so anything longer is a crafted post (M6.6 tester F2).
+  if (value.length > inputMaxLength(max)) return t(locale, "admin.form.tooLong").replace("{max}", String(max));
   const clean = cleanText(value);
   if (!/[^\s\p{Cf}]/u.test(clean)) return t(locale, "admin.form.required");
   if (visibleLength(clean) > max) return t(locale, "admin.form.tooLong").replace("{max}", String(max));

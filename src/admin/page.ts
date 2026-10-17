@@ -43,7 +43,14 @@ export async function adminPage(astro: AstroGlobal): Promise<AdminPage | Respons
     csrf: await formToken(secret, session.tokenHash),
     repo: { db: env.DB, siteId: session.siteId, userId: session.userId, now: new Date() },
     async postedForm() {
-      const form = await astro.request.formData();
+      // A body that isn't a form (a broken multipart boundary, text/plain) is treated like an
+      // expired form, never a 500 (M6.6 tester F1).
+      let form: FormData;
+      try {
+        form = await astro.request.formData();
+      } catch {
+        return null;
+      }
       return (await checkFormToken(secret, session.tokenHash, form.get("csrf"))) ? form : null;
     },
   };

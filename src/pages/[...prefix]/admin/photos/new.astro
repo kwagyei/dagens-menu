@@ -27,7 +27,7 @@ if (Astro.request.method === "POST") {
   const sizeProblem = bodySizeProblem(Astro.request);
   if (sizeProblem) {
     Astro.response.status = sizeProblem;
-    errors = { photo: t(locale, "admin.photos.tooBig") };
+    errors = { photo: t(locale, sizeProblem === 413 ? "admin.photos.tooBig" : "admin.photos.notPhoto") };
   } else {
     const form = await page.postedForm();
     if (!form) return Astro.redirect(`${here}?done=expired`, 303);
