@@ -17,8 +17,12 @@
 /** Hex text for an `unhex(?)` placeholder. Uses the native encoder, not the Node layer. */
 export function bytesParam(bytes: Uint8Array): string {
   if (!(bytes instanceof Uint8Array)) throw new TypeError("bytesParam expects a Uint8Array");
-  // Through the prototype, so a subclass's own toHex() cannot change what is bound.
-  return Uint8Array.prototype.toHex.call(bytes);
+  // Through the prototype, so a subclass's own toHex() cannot change what is bound. Node 22, where
+  // the seed CLI runs a restore, has no native toHex yet: a plain loop there (CPU doesn't matter).
+  if (typeof Uint8Array.prototype.toHex === "function") return Uint8Array.prototype.toHex.call(bytes);
+  let out = "";
+  for (const b of bytes) out += b.toString(16).padStart(2, "0");
+  return out;
 }
 
 /**

@@ -5,9 +5,13 @@
  *
  * Format 2 (M6.3, ADR-014 §5) carries the image library with its alt text, and gallery entries
  * name a library image. Format 1 files, which owners may still hold, are upgraded on reading.
- * Uploaded photos' bytes join the file's references in M6.4.
+ *
+ * Uploaded photos (M6.4): each upload in `content.images` also lists its stored `variants`
+ * (widths) and the URL of its `master`, the widest one. The file holds no bytes: a restore
+ * fetches each master (or takes it from a folder), checks its SHA-256 against the id, and makes
+ * the smaller sizes again.
  */
-import { imageReferences, type LibraryImage, type SiteSettings, siteContentSchema, type Theme } from "../content/schema";
+import { imageReferences, isUploadRef, type LibraryImage, type SiteSettings, siteContentSchema, type Theme } from "../content/schema";
 import type { ExportedSite } from "./export";
 import type { StoredContent } from "./seed";
 
@@ -26,14 +30,37 @@ export interface ExportFile {
   content: StoredContent;
 }
 
-export function exportFile(site: string, exported: ExportedSite, now: Date): ExportFile {
+/** Where an export's uploads can be fetched from: the site's origin and each upload's widths. */
+export interface ExportPhotos {
+  origin: string;
+  widths: Record<string, number[]>;
+}
+
+/** An upload in the file: its library entry plus where its master is. */
+export interface ExportedUpload {
+  id: string;
+  variants: number[];
+  master: string;
+}
+
+export function exportFile(site: string, exported: ExportedSite, now: Date, photos?: ExportPhotos): ExportFile {
+  const content = photos
+    ? {
+        ...exported.content,
+        images: exported.content.images.map((image) => {
+          const widths = photos.widths[image.ref];
+          if (!isUploadRef(image.ref) || !widths?.length) return image;
+          return { ...image, variants: widths, master: `${photos.origin}/media/${image.ref}-${widths[widths.length - 1]}.webp` };
+        }),
+      }
+    : exported.content;
   return {
     format: EXPORT_FORMAT,
     formatVersion: EXPORT_FORMAT_VERSION,
     site,
     exportedAt: now.toISOString().replace(/\.\d{3}Z$/, "Z"),
     contentVersion: exported.version,
-    content: exported.content,
+    content,
   };
 }
 
@@ -51,6 +78,8 @@ export type ReadExportResult =
       operatorFieldsReplaced: boolean;
       /** A format 1 file's per-highlight photos, which the content model no longer has. */
       highlightImagesDropped: number;
+      /** The file's uploads, with where to fetch each master; a restore needs every one. */
+      uploads: ExportedUpload[];
     }
   | { ok: false; error: string };
 
@@ -107,6 +136,45 @@ function upgradeFromV1(content: Raw, repository: LibraryImage[]): { content: Raw
 }
 
 /**
+ * Take each upload's `variants` and `master` off its library entry, checked: widths are whole
+ * pixels in increasing order, and the master link names this photo's own id at its widest
+ * size, over http(s). Curated entries must not have them.
+ */
+function takeUploads(content: Raw): { ok: true; content: Raw; uploads: ExportedUpload[] } | { ok: false; error: string } {
+  if (!Array.isArray(content.images)) return { ok: true, content, uploads: [] };
+  const uploads: ExportedUpload[] = [];
+  const images: unknown[] = [];
+  for (const [index, entry] of content.images.entries()) {
+    if (typeof entry !== "object" || entry === null || Array.isArray(entry)) {
+      images.push(entry);
+      continue;
+    }
+    const { variants, master, ...image } = entry as Raw;
+    const ref = image.ref;
+    if (typeof ref !== "string" || !isUploadRef(ref)) {
+      if (variants !== undefined || master !== undefined) return { ok: false, error: `images.${index}: only an uploaded photo has variants and a master` };
+      images.push(entry);
+      continue;
+    }
+    const widths = Array.isArray(variants) && variants.length > 0 && variants.every((w) => Number.isInteger(w) && w >= 1 && w <= 1600) ? (variants as number[]) : null;
+    if (!widths || widths.some((w, i) => i > 0 && w <= widths[i - 1])) return { ok: false, error: `images.${index}: an uploaded photo needs its widths, smallest first` };
+    let url: URL | null = null;
+    try {
+      url = typeof master === "string" ? new URL(master) : null;
+    } catch {
+      url = null;
+    }
+    const expected = `/media/${ref}-${widths[widths.length - 1]}.webp`;
+    if (!url || (url.protocol !== "https:" && url.protocol !== "http:") || url.pathname !== expected || url.search || url.hash) {
+      return { ok: false, error: `images.${index}: the master must be a link ending in ${expected}` };
+    }
+    uploads.push({ id: ref, variants: widths, master: url.href });
+    images.push(image);
+  }
+  return { ok: true, content: { ...content, images }, uploads };
+}
+
+/**
  * Read an export back for `site`, validated with the same schema as every other content
  * source. The theme, booking and the map come from the repository (`operator`), whatever
  * the file says: an owner's file, however edited, can't set an embed or a map URL. A file
@@ -136,6 +204,10 @@ export function readExportFile(text: string, site: string, operator: OperatorCon
     if ("images" in fileContent) return { ok: false, error: "a format 1 file has no image library, but this one has an images list" };
     ({ content: fileContent, highlightImagesDropped } = upgradeFromV1(fileContent, operator.images ?? []));
   }
+  // Uploads carry where their master is; that isn't content, so it comes off before the schema.
+  const taken = takeUploads(fileContent);
+  if (!taken.ok) return taken;
+  fileContent = taken.content;
   const fromFile = fileContent as { settings?: Record<string, unknown> };
   const operatorFieldsReplaced =
     JSON.stringify({ booking: fromFile.settings?.booking, mapEmbed: fromFile.settings?.mapEmbed }) !==
@@ -148,5 +220,5 @@ export function readExportFile(text: string, site: string, operator: OperatorCon
   }
   const { theme: _theme, ...content } = checked.data;
   const exportedAt = typeof file.exportedAt === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(file.exportedAt) ? file.exportedAt : "unknown";
-  return { ok: true, content: content as StoredContent, exportedAt, operatorFieldsReplaced, highlightImagesDropped };
+  return { ok: true, content: content as StoredContent, exportedAt, operatorFieldsReplaced, highlightImagesDropped, uploads: taken.uploads };
 }

@@ -306,4 +306,8 @@ export default {
   "admin.photos.quotaCount": "Du har redan {limit} foton, som är det högsta. Ta bort ett foto du inte använder och försök igen.",
   "admin.photos.quotaBytes": "Dina foton tar redan upp nästan all plats ({limitMb} MB). Ta bort ett foto du inte använder och försök igen.",
   "admin.photos.quotaDatabase": "Det finns inte plats för fler foton just nu. Hör av dig till den som byggt webbplatsen.",
+  "admin.photos.yours": "Dina foton",
+  "admin.photos.yoursLead": "Foton du har laddat upp. Ladda ner ett foto i full storlek med länken under det.",
+  "admin.photos.none": "Du har inte laddat upp några foton än.",
+  "admin.photos.download": "Ladda ner i full storlek",
 } as const;

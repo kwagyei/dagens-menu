@@ -6,6 +6,7 @@
  */
 import { imageReferences, isUploadRef, type SiteContent } from "../content/schema";
 import { WEEKDAYS } from "../content/vocabulary";
+import { bytesParam } from "./blob-hex";
 import { newId } from "./ids";
 import { type Statement, stmt } from "./sql";
 
@@ -23,6 +24,33 @@ export interface StaticImage {
 
 /** Looks up a curated image by its path; the CLI hashes the real file, tests fake it. */
 export type ImageResolver = (path: string) => StaticImage;
+
+/** An upload's bytes for a restore, smallest first; the last is the master, whose SHA-256 is the id. */
+export type UploadBytes = Map<string, Array<{ width: number; height: number; bytes: Uint8Array }>>;
+
+/**
+ * D1 refuses SQL statements over 100,000 bytes, and the seed writes a SQL file, so a variant is
+ * written in chunks: inserted with its first chunk (never empty: the CHECK wants 1+ bytes), then
+ * extended. 45,000 bytes is 90,000 hex characters, leaving room for the rest of the statement.
+ */
+export const BLOB_CHUNK_BYTES = 45_000;
+
+function variantStatements(site: string, id: string, width: number, bytes: Uint8Array): Statement[] {
+  // As hex through blob-hex.ts, like every other write of photo bytes (ADR-012 Amendment 1).
+  const out = [stmt("INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES (?, ?, ?, 'image/webp', unhex(?))", site, id, width, bytesParam(bytes.subarray(0, BLOB_CHUNK_BYTES)))];
+  for (let at = BLOB_CHUNK_BYTES; at < bytes.length; at += BLOB_CHUNK_BYTES) {
+    out.push(
+      stmt(
+        "UPDATE image_variants SET bytes = CAST(bytes || unhex(?) AS BLOB) WHERE site_id = ? AND image_id = ? AND width = ?",
+        bytesParam(bytes.subarray(at, at + BLOB_CHUNK_BYTES)),
+        site,
+        id,
+        width,
+      ),
+    );
+  }
+  return out;
+}
 
 /** Tables holding a site's content, children before parents. Accounts are not touched. */
 const CONTENT_TABLES = [
@@ -60,6 +88,8 @@ export function seedStatements(
   now = new Date(),
   /** The audit entry's summary; a restore names its file. */
   summary = "Content loaded from JSON",
+  /** A restore's uploaded photos (M6.4); JSON fixtures have none. */
+  uploads: UploadBytes = new Map(),
 ): Statement[] {
   const out: Statement[] = [];
   const version = Math.floor(now.getTime() / 1000);
@@ -77,7 +107,27 @@ export function seedStatements(
   const imageIds = new Map<string, string>();
   const pathOfId = new Map<string, string>();
   for (const entry of content.images) {
-    if (isUploadRef(entry.ref)) throw new Error(`${entry.ref} is an upload; JSON content can only list curated files.`);
+    if (isUploadRef(entry.ref)) {
+      const variants = uploads.get(entry.ref);
+      if (!variants?.length) throw new Error(`${entry.ref} is an uploaded photo, but its bytes weren't given (restore it with --from).`);
+      if (!entry.alt) throw new Error(`uploaded photo ${entry.ref} has no alt text`);
+      const master = variants[variants.length - 1];
+      imageIds.set(entry.ref, entry.ref);
+      out.push(
+        stmt(
+          "INSERT INTO images (site_id, id, kind, path, mime, width, height, byte_size, alt_sv, alt_en) VALUES (?, ?, 'upload', NULL, 'image/webp', ?, ?, ?, ?, ?)",
+          site,
+          entry.ref,
+          master.width,
+          master.height,
+          variants.reduce((n, v) => n + v.bytes.length, 0),
+          entry.alt.sv,
+          entry.alt.en,
+        ),
+      );
+      for (const v of variants) out.push(...variantStatements(site, entry.ref, v.width, v.bytes));
+      continue;
+    }
     const image = resolveImage(entry.ref);
     const other = pathOfId.get(image.id);
     if (other) throw new Error(`${entry.ref} and ${other} are the same file; list one of them.`);

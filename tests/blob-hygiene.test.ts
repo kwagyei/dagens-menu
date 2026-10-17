@@ -93,6 +93,8 @@ function topLevelItems(list: string): string[] {
 }
 
 const UNHEX = /^unhex\(\s*\?\s*\)$/i;
+/** Appending a chunk (a restore writes big variants in pieces, M6.4): the new bytes still come through unhex(?). */
+const APPEND_UNHEX = /^CAST\(\s*bytes\s*\|\|\s*unhex\(\s*\?\s*\)\s+AS\s+BLOB\s*\)$/i;
 
 /** Whether every place an INSERT or UPDATE sets the bytes column takes them through unhex(?). */
 function writesThroughUnhex(sql: string): boolean {
@@ -112,7 +114,7 @@ function writesThroughUnhex(sql: string): boolean {
   }
   // UPDATE … SET bytes = …, and an upsert's DO UPDATE SET bytes = …
   for (const m of sql.matchAll(/\bbytes\s*=\s*([^,]+?)(?=\s*(?:,|\bWHERE\b|\bRETURNING\b|$))/gi)) {
-    if (!UNHEX.test(m[1].trim()) && !/^excluded\.bytes$/i.test(m[1].trim())) return false;
+    if (!UNHEX.test(m[1].trim()) && !APPEND_UNHEX.test(m[1].trim()) && !/^excluded\.bytes$/i.test(m[1].trim())) return false;
   }
   return true;
 }
@@ -164,6 +166,7 @@ describe("the scanner", () => {
     ['const s = `SELECT width, bytes, mime FROM image_variants`;', "reading bytes in a list"],
     ['const s = "INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES (?, ?, ?, ?, ?)";', "writing bytes raw"],
     ['const s = "UPDATE image_variants SET bytes = ? WHERE width = ?";', "updating bytes raw"],
+    ['const s = "UPDATE image_variants SET bytes = CAST(bytes || ? AS BLOB) WHERE width = ?";', "appending raw bytes"],
   ])("flags %s (%s)", (source) => {
     expect(blobViolations(source)).not.toEqual([]);
   });
