@@ -23,11 +23,11 @@ describe("describeUses", () => {
   ];
   it("names each place in the page's language, with a link to change it", () => {
     expect(describeUses(uses, "sv")).toEqual([
-      { label: "rätten Köttbullar", href: "/admin/menu/item/abcdefghijkl/" },
-      { label: "menysidans översta foto", href: "/admin/texts/" },
+      { label: "rätten Köttbullar", href: "/admin/menu/item/abcdefghijkl/photo/" },
+      { label: "menysidans översta foto", href: "/admin/page-photos/menu_hero/" },
       { label: "galleriet, foto 3", href: "/admin/gallery/" },
     ]);
-    expect(describeUses(uses, "en").map((u) => u.href)).toEqual(["/en/admin/menu/item/abcdefghijkl/", "/en/admin/texts/", "/en/admin/gallery/"]);
+    expect(describeUses(uses, "en").map((u) => u.href)).toEqual(["/en/admin/menu/item/abcdefghijkl/photo/", "/en/admin/page-photos/menu_hero/", "/en/admin/gallery/"]);
     expect(describeUses(uses, "en")[0].label).toBe("the dish Meatballs");
   });
   it("every page slot has words in both languages", () => {
