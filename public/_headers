@@ -6,3 +6,8 @@
   X-XSS-Protection: 0
   Strict-Transport-Security: max-age=63072000; includeSubDomains
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-src 'self'; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+# Curated photos' WebP sizes (M6.9; ADR-015 §3): the file name never changes for the same bytes
+# (curated files are append-only), so they can be kept for a year. Originals revalidate as before.
+/images/:site/v/*
+  Cache-Control: public, max-age=31536000, immutable

@@ -98,6 +98,11 @@ jobs:
           cat wrangler-dev.log; exit 1
       - name: All 14 routes render, and nothing third-party loads before consent
         run: node scripts/check-no-third-party.mjs --url http://localhost:8788 --title "${{ matrix.title }}"
+      # Every listed curated photo has its WebP sizes, and every public photo uses them (M6.9).
+      - name: Every curated photo has its sizes
+        run: npm run -s image-variants -- --site ${{ matrix.site }} --check
+      - name: Every public photo has width, height and srcset, and its sizes are served
+        run: node scripts/check-images.mjs --url http://localhost:8788
 
   # The deploy gate: the owner's journeys and the security model, no retries. The tester's
   # edge-case sweeps run in e2e-edge.yml, which never blocks a deploy.

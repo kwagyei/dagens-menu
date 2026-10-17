@@ -1,4 +1,5 @@
 ---
+import Photo from "./Photo.astro";
 /**
  * The menu: a category bar on one row that stays at the top while scrolling, then every
  * category in order. Classic sets it as a printed card, text only. Modern gives each dish
@@ -62,7 +63,7 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
                 )}
                 {item.allergens.length > 0 && <p class="meta">{t(locale, "menu.allergens")}: {allergenList(item)}</p>}
               </div>
-              {item.image && <img class="menu-item__thumb" src={item.image} alt={localized(item.name, locale)} loading="lazy" />}
+              <Photo ref={item.image} slot="thumb" class="menu-item__thumb" />
             </div>
           </article>
         ))}

@@ -1,4 +1,5 @@
 ---
+import Photo from "../components/Photo.astro";
 import Base from "../layouts/Base.astro";
 import BookingCta from "../components/BookingCta.astro";
 import PageHero from "../components/PageHero.astro";
@@ -7,7 +8,6 @@ import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
 const { pages, settings } = Astro.locals.content;
-const siteName = localized(settings.name, locale);
 // The owner's own line, when it says something the tagline doesn't (UI review P2-2).
 const voice = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
 const showVoice = voice !== null && voice !== localized(settings.tagline, locale) && voice !== localized(pages.home.tagline, locale);
@@ -17,7 +17,7 @@ const showVoice = voice !== null && voice !== localized(settings.tagline, locale
   <PageHero title={t(locale, "nav.about")} />
 
   <section class="story" aria-labelledby="story-title">
-    {pages.about.storyImage && <img class="story__img" src={pages.about.storyImage} alt={siteName} loading="lazy" />}
+    <Photo ref={pages.about.storyImage} slot="story" class="story__img" />
     <div class="prose">
       <h2 class="section-title" id="story-title">{t(locale, "about.story.heading")}</h2>
       <p>{localized(pages.about.story, locale)}</p>
@@ -31,7 +31,7 @@ const showVoice = voice !== null && voice !== localized(settings.tagline, locale
   )}
 
   <section class="story story--flip" aria-labelledby="chef-title">
-    {pages.about.kitchenImage && <img class="story__img" src={pages.about.kitchenImage} alt={t(locale, "about.chef.heading")} loading="lazy" />}
+    <Photo ref={pages.about.kitchenImage} slot="story" class="story__img" />
     <div class="prose">
       <h2 class="section-title" id="chef-title">{t(locale, "about.chef.heading")}</h2>
       <p>{localized(pages.about.chef, locale)}</p>
