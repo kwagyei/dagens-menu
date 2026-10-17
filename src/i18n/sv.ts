@@ -310,4 +310,13 @@ export default {
   "admin.photos.yoursLead": "Foton du har laddat upp. Ladda ner ett foto i full storlek med länken under det.",
   "admin.photos.none": "Du har inte laddat upp några foton än.",
   "admin.photos.download": "Ladda ner i full storlek",
+  "admin.photos.opening": "Öppnar fotot…",
+  "admin.photos.preparing": "Förbereder fotot ({n} av {total})…",
+  "admin.photos.sending": "Skickar fotot…",
+  "admin.photos.fileTooLarge": "Filen är större än 40 MB. Välj ett annat foto.",
+  "admin.photos.tooManyPixels": "Fotot har för många pixlar för att öppnas här. Välj ett mindre foto.",
+  "admin.photos.tooNarrow": "Fotot är för smalt. Det behöver vara minst 320 pixlar brett efter att det anpassats.",
+  "admin.photos.altRequired": "Beskriv fotot på båda språken innan du laddar upp det.",
+  "admin.photos.failed": "Något gick fel när fotot förbereddes. Försök igen.",
+  "admin.photos.choosePhoto": "Välj ett foto först.",
 } as const;

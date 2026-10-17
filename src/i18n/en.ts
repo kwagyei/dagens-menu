@@ -310,4 +310,13 @@ export default {
   "admin.photos.yoursLead": "Photos you've uploaded. Download one at full size with the link below it.",
   "admin.photos.none": "You haven't uploaded any photos yet.",
   "admin.photos.download": "Download at full size",
+  "admin.photos.opening": "Opening the photo…",
+  "admin.photos.preparing": "Preparing the photo ({n} of {total})…",
+  "admin.photos.sending": "Sending the photo…",
+  "admin.photos.fileTooLarge": "The file is over 40 MB. Choose another photo.",
+  "admin.photos.tooManyPixels": "The photo has too many pixels to open here. Choose a smaller photo.",
+  "admin.photos.tooNarrow": "The photo is too narrow. It needs to be at least 320 pixels wide once fitted.",
+  "admin.photos.altRequired": "Describe the photo in both languages before uploading it.",
+  "admin.photos.failed": "Something went wrong while preparing the photo. Try again.",
+  "admin.photos.choosePhoto": "Choose a photo first.",
 } as const;
