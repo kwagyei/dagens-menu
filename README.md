@@ -174,6 +174,10 @@ is the seed data the demos are loaded from.
 - **An export file restores a demo, not a client, on the live database.** `npm run seed --
   --from <file>` restores locally, and `--remote --reset` is allowed only for the two demo
   sites. A client site on the live database is restored from D1 Time Travel instead.
+- **Backups restore both demos at once, and photos only from Time Travel.** D1 Time Travel
+  (7 days) is the restore path and rolls back the whole shared database. A weekly content-only
+  export goes to a private repo, without photo bytes, history or owner accounts; restoring from
+  it is a manual job. See [backups and restoring them](docs/backup-restore.md).
 - **History has no undo.** It shows the last 50 changes and who made them; going back means
   restoring an export or Time Travel.
 - **Recovering a lost passkey needs the operator.** Owners can add a second device

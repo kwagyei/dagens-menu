@@ -1,0 +1,97 @@
+name: Content backup
+
+# ADR-011 §5, plan M7.5. Once a week the content tables of the production D1 are exported and
+# committed to the private kwagyei/dagens-menu-data repo, so the bot's commits stay out of this
+# repo's history and nothing lands in a public artifact. Photo bytes, history and auth tables
+# are never exported (scripts/backup-tables.ts). On a PR that touches the export or the schema,
+# the same export and load check runs against a seeded local database instead.
+
+on:
+  schedule:
+    # Monday 01:30 UTC is 02:30 or 03:30 in Stockholm. D1 fails other queries while an export
+    # runs (about 4 s per table); the Workers serve their cached content meanwhile.
+    - cron: "30 1 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/backup*.ts"
+      - "scripts/d1-cli.ts"
+      - "scripts/seed.ts"
+      - "src/db/seed.ts"
+      - "src/db/sql.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "migrations/**"
+      - ".github/workflows/backup.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  rehearse:
+    name: Export and reload a seeded local database
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate:local
+      - run: npm run seed -- --site bistro
+      - run: npm run seed -- --site westafrican
+      - run: npm run backup -- export --out backup/
+      - run: npm run backup -- verify --dir backup/
+
+  export:
+    name: Export production content
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # The production environment (main only) holds the Cloudflare token and the data repo's
+    # deploy key. As in ci.yml, only the steps that need a secret see it.
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Export the content tables
+        run: npm run backup -- export --remote --config wrangler.bistro.jsonc --out backup/
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      # A backup that doesn't load is caught the week it's made, not the day it's needed.
+      - name: Check the export loads into a fresh database
+        run: npm run backup -- verify --dir backup/
+      # The deploy key has write access to that one repo and nothing else.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: kwagyei/dagens-menu-data
+          ssh-key: ${{ secrets.DATA_REPO_DEPLOY_KEY }}
+          path: data
+      - name: Commit the export if the content changed
+        working-directory: data
+        run: |
+          rm -f -- *.sql manifest.json
+          cp ../backup/* .
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No content changes since the last export."
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "Content export $(date -u +%F)" \
+              -m "From kwagyei/dagens-menu@${GITHUB_SHA::12}, run ${GITHUB_RUN_ID}."
+          git push
+          git log --stat -1
