@@ -19,6 +19,19 @@ describe("thirdPartyRequests", () => {
     expect(thirdPartyRequests(html)).toHaveLength(1);
   });
 
+  it("allows absolute canonical and hreflang links, which the browser never fetches", () => {
+    const html = `<link rel="canonical" href="https://a.example/"><link rel="alternate" hreflang="en" href="https://a.example/en/">`;
+    expect(thirdPartyRequests(html)).toEqual([]);
+  });
+
+  it.each([
+    ["an external stylesheet", `<link rel="stylesheet" href="https://cdn.example/a.css">`],
+    ["an external preload", `<link rel="preload" href="https://cdn.example/a.woff2" as="font">`],
+    ["an alternate stylesheet", `<link rel="alternate stylesheet" href="https://cdn.example/a.css">`],
+  ])("still flags %s", (_name, html) => {
+    expect(thirdPartyRequests(html)).toHaveLength(1);
+  });
+
   it("ignores embeds parked in a <template> until consent", () => {
     expect(thirdPartyRequests(`<template><iframe src="https://www.google.com/maps/embed"></iframe></template>`)).toEqual([]);
   });
