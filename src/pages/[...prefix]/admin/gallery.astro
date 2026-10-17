@@ -41,7 +41,8 @@ if (Astro.request.method === "POST") {
     const done = result.ok ? "added" : result.error === "conflict" ? "busy" : result.error === "invalid" ? "not-found" : result.error;
     return Astro.redirect(`${here}?done=${done}`, 303); // no #fragment: it would stop the message taking focus
   }
-  return Astro.redirect(`${here}?done=not-found`, 303);
+  // An action this page never sends (a crafted or stale form): nothing changes (tester L3).
+  return Astro.redirect(`${here}?done=unknown`, 303);
 }
 
 const [gallery, library] = await Promise.all([listGallery(repo), listLibrary(repo)]);
@@ -58,8 +59,9 @@ const message: Record<string, string> = {
   "not-found": t(locale, "admin.gallery.notFound"),
   busy: t(locale, "admin.gallery.busy"),
   expired: t(locale, "admin.error.form"),
+  unknown: t(locale, "admin.gallery.unknown"),
 };
-const problem = done === "already" || done === "full" || done === "no-alt" || done === "not-found" || done === "busy" || done === "expired";
+const problem = done === "already" || done === "full" || done === "no-alt" || done === "not-found" || done === "busy" || done === "expired" || done === "unknown";
 
 // After a move, focus returns to the button just used; at the top or bottom, to the other one.
 const [changedId, changedDir] = (Astro.url.searchParams.get("changed") ?? "").split(":");
@@ -135,6 +137,9 @@ const focusMove = (id: string, index: number, dir: Direction) => {
     <section class="space-y-3" aria-labelledby="gallery-add-heading">
       <h2 class="text-xl font-semibold" id="gallery-add-heading">{t(locale, "admin.gallery.addHeading")}</h2>
       <p class="admin-muted">{t(locale, "admin.gallery.addLead")} <a class="underline" href={page.path("/photos/new/")}>{t(locale, "admin.photos.heading")}</a></p>
+      {gallery.length >= GALLERY_LIMIT && addable.length > 0 && (
+        <p class="admin-message" role="status" id="gallery-full">{message.full}</p>
+      )}
       {addable.length === 0 ? (
         <p class="admin-muted">{t(locale, "admin.gallery.noneToAdd")}</p>
       ) : (

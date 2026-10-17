@@ -51,6 +51,7 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
     "gallery.images.0.image",
     "needs alt text",
   ],
+  ["a gallery of 31 photos", (c) => (c.gallery.images = Array.from({ length: 31 }, () => c.gallery.images[0])), "gallery.images", "at most 30"],
   ["highlightImages, gone from the model", (c) => (c.pages.home.highlightImages = {}), "pages.home", "Unrecognized key"],
   ["image path traversal", (c) => (c.pages.home.heroImage = "/images/bistro/../secret.jpg"), "pages.home.heroImage", "under /images/bistro/"],
   ["image path that is a directory", (c) => (c.pages.home.heroImage = "/images/bistro/.."), "pages.home.heroImage", "under /images/bistro/"],

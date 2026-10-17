@@ -13,11 +13,11 @@ import { swapWithNeighbour, type Placed } from "./menu";
 import { commitIf, type RepoContext, type WriteResult } from "./repository";
 import { stmt } from "./sql";
 import { isImageId } from "./library";
+import { GALLERY_LIMIT } from "../content/schema";
 
 type Localized = { sv: string; en: string };
 
-/** The most photos the gallery holds: a page, not an archive. */
-export const GALLERY_LIMIT = 30;
+export { GALLERY_LIMIT } from "../content/schema";
 
 export interface GalleryEntry {
   /** The gallery row's own 12-character id; what moves and removals name. */

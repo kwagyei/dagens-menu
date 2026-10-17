@@ -263,9 +263,12 @@ export const pageTextsSchema = z.strictObject({
 });
 
 /** The gallery lists library images in order; their alt lives on the image (ADR-014 §1). */
+/** The most photos the gallery holds: a page, not an archive (M6.10b). */
+export const GALLERY_LIMIT = 30;
+
 export const gallerySchema = (site: string) =>
   z.strictObject({
-    images: z.array(z.strictObject({ image: imageRef(site) })),
+    images: z.array(z.strictObject({ image: imageRef(site) })).max(GALLERY_LIMIT, `at most ${GALLERY_LIMIT} photos`),
   });
 
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "must be a six-digit hex colour");
