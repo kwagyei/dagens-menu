@@ -2,6 +2,9 @@
 import { execFileSync } from "node:child_process";
 import { expect, type Page } from "@playwright/test";
 
+/** The site the Worker under test serves (playwright.config.ts). */
+export const SITE = process.env.E2E_SITE ?? "bistro";
+
 /**
  * Today's date in Stockholm, as YYYY-MM-DD: the date the Worker means by "today". Never take the date from
  * an ISO timestamp, which gives the UTC date and is wrong between midnight and 01:00
@@ -28,7 +31,7 @@ let ip = 0;
 export const freshIp = (): string => `2001:db8::${(process.pid & 0xffff).toString(16)}:${(++ip).toString(16)}`;
 
 export function invite(email: string): string {
-  const out = execFileSync("npm", ["run", "-s", "admin", "--", "invite", "--site", "bistro", "--email", email, "--url", "http://localhost:8790"], {
+  const out = execFileSync("npm", ["run", "-s", "admin", "--", "invite", "--site", SITE, "--email", email, "--url", "http://localhost:8790"], {
     encoding: "utf-8",
   });
   const link = out.match(/http:\/\/localhost:8790\/admin\/invite\/[A-Za-z0-9_-]{43}/)?.[0];

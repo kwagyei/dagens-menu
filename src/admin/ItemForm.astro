@@ -1,6 +1,7 @@
 ---
 // The dish form, for adding and editing (plan M5.2). Works without JavaScript: errors come
 // back from the server next to each field, with a summary at the top linking to them.
+import ErrorSummary from "./ErrorSummary.astro";
 import { type FieldErrors, inputMaxLength, type ItemFormValues } from "./forms";
 import { TEXT_LIMITS } from "../content/schema";
 import { ALLERGENS, MENU_TAGS } from "../content/vocabulary";
@@ -25,22 +26,12 @@ const label: Record<string, Parameters<typeof t>[1]> = {
   description_en: "admin.item.descEn",
   price: "admin.item.price",
 };
-const errorList = Object.entries(errors).filter(([, message]) => message);
 const invalid = (name: string) => (errors[name] ? "true" : undefined);
 const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-error` : "", hint ?? ""].filter(Boolean).join(" ") || undefined;
 ---
 
 <form method="post" class="space-y-5" novalidate>
-  {errorList.length > 0 && (
-    <div class="admin-message" role="alert" tabindex="-1" id="error-summary">
-      <p class="font-semibold">{t(locale, "admin.form.errorsTitle")}</p>
-      <ul class="list-disc pl-5 mt-1">
-        {errorList.map(([name, message]) => (
-          <li><a href={`#${name}`}>{label[name] ? `${t(locale, label[name])}: ` : ""}{message}</a></li>
-        ))}
-      </ul>
-    </div>
-  )}
+  <ErrorSummary locale={locale} errors={errors} labels={Object.fromEntries(Object.entries(label).map(([name, key]) => [name, t(locale, key)]))} />
 
   <input type="hidden" name="csrf" value={csrf} />
   {rowVersion !== undefined && <input type="hidden" name="row_version" value={rowVersion} />}
@@ -48,7 +39,7 @@ const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-er
   {(["name_sv", "name_en"] as const).map((name) => (
     <div class="space-y-1">
       <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
-      <input class="admin-input" id={name} name={name} value={values[name]} maxlength={inputMaxLength(TEXT_LIMITS.name)} aria-invalid={invalid(name)} aria-describedby={describedBy(name)} />
+      <input class="admin-input" id={name} name={name} lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined} value={values[name]} maxlength={inputMaxLength(TEXT_LIMITS.name)} aria-invalid={invalid(name)} aria-describedby={describedBy(name)} />
       {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
     </div>
   ))}
@@ -56,7 +47,7 @@ const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-er
   {(["description_sv", "description_en"] as const).map((name) => (
     <div class="space-y-1">
       <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
-      <textarea class="admin-input" id={name} name={name} rows="3" maxlength={inputMaxLength(TEXT_LIMITS.short)} aria-invalid={invalid(name)} aria-describedby={describedBy(name)}>{values[name]}</textarea>
+      <textarea class="admin-input" id={name} name={name} lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined} rows="3" maxlength={inputMaxLength(TEXT_LIMITS.short)} aria-invalid={invalid(name)} aria-describedby={describedBy(name)}>{values[name]}</textarea>
       {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
     </div>
   ))}
@@ -82,7 +73,7 @@ const describedBy = (name: string, hint?: string) => [errors[name] ? `${name}-er
 
   <fieldset class="space-y-2">
     <legend class="font-medium">{t(locale, "admin.item.allergens")}</legend>
-    <div class="grid grid-cols-2 gap-x-5 gap-y-1">
+    <div class="grid grid-cols-1 min-[24rem]:grid-cols-2 gap-x-5 gap-y-1">
       {ALLERGENS.map((allergen) => (
         <label class="flex items-center gap-2 min-h-11"><input type="checkbox" name="allergens" value={allergen} checked={values.allergens.includes(allergen)} class="h-5 w-5" /> {t(locale, `allergen.${allergen}`)}</label>
       ))}

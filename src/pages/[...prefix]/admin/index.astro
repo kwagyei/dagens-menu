@@ -39,8 +39,11 @@ if (Astro.locals.session) {
           : action === "move-category" && direction
             ? await moveCategory(page.repo, id, direction)
             : { ok: false as const, error: "not-found" as const };
-    const anchor = action === "move-category" ? `category-${id}` : `item-${id}`;
-    return Astro.redirect(result.ok ? `${home}#${anchor}` : `${home}?done=not-found`, 303);
+    // Name what changed, so its button takes focus again on the next page (no JS needed).
+    // No #fragment: browsers skip autofocus when the URL targets an element, and focusing
+    // the button scrolls it into view anyway.
+    const changed = result.ok ? `?changed=${encodeURIComponent(`${action}:${id}:${direction ?? ""}`)}` : "?done=not-found";
+    return Astro.redirect(`${home}${changed}`, 303);
   }
 
   menu = await adminMenu(page.repo);
@@ -48,6 +51,15 @@ if (Astro.locals.session) {
 }
 
 const done = Astro.url.searchParams.get("done");
+// After a quick action, focus returns to the control just used (M5.7). A move that reached
+// the top or bottom disables that button, so focus goes to the other direction's instead.
+const [changedAction, changedId, changedDir] = (Astro.url.searchParams.get("changed") ?? "").split(":");
+/** `disabled` is this button's state; `oppositeDisabled` the other direction's. */
+const focusMove = (action: string, id: string, dir: "up" | "down", disabled: boolean, oppositeDisabled: boolean) => {
+  if (changedAction !== action || changedId !== id || disabled) return false;
+  // The button for the direction just used, or this one if that one is now disabled.
+  return dir === changedDir || oppositeDisabled;
+};
 const message: Record<string, string> = {
   saved: t(locale, "admin.menu.saved"),
   added: t(locale, "admin.menu.added"),
@@ -84,6 +96,7 @@ const message: Record<string, string> = {
                     class="admin-small-button"
                     type="submit"
                     disabled={(dir === "up" && ci === 0) || (dir === "down" && ci === menu.length - 1)}
+                    autofocus={focusMove("move-category", category.id, dir, (dir === "up" && ci === 0) || (dir === "down" && ci === menu.length - 1), (dir === "down" && ci === 0) || (dir === "up" && ci === menu.length - 1))}
                     aria-label={`${t(locale, dir === "up" ? "admin.menu.up" : "admin.menu.down")}: ${category.name[locale]}`}
                   >{dir === "up" ? "↑" : "↓"}</button>
                 </form>
@@ -116,7 +129,7 @@ const message: Record<string, string> = {
                       <input type="hidden" name="action" value="sold-out" />
                       <input type="hidden" name="id" value={item.id} />
                       <input type="hidden" name="value" value={soldOut ? "0" : "1"} />
-                      <button class="admin-button" type="submit" aria-pressed={soldOut ? "true" : "false"}>
+                      <button class="admin-button" type="submit" autofocus={changedAction === "sold-out" && changedId === item.id} aria-label={`${soldOut ? t(locale, "admin.menu.backOnSale") : t(locale, "admin.menu.soldOut")}: ${item.name[locale]}`}>
                         {soldOut ? t(locale, "admin.menu.backOnSale") : t(locale, "admin.menu.soldOut")}
                       </button>
                     </form>
@@ -130,6 +143,7 @@ const message: Record<string, string> = {
                           class="admin-small-button"
                           type="submit"
                           disabled={(dir === "up" && ii === 0) || (dir === "down" && ii === category.items.length - 1)}
+                          autofocus={focusMove("move-item", item.id, dir, (dir === "up" && ii === 0) || (dir === "down" && ii === category.items.length - 1), (dir === "down" && ii === 0) || (dir === "up" && ii === category.items.length - 1))}
                           aria-label={`${t(locale, dir === "up" ? "admin.menu.up" : "admin.menu.down")}: ${item.name[locale]}`}
                         >{dir === "up" ? "↑" : "↓"}</button>
                       </form>
