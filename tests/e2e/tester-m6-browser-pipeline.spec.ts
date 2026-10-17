@@ -28,7 +28,8 @@ async function signIn(page: Page, browserName: string) {
   const cookies = await other.context().cookies();
   await helper.close();
   const header = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
-  await page.context().route(`${ORIGIN}/**`, (route) => route.continue({ headers: { ...route.request().headers(), cookie: header } }));
+  // Sent once, as a header (a route that set it again was redundant). These specs run on macOS:
+  // Linux's WebKit build answers as signed out however the cookie is sent (see e2e-edge.yml).
   await page.context().setExtraHTTPHeaders({ cookie: header });
 }
 

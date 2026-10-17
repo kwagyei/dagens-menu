@@ -24,7 +24,8 @@ async function signIn(page: Page) {
   await helper.close();
   // WebKit won't store a __Host- cookie for plain http://localhost, so send it with each request.
   const header = cookies.map((c) => `${c.name}=${c.value}`).join("; ");
-  await page.context().route("http://localhost:8790/**", (route) => route.continue({ headers: { ...route.request().headers(), cookie: header } }));
+  // Sent once, as a header (a route that set it again was redundant). These specs run on macOS:
+  // Linux's WebKit build answers as signed out however the cookie is sent (see e2e-edge.yml).
   await page.context().setExtraHTTPHeaders({ cookie: header });
 }
 
