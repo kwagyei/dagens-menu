@@ -1,15 +1,13 @@
 ---
+import Photo from "../components/Photo.astro";
 import Base from "../layouts/Base.astro";
 import BookingCta from "../components/BookingCta.astro";
 import PageHero from "../components/PageHero.astro";
-import { localized } from "../content/load";
 import { getLocale, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const { gallery, images } = Astro.locals.content;
-// Alt text lives on the library image (ADR-014 §1); the schema guarantees a gallery photo has one.
-const altOf = new Map(images.map((i) => [i.ref, i.alt]));
-const photos = gallery.images.map((g) => ({ src: g.image, alt: altOf.get(g.image) }));
+// Alt text and sizes come from the library image (ADR-014 §1, ADR-015 §4), through Photo.
+const photos = Astro.locals.content.gallery.images;
 ---
 
 <Base title={t(locale, "nav.gallery")}>
@@ -19,7 +17,7 @@ const photos = gallery.images.map((g) => ({ src: g.image, alt: altOf.get(g.image
       {photos.map((image, i) => (
         <li>
           <figure>
-            <img src={image.src} alt={image.alt ? localized(image.alt, locale) : t(locale, "gallery.alt.missing")} loading={i < 4 ? "eager" : "lazy"} />
+            <Photo ref={image.image} slot="gallery" first={i === 0} />
           </figure>
         </li>
       ))}

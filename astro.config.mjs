@@ -2,6 +2,7 @@
 import cloudflare from "@astrojs/cloudflare";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
+import { buildImageVariants } from "./scripts/image-variants.ts";
 
 // Each site is its own Worker build: SITE picks the theme, the curated images and the
 // wrangler config; content comes from D1 at request time (ADR-011). `astro check` runs
@@ -17,6 +18,18 @@ export default defineConfig({
   session: false,
   // Cross-site form posts get a 403 (on by default; stated because the admin relies on it).
   security: { checkOrigin: true },
+  integrations: [
+    {
+      // The curated photos' WebP sizes, made before every build and dev server (M6.9, ADR-015 §3).
+      // In the config rather than an npm prebuild hook, because CI and the tests call astro directly.
+      name: "image-variants",
+      hooks: {
+        "astro:config:setup": async ({ command, logger }) => {
+          if (command === "build" || command === "dev") await buildImageVariants(site, (m) => logger.info(m));
+        },
+      },
+    },
+  ],
   vite: {
     plugins: [tailwindcss()],
     // The site the build was made for; the Worker refuses to serve another (src/content/site-id.ts).

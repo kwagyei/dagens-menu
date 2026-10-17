@@ -1,0 +1,65 @@
+---
+/**
+ * One library photo with its sizes (plan M6.9; ADR-015 §4). The slot decides what `sizes` says
+ * (how wide the photo is drawn, from the CSS) and whether the photo is decorative:
+ *
+ * | slot      | drawn at                                   | alt                 |
+ * |-----------|--------------------------------------------|---------------------|
+ * | hero, cta | the full width, behind text                | "" (decorative)     |
+ * | strip     | home dishes: a swipe strip, 3 across wide  | the library's alt   |
+ * | card      | home dishes, modern: 3 across wide         | the library's alt   |
+ * | thumb     | the menu's round 84 px photo               | the library's alt   |
+ * | story     | the about page's two photos                | the library's alt   |
+ * | gallery   | the gallery grid                           | the library's alt   |
+ *
+ * WebP only, with width and height (no layout shift). A reference the library doesn't know
+ * renders nothing and logs one line: one missing photo never breaks the page.
+ */
+import { localized } from "../content/load";
+import { photoSources } from "../content/images";
+import { getLocale } from "../i18n";
+
+type Slot = "hero" | "cta" | "strip" | "card" | "thumb" | "story" | "gallery";
+interface Props {
+  ref: string | undefined;
+  slot: Slot;
+  /** The page's first photo, its LCP: loaded at once, at high priority. */
+  first?: boolean;
+  class?: string;
+}
+
+const SIZES: Record<Slot, string> = {
+  hero: "100vw",
+  cta: "100vw",
+  strip: "(min-width: 56.25rem) 30vw, 72vw",
+  card: "(min-width: 56.25rem) 30vw, 92vw",
+  thumb: "84px",
+  story: "(min-width: 56.25rem) 50vw, 92vw",
+  gallery: "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw",
+};
+const DECORATIVE: ReadonlySet<Slot> = new Set(["hero", "cta"]);
+
+const { ref, slot, first = false, class: className } = Astro.props;
+const locale = getLocale(Astro.url);
+const image = ref ? Astro.locals.content.images.find((i) => i.ref === ref) : undefined;
+if (ref && !image) console.error(`photo: ${ref} is not in the image library; not shown`);
+const sources = image ? photoSources(image) : null;
+const alt = !image || DECORATIVE.has(slot) ? "" : image.alt ? localized(image.alt, locale) : "";
+---
+
+{image && (sources ? (
+  <img
+    class={className}
+    src={sources.src}
+    srcset={sources.srcset}
+    sizes={SIZES[slot]}
+    width={sources.width}
+    height={sources.height}
+    alt={alt}
+    loading={first ? "eager" : "lazy"}
+    fetchpriority={first ? "high" : undefined}
+    decoding="async"
+  />
+) : (
+  <img class={className} src={image.ref} alt={alt} width={image.width} height={image.height} loading={first ? "eager" : "lazy"} decoding="async" />
+))}

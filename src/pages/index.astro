@@ -1,4 +1,6 @@
 ---
+import Photo from "../components/Photo.astro";
+import { photoSources } from "../content/images";
 /**
  * Home. One booking button, in the hero, next to today's hours. The navigation sits on the hero
  * photo, so the layout leaves out the header (`bare`).
@@ -23,12 +25,11 @@ const voice = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : n
 const highlights = resolveHighlights(menu, pages.home.highlights, today.soldOut);
 const todayText = `${t(locale, "hours.today")}: ${today.hours ? `${today.hours.open}–${today.hours.close}` : t(locale, "hours.closed")}`;
 
-// The hero photo is described when it is one of the menu's dishes; a room or table photo is
-// decoration (alt="").
-const allItems = menu.categories.flatMap((c) => c.items);
+// The hero photo sits behind the name and the booking button: decorative (alt="", ADR-015 §4).
 const heroImage = pages.home.heroImage;
-const heroDish = heroImage ? allItems.find((item) => item.image === heroImage) : undefined;
-const heroAlt = heroDish ? localized(heroDish.name, locale) : "";
+// The CTA strip draws its photo as a CSS background three times, so it takes one fixed size.
+const ctaImage = pages.home.ctaImage ? Astro.locals.content.images.find((i) => i.ref === pages.home.ctaImage) : undefined;
+const ctaUrl = ctaImage ? (photoSources(ctaImage)?.src ?? ctaImage.ref) : pages.home.ctaImage;
 
 // Classic shows the lunch list when the menu has a lunch category with something on sale.
 const soldOut = new Set(today.soldOut);
@@ -59,7 +60,7 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
   {theme.style === "classic" ? (
     <>
       <section class="hero-ljus" aria-labelledby="page-title">
-        {heroImage && <img class="hero-ljus__img" src={heroImage} alt={heroAlt} loading="eager" fetchpriority="high" />}
+        <Photo ref={heroImage} slot="hero" class="hero-ljus__img" first />
         <div class="hero-ljus__nav"><SiteNav variant="hero" /></div>
         <svg class="arc" viewBox="0 0 360 120" aria-hidden="true" focusable="false">
           <path d="M8 112 Q180 -22 352 112" fill="none" stroke="currentColor" stroke-width="1.5" />
@@ -83,7 +84,7 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
             {highlights.map(({ item }) => (
               <li>
                 <figure class:list={{ strip__plain: !item.image }}>
-                  {item.image && <img src={item.image} alt={localized(item.name, locale)} loading="lazy" />}
+                  <Photo ref={item.image} slot="strip" />
                   <figcaption>{localized(item.name, locale)}<span>{formatPrice(item.price)}</span></figcaption>
                 </figure>
               </li>
@@ -115,11 +116,7 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
     <>
       <section class="hero-dag" aria-labelledby="page-title">
         <div class="hero-dag__photo">
-          {heroImage ? (
-            <img class="hero-dag__img" src={heroImage} alt={heroAlt} loading="eager" fetchpriority="high" />
-          ) : (
-            <div class="hero-dag__img" />
-          )}
+          {heroImage ? <Photo ref={heroImage} slot="hero" class="hero-dag__img" first /> : <div class="hero-dag__img" />}
           <div class="hero-dag__nav"><SiteNav variant="hero" /></div>
           <a class="star wide-only" href={localePath(locale, "/menu/")}>{t(locale, "home.seeMenu")}</a>
         </div>
@@ -147,9 +144,9 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
       {pages.home.ctaImage && (
         <div class="slices-band narrow-only">
           <div class="slices">
-            <i style={`background-image: url("${pages.home.ctaImage}")`}></i>
-            <i style={`background-image: url("${pages.home.ctaImage}")`}></i>
-            <i style={`background-image: url("${pages.home.ctaImage}")`}></i>
+            <i style={`background-image: url("${ctaUrl}")`}></i>
+            <i style={`background-image: url("${ctaUrl}")`}></i>
+            <i style={`background-image: url("${ctaUrl}")`}></i>
             <a class="star" href={localePath(locale, "/menu/")}>{t(locale, "home.seeMenu")}</a>
           </div>
         </div>
@@ -165,11 +162,7 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
             {highlights.map(({ item }) => (
               <li>
                 <figure class="dish-card">
-                  {item.image ? (
-                    <img src={item.image} alt={localized(item.name, locale)} loading="lazy" />
-                  ) : (
-                    <div class="dish-card__plain" />
-                  )}
+                  {item.image ? <Photo ref={item.image} slot="card" /> : <div class="dish-card__plain" />}
                   <figcaption>
                     <span>{localized(item.name, locale)}</span>
                     <span class="dish-card__price">{formatPrice(item.price)}</span>

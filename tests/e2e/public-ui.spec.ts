@@ -76,9 +76,12 @@ test("each home highlight shows its own dish's photo, or none", async ({ page })
   const items = menu.categories.flatMap((c) => c.items);
   for (const id of pages.home.highlights as string[]) {
     const dish = items.find((i) => i.id === id)!;
-    const img = page.locator(`main img[alt="${dish.name.sv}"]`);
-    if (dish.image) await expect(img).toHaveAttribute("src", dish.image);
-    else await expect(img).toHaveCount(0);
+    // The dish's card, by its caption; its photo is that dish's own image, in WebP sizes (M6.9).
+    const img = page.locator("main li").filter({ hasText: dish.name.sv }).first().locator("img");
+    if (dish.image) {
+      const name = dish.image.replace(/^.*\//, "").replace(/\.[^.]+$/, "");
+      await expect(img).toHaveAttribute("srcset", new RegExp(`/v/${name}-\\d+\\.webp \\d+w`));
+    } else await expect(img).toHaveCount(0);
   }
 });
 

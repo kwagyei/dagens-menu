@@ -40,3 +40,6 @@ playwright-report/
 test-results/
 westafrican.log
 playwright-report-isolation/
+
+# Curated photos' WebP sizes, made by every build (scripts/image-variants.ts): not committed.
+public/images/*/v/
