@@ -4,13 +4,12 @@
  * back, so the order doesn't matter. "Today" tests remove what they add.
  */
 import { expect, type Page, test } from "@playwright/test";
-import { signedInOwner } from "./helpers";
+import { daysAhead, plusDays, signedInOwner, stockholmToday } from "./helpers";
 
 const BASE = "http://localhost:8790";
-const stockholmToday = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm" }).format(new Date());
-const plusDays = (iso: string, n: number) => new Date(Date.parse(`${iso}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
-const daysAhead = (n: number) => plusDays(stockholmToday(), n);
 const group = (page: Page, name: string) => page.getByRole("group", { name });
+/** The admin's list entry for an exception day. The list shows the date in words, so match the remove form's ISO date. */
+const exceptionRow = (page: Page, iso: string) => page.locator("#exceptions li", { has: page.locator(`input[name=date][value="${iso}"]`) });
 const csrfOf = (page: Page) => page.locator("input[name=csrf]").first().inputValue();
 const weeklyForm = (over: Record<string, string> = {}) => {
   const f: Record<string, string> = { action: "weekly" };
@@ -192,7 +191,7 @@ test("CSRF: all three actions are refused without a valid token and change nothi
   expect(await (await page.request.get("/admin/hours/")).text()).toBe(page0.replace(/name="csrf" value="[^"]+"/g, (m) => m));
   await page.goto("/admin/hours/");
   await expect(page.locator("#exceptions li", { hasText: "Behåll" })).toHaveCount(1);
-  await expect(page.locator("#exceptions li", { hasText: daysAhead(201) })).toHaveCount(0);
+  await expect(exceptionRow(page, daysAhead(201))).toHaveCount(0);
   // A token from before sign-out and a request with no session never write.
   const anon = await page.context().browser()!.newContext({ baseURL: BASE });
   const res = await anon.request.post("/admin/hours/", { form: { csrf, ...weeklyForm({ monday_open: "03:00" }) }, maxRedirects: 0, headers: { Origin: BASE } });
@@ -210,7 +209,7 @@ test("double submit of the same exception gives one row and one friendly duplica
   expect(statuses).toEqual([303, 422, 422]);
   for (const r of results.filter((x) => x.status() === 422)) expect(await r.text()).toContain("redan en avvikande dag");
   await page.goto("/admin/hours/");
-  await expect(page.locator("#exceptions li")).toHaveCount(1);
+  await expect(exceptionRow(page, date)).toHaveCount(1);
   // Remove twice at once: both answer with a redirect, one says deleted, one not-found.
   const csrf = await csrfOf(page);
   const rm = () => page.request.post("/admin/hours/", { form: { csrf, action: "remove-exception", date }, maxRedirects: 0, headers: { Origin: BASE } });
@@ -227,6 +226,8 @@ test("exception dates: today ok, yesterday refused, +2 years exactly, one day mo
     const last = new Date(Date.UTC(y + 2, m, 0)).getUTCDate();
     return `${y + 2}-${String(m).padStart(2, "0")}-${String(Math.min(d, last)).padStart(2, "0")}`;
   })();
+  // Another spec may have left an exception on today; this test is about adding one.
+  for (const date of [today, limit]) await post("/admin/hours/", { action: "remove-exception", date });
   const cases: Array<[string, number]> = [
     [plusDays(today, -1), 422],
     [plusDays(limit, 1), 422],
@@ -240,7 +241,7 @@ test("exception dates: today ok, yesterday refused, +2 years exactly, one day mo
   ];
   for (const [date, status] of cases) expect((await post("/admin/hours/", exceptionForm(date))).status(), date).toBe(status);
   await page.goto("/admin/hours/");
-  await expect(page.locator("#exceptions li")).toHaveCount(2);
+  for (const date of [today, limit]) await expect(exceptionRow(page, date)).toHaveCount(1);
   // Both now show on the public contact list; clean up.
   await page.goto("/contact/");
   await expect(page.locator("main li", { has: page.locator(`time[datetime="${today}"]`) })).toContainText("Anledning");
@@ -253,6 +254,7 @@ test("exception dates: today ok, yesterday refused, +2 years exactly, one day mo
 test("a closed exception for today wins on the home badge, in sv and en, and goes away when removed", async ({ page }) => {
   const { post } = await withAuth(page);
   const today = stockholmToday();
+  await post("/admin/hours/", { action: "remove-exception", date: today });
   expect((await post("/admin/hours/", exceptionForm(today, { note_sv: "Privat fest", note_en: "Private party" }))).status()).toBe(303);
   await page.goto("/");
   await expect(page.locator(".hours-badge")).toContainText("Idag: Stängt");
@@ -268,7 +270,8 @@ test("a closed exception for today wins on the home badge, in sv and en, and goe
 test("special hours past midnight for today show on the home badge", async ({ page }) => {
   const { post } = await withAuth(page);
   const today = stockholmToday();
-  await post("/admin/hours/", exceptionForm(today, { closed: "", exception_open: "18:00", exception_close: "02:00" }));
+  await post("/admin/hours/", { action: "remove-exception", date: today });
+  expect((await post("/admin/hours/", exceptionForm(today, { closed: "", exception_open: "18:00", exception_close: "02:00" }))).status()).toBe(303);
   await page.goto("/");
   await expect(page.locator(".hours-badge")).toContainText("18:00–02:00");
   await post("/admin/hours/", { action: "remove-exception", date: today });
@@ -308,8 +311,8 @@ test("notes: exactly 300 accepted, 301 refused with both values kept, whitespace
   }
   await page.goto("/admin/hours/");
   await expect(page.locator("#exceptions li", { hasText: "ååå" })).toHaveCount(1);
-  await expect(page.locator("#exceptions li", { hasText: daysAhead(72) })).toHaveCount(0);
-  await expect(page.locator("#exceptions li", { hasText: daysAhead(71) })).toHaveCount(0);
+  await expect(exceptionRow(page, daysAhead(72))).toHaveCount(0);
+  await expect(exceptionRow(page, daysAhead(71))).toHaveCount(0);
   // A 300-character note does not blow the page layout out at 375px.
   await page.setViewportSize({ width: 375, height: 800 });
   await page.goto("/admin/hours/");
@@ -404,10 +407,10 @@ test("375px: no horizontal overflow on the hours page and every control is at le
     [...document.querySelectorAll<HTMLInputElement>("main input[type=checkbox]")].map((c) => Math.round((c.closest("label") ?? c).getBoundingClientRect().height)),
   );
   expect(Math.min(...ticks)).toBeGreaterThanOrEqual(44);
-  // Time inputs sit side by side without overlapping.
+  // The two time inputs don't overlap, whether they sit side by side or stacked.
   const overlap = await page.evaluate(() => {
     const [a, b] = [...document.querySelectorAll("fieldset")[0].querySelectorAll("input[type=time]")].map((e) => e.getBoundingClientRect());
-    return a.right > b.left;
+    return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
   });
   expect(overlap).toBe(false);
   // The remove button's accessible name carries the date.

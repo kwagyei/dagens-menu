@@ -1,6 +1,7 @@
 /**
- * Tester, M4 (ADR-011 §6, answer 7): attacks on the admin's sign-in, against the same built
- * bistro Worker as admin.spec.ts.
+ * Attacks on the admin's sign-in (ADR-011 §6, answer 7), written by the tester in M4, against
+ * the same built bistro Worker as admin.spec.ts. Part of the deploy gate: these protect the
+ * security model, not an edge of the UI.
  *
  * The westafrican isolation block needs a second Worker and runs only when WESTAFRICAN_URL is
  * set (see the tester report for how it was started); the missing-secret block starts its own
@@ -8,6 +9,7 @@
  */
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { type APIRequestContext, type BrowserContext, expect, type Page, test } from "@playwright/test";
+import { freshIp } from "./helpers";
 
 const BASE = "http://localhost:8790";
 const SAME = { Origin: BASE };
@@ -47,9 +49,8 @@ const sessionCookie = async (context: BrowserContext) => (await context.cookies(
 let n = 0;
 const freshEmail = () => `tester-${Date.now().toString(36)}-${n++}@example.se`;
 
-let ip = 0;
 test.beforeEach(async ({ context }) => {
-  await context.setExtraHTTPHeaders({ "CF-Connecting-IP": `192.0.2.${++ip}` });
+  await context.setExtraHTTPHeaders({ "CF-Connecting-IP": freshIp() });
 });
 
 async function enrol(page: Page, email = freshEmail(), base = BASE) {

@@ -4,6 +4,7 @@
  */
 import { execFileSync } from "node:child_process";
 import { type BrowserContext, expect, type Page, test } from "@playwright/test";
+import { freshIp } from "./helpers";
 
 function invite(email: string): string {
   const out = execFileSync("npm", ["run", "-s", "admin", "--", "invite", "--site", "bistro", "--email", email, "--url", "http://localhost:8790"], { encoding: "utf-8" });
@@ -42,9 +43,8 @@ const freshEmail = () => `e2e-${Date.now().toString(36)}-${n++}@example.se`;
 
 // Every test is its own visitor: the admin's rate limit (10 a minute per IP) would otherwise
 // count the whole suite as one client. One test checks the limit itself.
-let ip = 0;
 test.beforeEach(async ({ context }) => {
-  await context.setExtraHTTPHeaders({ "CF-Connecting-IP": `198.51.100.${++ip}` });
+  await context.setExtraHTTPHeaders({ "CF-Connecting-IP": freshIp() });
 });
 
 async function enrol(page: Page, email = freshEmail()) {

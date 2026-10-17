@@ -1,0 +1,58 @@
+name: E2E edge cases
+
+# The tester's edge-case sweeps (tests/e2e/tester-m5-*), split from the deploy gate in ci.yml
+# (review H1, 2026-10-17). They run on every PR so a reviewer sees them, and nightly so a
+# time-of-day or ordering problem shows up without a PR. Nothing here blocks a deploy: the
+# deploy job in ci.yml needs only the gate. A failed nightly run opens (or comments on) an
+# issue, so it becomes a task instead of a red mark nobody looks at.
+
+on:
+  pull_request:
+  schedule:
+    # 22:30 UTC is 23:30 or 00:30 in Stockholm, so the dates either side of midnight get exercised.
+    - cron: "30 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-edge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  edge:
+    name: Admin edge cases (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:edge
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-edge
+          path: playwright-report/
+          retention-days: 7
+      - name: File the nightly failure as an issue
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Nightly e2e edge cases failed"
+          open=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "Failed again: $RUN"
+          else
+            gh issue create --title "$title" --body "The non-blocking edge-case specs failed on \`main\`: $RUN. The report is attached to the run for 7 days."
+          fi

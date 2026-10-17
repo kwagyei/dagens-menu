@@ -1,6 +1,6 @@
 /**
  * Tester, M5.1–M5.3: attacks on menu editing, against the built bistro Worker.
- * Runs after menu.spec.ts and tester-m4.spec.ts (alphabetical). Each test makes its own
+ * Runs in the edge project (`npm run test:e2e:edge`), not the deploy gate. Each test makes its own
  * category so it doesn't depend on the seeded menu's state.
  */
 import { readFileSync } from "node:fs";

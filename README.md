@@ -48,7 +48,8 @@ npm run db:migrate:local              # a local D1 database (.wrangler/state)
 npm run seed -- --site bistro         # load a demo's content into it
 npm run dev:bistro                    # or dev:westafrican (seed it first)
 npm test                              # unit, content, and database tests in workerd
-npm run test:e2e                      # admin sign-in end to end (Playwright)
+npm run test:e2e                      # admin end to end, the deploy gate (Playwright)
+npm run test:e2e:edge                 # the edge-case sweeps; non-blocking in CI, also nightly
 npm run check                         # type check (astro check)
 SITE=bistro npm run build             # the bistro's Worker, in dist/
 ```
@@ -127,6 +128,13 @@ is the seed data the demos are loaded from.
   per IP; ordinary edits aren't, so an owner can mark a dozen dishes sold out in a minute.
   Each sign-in challenge works once, even for synced passkeys that don't count signatures.
   The admin has its own stricter CSP: no inline scripts at all.
+- **Merging deploys, so the gate has to be trusted.** Every merge to `main` applies
+  migrations, deploys both Workers and smoke-tests them, but only after type checks, unit,
+  database and build tests, and a Playwright gate: the owner's journeys plus the attacks on
+  sign-in. The gate runs in about 5 minutes with no retries, because a retried test hides
+  flakiness that people then learn to merge over. The tester's edge-case sweeps run on every
+  PR and nightly (straddling Stockholm midnight) but never block a deploy; a nightly failure
+  opens an issue.
 - **If the database is unreachable, the site still answers.** Each Worker keeps the last
   good content in memory and serves it, marked stale, when D1 fails or takes longer than
   1.5 s. With nothing held, visitors get a page with the restaurant's phone number,
@@ -139,8 +147,8 @@ is the seed data the demos are loaded from.
   is removed, because it saved to git, which the Workers no longer read.
 - **Recovering a lost passkey needs the operator.** Owners can add a second device
   themselves, but if every passkey is lost, the operator sends a new invite.
-- **Deploys are run by hand.** An automatic deploy on merge to `main` needs a Cloudflare
-  API token in the repository's secrets.
+- **The edge-case suite can be red while `main` deploys.** That's the price of a fast gate:
+  an edge case found nightly becomes an issue, not a blocked release.
 - **Images are served as uploaded JPEGs.** Astro's image pipeline (AVIF/WebP, responsive
   sizes) isn't used yet, which costs page weight on mobile.
 - **Lighthouse performance is 75–88 on mobile, below the 95 target.** Measured 2026-10-16:

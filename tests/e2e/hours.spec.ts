@@ -3,9 +3,8 @@
  * contact page and in the JSON-LD on the very next request.
  */
 import { expect, type Page, test } from "@playwright/test";
-import { signedInOwner } from "./helpers";
+import { daysAhead, signedInOwner } from "./helpers";
 
-const daysAhead = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
 const sunday = (page: Page) => page.getByRole("group", { name: "Söndag" });
 
 async function openHours(page: Page) {
