@@ -36,12 +36,33 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # Tester F3: the per-site isolation test in security.spec.ts needs a westafrican Worker on
+      # the same local D1 as the bistro one, so the gate skips it; it runs here instead. The
+      # Worker stays up in the background until the job ends.
+      - name: Start a westafrican Worker beside the bistro one
+        run: |
+          scripts/serve-westafrican.sh 8792 > westafrican.log 2>&1 &
+          for _ in $(seq 1 80); do
+            curl -sf -o /dev/null http://localhost:8792/ && exit 0
+            sleep 3
+          done
+          cat westafrican.log
+          exit 1
+      - name: Per-site isolation against the westafrican Worker
+        run: npx playwright test --project=gate tests/e2e/security.spec.ts --grep "per-site isolation"
+        env:
+          WESTAFRICAN_URL: http://localhost:8792
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-isolation
       - run: npm run test:e2e:edge
+        if: ${{ !cancelled() }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-report-edge
-          path: playwright-report/
+          path: |
+            playwright-report/
+            playwright-report-isolation/
+            westafrican.log
           retention-days: 7
       - name: File the nightly failure as an issue
         if: failure() && github.event_name != 'pull_request'

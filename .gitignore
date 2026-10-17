@@ -38,3 +38,5 @@ inspiration/
 
 playwright-report/
 test-results/
+westafrican.log
+playwright-report-isolation/
