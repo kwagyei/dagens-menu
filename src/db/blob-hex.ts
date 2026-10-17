@@ -17,12 +17,17 @@
 /** Hex text for an `unhex(?)` placeholder. Uses the native encoder, not the Node layer. */
 export function bytesParam(bytes: Uint8Array): string {
   if (!(bytes instanceof Uint8Array)) throw new TypeError("bytesParam expects a Uint8Array");
-  return bytes.toHex();
+  // Through the prototype, so a subclass's own toHex() cannot change what is bound.
+  return Uint8Array.prototype.toHex.call(bytes);
 }
 
 /**
  * Bytes from a `hex(column)` result. Refuses anything that is not a string of hex digit
- * pairs, so a wrong column or a NULL fails here with a clear message, not later.
+ * pairs, so a wrong column fails here with a clear message, not later.
+ *
+ * SQLite's hex(NULL) is '', the same as hex() of an empty BLOB, so '' decodes to zero bytes.
+ * A query that can find no BLOB (a LEFT JOIN) must check that the row exists; stored
+ * variants are never empty (image_variants' CHECK).
  */
 export function bytesFromHex(value: unknown): Uint8Array<ArrayBuffer> {
   if (typeof value !== "string") throw new TypeError(`Expected hex text from hex(), got ${value === null ? "null" : typeof value}`);
