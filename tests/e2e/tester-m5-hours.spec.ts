@@ -42,10 +42,19 @@ const withAuth = async (page: Page) => {
   return { csrf, post };
 };
 const exceptionsText = async (page: Page) => page.locator("#exceptions ul").innerText();
+/**
+ * The week's version token from a freshly loaded hours page. Since M4 a weekly save without the
+ * token the form was rendered with is a 409, so every raw weekly POST that should succeed sends it.
+ */
+async function weeklyTokenOf(page: Page): Promise<string> {
+  await page.goto("/admin/hours/");
+  return page.locator("input[name=weekly_token]").inputValue();
+}
 async function restoreWeek(page: Page) {
-  const csrf = await csrfOf(page.url().includes("/admin/hours") ? page : (await page.goto("/admin/hours/"), page));
+  const weekly_token = await weeklyTokenOf(page);
+  const csrf = await csrfOf(page);
   await page.request.post("/admin/hours/", {
-    form: { csrf, ...weeklyForm(), sunday_closed: "on", sunday_open: "", sunday_close: "" },
+    form: { csrf, weekly_token, ...weeklyForm(), sunday_closed: "on", sunday_open: "", sunday_close: "" },
     maxRedirects: 0,
     headers: { Origin: BASE },
   });
@@ -360,7 +369,10 @@ test("the English admin stays under /en/admin/ through every redirect and shows 
   await page.getByRole("button", { name: "Add a day" }).click();
   expect(page.url()).toMatch(/\/en\/admin\/hours\/\?done=added#exceptions$/);
   await expect(page.getByRole("status")).toHaveText("Added.");
-  await group(page, "Sunday").getByLabel("Opens").fill("12:00");
+  // A real change: since M4 an unchanged save answers done=unchanged instead.
+  const mondayOpens = group(page, "Monday").getByLabel("Opens"); // an open day: a closed day ignores its times
+  const before = await mondayOpens.inputValue();
+  await mondayOpens.fill(before === "10:30" ? "10:15" : "10:30");
   await page.getByRole("button", { name: "Save opening hours" }).click();
   expect(page.url()).toMatch(/\/en\/admin\/hours\/\?done=saved/);
   await page.locator("#exceptions li", { hasText: "Holiday" }).getByRole("button", { name: /Remove/ }).click();
@@ -376,12 +388,14 @@ test("the English admin stays under /en/admin/ through every redirect and shows 
   await page.getByLabel("Reason in English").fill("x");
   await page.getByRole("button", { name: "Add a day" }).click();
   await expect(page.locator("#date-error")).toHaveText("That date has already passed.");
+  await restoreWeek(page);
 });
 
 test("westafrican's hours are untouched by a bistro save (public pages of the other demo don't exist here)", async ({ page }) => {
   // Guard on the form itself: a posted siteId or site field must be ignored.
   const { post } = await withAuth(page);
-  const res = await post("/admin/hours/", { ...weeklyForm({ monday_open: "04:00" }), site: "westafrican", site_id: "westafrican", siteId: "westafrican" });
+  const weekly_token = await weeklyTokenOf(page);
+  const res = await post("/admin/hours/", { ...weeklyForm({ monday_open: "04:00" }), weekly_token, site: "westafrican", site_id: "westafrican", siteId: "westafrican" });
   expect(res.status()).toBe(303);
   await page.goto("/admin/hours/");
   await expect(group(page, "Måndag").getByLabel("Öppnar")).toHaveValue("04:00");
