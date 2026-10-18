@@ -93,9 +93,13 @@ if (command === "list") {
 }
 
 if (command === "purge") {
-  // One moment for both the counts and the deletes, so they describe the same rows.
-  const now = new Date();
-  const [counts] = query<PurgeCounts>("admin", target, renderSql([purgeCountStatement(site, now)]).replace(/;$/, ""));
+  // The database's clock, not this machine's: a laptop running ahead could otherwise delete a
+  // session or invite in its last seconds (tester, 18 Oct). One moment for both the counts and
+  // the deletes, so they describe the same rows.
+  const [{ now: dbNow }] = query<{ now: string }>("admin", target, "SELECT strftime('%Y-%m-%dT%H:%M:%SZ', 'now') AS now");
+  const now = new Date(dbNow);
+  const count = () => query<PurgeCounts>("admin", target, renderSql([purgeCountStatement(site, now)]).replace(/;$/, ""))[0];
+  const counts = count();
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   console.log(`admin: purge "${site}" (${targetName(target)}), rows that would go:`);
   console.table(counts);
@@ -103,6 +107,8 @@ if (command === "purge") {
   else if (total === 0) console.log("admin: nothing to delete.");
   else {
     execute("admin", target, purgeStatements(site, now));
-    console.log(`admin: deleted ${total} row(s).${counts.audit_log > 0 ? " The history notes how many old entries were removed." : ""}`);
+    // Counted again rather than assumed, so the message says what the batch actually did.
+    const left = Object.values(count()).reduce((a, b) => a + b, 0);
+    console.log(`admin: deleted ${total - left} row(s)${left > 0 ? `; ${left} still match (added since the count)` : ""}.${counts.audit_log > 0 ? " The history notes how many old entries were removed." : ""}`);
   }
 }
