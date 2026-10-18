@@ -51,6 +51,8 @@
 .site img { display: block; max-width: 100%; }
 :where(.site) a { color: inherit; }
 .vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* The menu button's name: "Öppna menyn" while closed, "Stäng menyn" while open (SiteNav). */
+.site-nav__more:not([open]) .site-nav__label-close, .site-nav__more[open] .site-nav__label-open { display: none; }
 
 @media (max-width: 56.2rem) { .wide-only { display: none !important; } }
 [data-style="classic"] .modern-only { display: none !important; }

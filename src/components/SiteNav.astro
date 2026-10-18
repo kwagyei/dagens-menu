@@ -69,7 +69,11 @@ const current = (path: string) => (currentPath === path ? { "aria-current": "pag
     </li>
   </ul>
   <details class="site-nav__more narrow-only">
-    <summary id="menu-toggle" aria-label={t(locale, "nav.open")}>
+    <summary id="menu-toggle">
+      {/* Its name follows the menu: CSS shows one of the two (details[open]), so it changes without
+          JavaScript, and a screen reader hears only the one shown (reviewer M5 follow-up). */}
+      <span class="vh site-nav__label-open">{t(locale, "nav.open")}</span>
+      <span class="vh site-nav__label-close">{t(locale, "nav.close")}</span>
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M3 7h18M3 12h18M3 17h18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
       </svg>

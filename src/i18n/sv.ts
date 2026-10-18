@@ -277,6 +277,7 @@ export default {
   "admin.texts.field.about_chef_en": "Om kocken, engelska",
   "nav.main": "Huvudnavigering",
   "nav.open": "Öppna menyn",
+  "nav.close": "Stäng menyn",
   "nav.skip": "Hoppa till innehållet",
   "home.taste.1": "Smaka",
   "home.taste.2": "säsongen",

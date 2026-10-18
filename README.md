@@ -229,5 +229,5 @@ is the seed data the demos are loaded from.
   Toast Skagen with confirmed shrimp, so close substitutes stand in; `docs/photo-credits.md`
   marks them. Thieboudienne, jordnötssoppa and pannbiff med lök have no photo at all.
 - **Lighthouse covers two pages per demo.** The scores above are for `/` and `/menu/` only.
-  axe runs in CI against the admin of both demos; the public pages have only Lighthouse's
-  accessibility audit.
+  axe runs in CI on every page of both demos, public and admin, in both languages; the public
+  pages are checked at phone width, with the menu closed and open, not at every width.

@@ -1,6 +1,7 @@
 /**
- * Admin accessibility (plan M5.7): axe finds nothing on any admin page, in Swedish and
- * English, signed out and in, and on each form in its error state, where it matters most.
+ * Accessibility. Admin (plan M5.7): axe finds nothing on any admin page, in Swedish and English,
+ * signed out and in, and on each form in its error state, where it matters most. Public site
+ * (18 Oct): every page in both languages at phone width, with the menu closed and open.
  */
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
@@ -91,3 +92,33 @@ test("the photo library pages, in both languages, and the description form rejec
   await expect(page.locator("#photo-alt-errors")).toBeVisible();
   await expectNoViolations(page, "photo description, rejected");
 });
+
+const PUBLIC = ["/", "/menu/", "/book/", "/about/", "/gallery/", "/contact/", "/privacy/"];
+
+test("every public page, and the 404 page, in both languages, at phone width, with the menu closed and open", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of [...PUBLIC, ...PUBLIC.map((p) => `/en${p}`), "/finns-inte/", "/en/no-such-page/"]) {
+    const response = await page.goto(path);
+    if (path.includes("finns-inte") || path.includes("no-such-page")) expect(response?.status(), path).toBe(404);
+    await expectNoViolations(page, path);
+    await page.locator("#menu-toggle").click();
+    await expect(page.locator("#nav-menu")).toBeVisible();
+    await expectNoViolations(page, `${path} with the menu open`);
+  }
+});
+
+test("the menu button says what it will do: open, then close (reviewer M5 follow-up)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const [path, open, close] of [["/menu/", "Öppna menyn", "Stäng menyn"], ["/en/menu/", "Open the menu", "Close the menu"]]) {
+    await page.goto(path);
+    const toggle = page.locator("#menu-toggle");
+    // Anchored: exactly one name, never both labels run together.
+    const exactly = (name: string) => new RegExp(`^${name}$`);
+    await expect(toggle).toHaveAccessibleName(exactly(open));
+    await toggle.click();
+    await expect(toggle).toHaveAccessibleName(exactly(close));
+    await toggle.click();
+    await expect(toggle).toHaveAccessibleName(exactly(open));
+  }
+});
+
