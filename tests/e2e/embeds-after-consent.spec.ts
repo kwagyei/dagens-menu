@@ -6,6 +6,7 @@
  * reach the route, and the stub script proves the browser ran it.
  */
 import { type BrowserContext, expect, test } from "@playwright/test";
+import { listPresets } from "../../src/booking/presets";
 import { d1, freshIp, SITE } from "./helpers";
 
 const BOOKING = "https://app.waiteraid.com";
@@ -80,4 +81,35 @@ test.describe("third-party embeds", () => {
     await expect(page.frameLocator('iframe[title="Map"]').getByText("Stub map")).toBeVisible();
     expect(requested).toEqual([`${MAP}/maps/embed?pb=e2e`]);
   });
+});
+
+// Every embed preset, with its own hosts: the CSP built from the preset lets the browser reach
+// each host its embed loads from, and only after consent.
+test.describe("each booking preset loads after consent", () => {
+  test.afterAll(() => {
+    d1(`UPDATE settings SET booking_mode = 'none', booking_embed_code = NULL WHERE site_id = '${SITE}'`);
+  });
+
+  for (const [id, preset] of Object.entries(listPresets()).filter(([, p]) => p.mode === "embed")) {
+    test(`${id}: the browser reaches ${preset.origins.join(", ")} after consent, not before`, async ({ page, context }) => {
+      const code = preset.embedPattern!.replace(/RESTAURANT_(ID|UUID)/g, "e2e");
+      d1(`UPDATE settings SET booking_mode = 'embed', booking_embed_code = '${code.replaceAll("'", "''")}' WHERE site_id = '${SITE}'`);
+      await context.setExtraHTTPHeaders({ "CF-Connecting-IP": freshIp() });
+      const reached: string[] = [];
+      for (const origin of preset.origins) {
+        await context.route(`${origin}/**`, (route) => {
+          reached.push(new URL(route.request().url()).origin);
+          const script = route.request().resourceType() === "script";
+          return route.fulfill({ contentType: script ? "text/javascript" : "text/html", body: script ? "" : "<p>Stub provider</p>" });
+        });
+      }
+      const response = await page.goto("/book/");
+      for (const origin of preset.origins) expect(response?.headers()["content-security-policy"]).toContain(origin);
+      await expect(page.getByRole("button", { name: "Ladda bokning" })).toBeVisible();
+      expect(reached).toEqual([]);
+
+      await page.getByRole("dialog").getByRole("button", { name: "Acceptera" }).click();
+      await expect.poll(() => [...new Set(reached)].sort()).toEqual([...preset.origins].sort());
+    });
+  }
 });
