@@ -89,3 +89,29 @@ the new schema while at least one site runs older code.
 After any rollback or restore, re-run the smoke test against each site with the build it
 now serves, e.g.
 `node scripts/smoke.mjs --url https://dagens-menu-westafrican.kwabenasasuboakye.workers.dev --title "Chez Abena" --build <short sha>`.
+
+## Routine operator tasks
+
+These aren't part of any workflow; they're run by hand.
+
+- **After a deploy that changes how content is saved** (`src/db/repository.ts`, `src/db/sql.ts`,
+  or a D1 or wrangler upgrade), check on production that a save still moves `content_version`
+  and writes its audit row. Every save relies on that (review M2). The check writes only a
+  throwaway site, which no Worker serves, and deletes it again:
+
+  ```sh
+  npx tsx scripts/check-d1-guard.ts --remote   # needs CLOUDFLARE_API_TOKEN
+  ```
+
+- **Once a month, per site: purge** (ADR-016). It removes what the app already refuses
+  (expired or idle sessions, expired invites and challenges) and history older than 180 days.
+  The history then notes how many old entries went. Look at the counts first:
+
+  ```sh
+  npm run admin -- purge --site bistro --remote --dry-run
+  npm run admin -- purge --site bistro --remote
+  ```
+
+  Then the same for `westafrican`. Deleted history can only be brought back with Time Travel,
+  within 7 days.
+

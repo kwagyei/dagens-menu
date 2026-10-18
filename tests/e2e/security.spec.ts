@@ -178,9 +178,11 @@ test.describe("security events in the history (reviewer M3)", () => {
       "Passkey skapad med inbjudan",
       "Inbjudan skapad",
     ]);
-    await expect(ours(page).nth(0)).toContainText("passkey created from a new invite (recovery); passkeys now: 2");
-    await expect(ours(page).nth(1)).toContainText("invited again (recovery)");
+    // Summaries are stored in English and shown in the admin's language.
+    await expect(ours(page).nth(0)).toContainText("passkey skapad med ny inbjudan (återställning); passkeys nu: 2");
+    await expect(ours(page).nth(1)).toContainText("inbjuden igen (återställning)");
     await page.goto("/en/admin/history/");
+    await expect(ours(page).nth(0)).toContainText("passkey created from a new invite (recovery); passkeys now: 2");
     await expect(ours(page).locator("p.font-semibold")).toHaveText([
       "Passkey created from an invite",
       "Invite issued",

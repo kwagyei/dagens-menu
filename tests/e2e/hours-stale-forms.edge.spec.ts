@@ -44,6 +44,8 @@ const historyCount = async (page: Page) => {
 
 test("the rendered form carries the week as its token", async ({ page }) => {
   await signedInOwner(page);
+  // Start from the seeded week: an earlier spec in the same shard may have changed the hours.
+  await restore(page);
   try {
     const { token } = await open(page);
     expect(token).toBe(SEEDED_TOKEN);

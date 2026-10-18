@@ -233,6 +233,7 @@ export default {
   "admin.history.entity.settings": "Restaurangen",
   "admin.history.entity.page_content": "Sidornas texter",
   "admin.history.entity.site": "Webbplatsen",
+  "admin.history.entity.audit_log": "Historiken",
   "admin.history.action.create": "tillagd",
   "admin.history.action.update": "ändrad",
   "admin.history.action.delete": "borttagen",

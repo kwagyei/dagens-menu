@@ -148,7 +148,8 @@ test.describe("history page", () => {
     const items = page.locator("main ol > li, ol > li");
     await expect(items.first()).toContainText("Rätt ändrad");
     await expect(items.first()).toContainText(email);
-    await expect(items.nth(1)).toContainText("sold out");
+    await expect(items.nth(1)).toContainText("slutsåld");
+    await expect(items.first()).toContainText("finns igen");
     // The seed CLI's entry: no user.
     await expect(page.locator("ol > li").filter({ hasText: "Webbplatsen inläst" }).first()).toContainText("Systemet");
     // Times are shown in Stockholm time with a machine-readable datetime.
@@ -159,9 +160,8 @@ test.describe("history page", () => {
     expect(shown).toContain(expected);
   });
 
-  // Open finding M5.6 D2 (tasks.md): summaries are stored in English. Kept as a fixme so it
-  // stays visible until summaries are stored per language.
-  test.fixme("D: summaries are stored in English, so the Swedish history reads half in English", async ({ page }) => {
+  // M5.6 D2 / M5.7 D6, fixed 18 Oct: summaries are stored in English and translated when shown.
+  test("the Swedish history reads in Swedish: no fixed English phrase is shown", async ({ page }) => {
     await signedInOwner(page);
     await page.goto("/admin/history/");
     const summaries = await page.locator("ol > li p.text-sm.break-words").allTextContents();

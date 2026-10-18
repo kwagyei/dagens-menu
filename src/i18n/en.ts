@@ -233,6 +233,7 @@ export default {
   "admin.history.entity.settings": "The restaurant",
   "admin.history.entity.page_content": "Page texts",
   "admin.history.entity.site": "The website",
+  "admin.history.entity.audit_log": "History",
   "admin.history.action.create": "added",
   "admin.history.action.update": "changed",
   "admin.history.action.delete": "removed",

@@ -207,7 +207,9 @@ is the seed data the demos are loaded from.
   export goes to a private repo, without photo bytes, history or owner accounts; restoring from
   it is a manual job. See [backups and restoring them](docs/backup-restore.md).
 - **History has no undo.** It shows the last 50 changes and who made them; going back means
-  restoring an export or Time Travel.
+  restoring an export or Time Travel. History older than 180 days is removed when the
+  operator runs `npm run admin -- purge` (monthly, by hand: there is no cron on the free
+  plan), not automatically, and the history notes how many entries went.
 - **A deleted photo can stay in caches for up to a year.** `/media` URLs are named by the
   photo's SHA-256, so they're served `immutable` for a year, and a matching ETag gets a 304
   without asking D1. Deleting a photo stops new pages linking to it, but a browser or CDN that
