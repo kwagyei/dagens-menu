@@ -52,7 +52,7 @@ test("the export downloads as a file and restores the site with the seed CLI", a
   await page.goto("/");
   await expect(page.locator("main")).toContainText("Ändrad efter exporten");
 
-  execFileSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--from", path, "--reset"], { encoding: "utf-8" });
+  execFileSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--allow-host", "localhost:8790", "--from", path, "--reset"], { encoding: "utf-8" });
   await page.goto("/");
   await expect(page.locator("main")).toContainText(tagline);
   await expect(page.locator("main")).not.toContainText("Ändrad efter exporten");
@@ -63,7 +63,7 @@ test("the seed CLI refuses another site's export", async () => {
   writeFileSync(path, JSON.stringify({ format: "dagens-menu-export", formatVersion: 1, site: "westafrican", content: {} }));
   let output = "";
   try {
-    execFileSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--from", path, "--reset"], { encoding: "utf-8", stdio: "pipe" });
+    execFileSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--allow-host", "localhost:8790", "--from", path, "--reset"], { encoding: "utf-8", stdio: "pipe" });
   } catch (error) {
     output = String((error as { stderr?: string }).stderr);
   }

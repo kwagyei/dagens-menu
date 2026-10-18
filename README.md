@@ -28,11 +28,13 @@ date themselves.
 ## What it does
 
 - Seven pages per language: home, menu, book a table, about, gallery, contact, privacy.
-  Swedish at `/`, English at `/en/`, with `hreflang` alternates.
+  Swedish at `/`, English at `/en/`, with `hreflang` alternates on every page, a sitemap that
+  lists both languages, and Open Graph tags with a photo for shared links.
 - A menu with EU-14 allergens, dietary tags and sold-out items, plus schema.org `Restaurant`
   and `Menu` JSON-LD for search results.
-- A booking widget in three modes (embed, link-out, phone/email fallback). There are
-  presets for six Swedish booking providers.
+- A booking widget in three modes (embed, link-out, phone/email fallback). Embed code is
+  accepted from five known providers (WaiterAid, TheFork, Formitable, easyTable, Quandoo);
+  BokaBord.se is a link-out preset.
 - A cookie consent banner with equally weighted Accept and Decline. The map and booking
   embeds load only after consent.
 - The privacy page is generated from the site settings, so it only describes services
@@ -40,8 +42,13 @@ date themselves.
 - An owner admin at `/admin/`, signed into with a passkey (Face ID, fingerprint or device PIN),
   no password. Owners are invited by the operator. They edit the whole menu (add, edit,
   delete, reorder, sold out today), opening hours and special days, and the site's texts
-  and contact details, on a phone and without JavaScript. Every change is in a history,
-  and "Export my content" downloads the whole site as a file.
+  and contact details, on a phone and without JavaScript. They upload photos (resized and
+  encoded to WebP in the browser), keep a library with alt text in both languages, and choose
+  the gallery and the photos on dishes and pages. Every change is in a history, and "Export
+  my content" downloads the whole site as a file.
+
+Lighthouse, mobile, median of 3 runs with simulated slow 4G (2026-10-18): performance 98–100
+on `/` and `/menu/` of both demos, and 100 for accessibility, best practices and SEO.
 
 ## Running it
 
@@ -65,8 +72,10 @@ is the seed data the demos are loaded from.
 
 ## Design decisions
 
-- **Static output, no server.** A restaurant site changes a few times a week. Static
-  HTML on Cloudflare Pages is free, fast and has nothing to patch.
+- **Rendered on request, one Worker per site.** An owner's edit should be live on the next
+  page load, without a rebuild, so each site is a Cloudflare Worker (free plan) that renders
+  from D1. Each page has an ETag of the build, the content version and the restaurant's
+  date, so a browser revalidates instead of downloading an unchanged page again.
 - **One codebase, many sites, selected at build time.** A new client is a content folder
   plus a theme file. Nothing forks, so a fix ships to every site.
 - **Two looks, not two colour schemes.** `theme.json` picks `"style": "classic"` (a full-bleed
@@ -78,7 +87,7 @@ is the seed data the demos are loaded from.
   the navigation, menu button and footer work without JavaScript.
 - **Prices are integers in öre.** They are never floats, so `145.5 kr` can't appear. They
   are formatted in one place (`formatPrice`), which rejects anything that isn't a
-  non-negative integer. A bad edit then fails the build instead of rendering `NaN kr`.
+  non-negative integer. A bad value then fails loudly instead of rendering `NaN kr`.
 - **Every text field is `{ sv, en }`.** There is no fallback-to-Swedish at render time
   that would hide a missing translation. The content tests require both languages.
 - **One schema defines valid content.** `src/content/schema.ts` (Zod) holds every rule:
@@ -89,16 +98,15 @@ is the seed data the demos are loaded from.
   - length caps
   - no unknown fields
 
-  Invalid content fails the build with the field and the reason. It also fails CI, and
-  `tests/schema-parity.test.ts` proves each rule rejects a bad value. The admin's save path
-  validates through the same schema, so a rule exists once.
+  Invalid content is refused with the field and the reason: by the seed, by the admin's save
+  path and in CI, all through the same schema, so a rule exists once.
+  `tests/schema-parity.test.ts` proves each rule rejects a bad value.
 - **Pages never read content directly.** Middleware loads the site's content through a
-  `ContentSource` into `Astro.locals.content`. Today that source is the JSON files. Moving
-  to a database means writing a new source, not touching every template.
+  `ContentSource` into `Astro.locals.content`. In production that source is D1; the JSON seed
+  files go through the same interface, so the move to a database touched no template.
 - **Dishes have stable ids.** Home-page highlights point at a dish's id, not its position,
   so reordering the menu can't change which dish is featured.
-- **The database repeats the schema's rules (in progress: the move to D1).** Content is
-  moving into Cloudflare D1 so owner edits go live immediately. The tables are `STRICT`,
+- **The database repeats the schema's rules.** Content lives in Cloudflare D1. The tables are `STRICT`,
   and CHECK constraints repeat the schema's core rules, so a bug in the app or a
   hand-written query still can't store a negative price or a one-language name.
   `tests/db/` runs in the Workers runtime against a local D1 and breaks each constraint
@@ -121,11 +129,17 @@ is the seed data the demos are loaded from.
 - **Nothing third-party loads before consent.** It's not left to code review. CI scans
   every built page for external scripts, styles, images and frames
   (`scripts/check-no-third-party.mjs`).
-- **Strict headers on every page.** The Worker sets the CSP and security headers itself,
-  because `public/_headers` only reaches static files. Pages may load only their own
-  origin; the one allowance is `'unsafe-inline'` for the scripts Astro inlines. The page's
-  ETag combines the build, the site, the path, the content version and the restaurant's
-  date, so unchanged pages come back as 304s.
+- **Strict headers on every page, scoped per route and per site.** The Worker sets the CSP
+  and security headers itself, because `public/_headers` only reaches static files.
+  - Public pages allow their own origin and `'unsafe-inline'` for the scripts Astro inlines.
+    A site with a booking embed or a map adds only that provider's origins, and the map's
+    origin as a frame; the scripts that use them run only after consent. Booking embed code
+    must load from exactly one known provider, with no inline script, and the CSP is built
+    from that provider's list (`src/booking/embed.ts`), so a pasted snippet can't widen it.
+  - The admin allows no inline scripts at all; only the photo upload page adds WebAssembly,
+    for its encoder.
+  - Every `/media` answer, including a 404, is `default-src 'none'; sandbox`, so a crafted
+    upload can't run as a page.
 - **Passkeys, no passwords, no sign-up.** A password hash strong enough to matter doesn't
   fit the Workers free plan's 10 ms of CPU, and magic links need an email domain. Passkeys
   verify with one signature check and can't be phished. The operator issues a single-use
@@ -150,7 +164,6 @@ is the seed data the demos are loaded from.
   Without the limiter binding those paths refuse (503) rather than run unlimited. A form
   posted after the session ended lands on sign-in saying the change wasn't saved.
   Each sign-in challenge works once, even for synced passkeys that don't count signatures.
-  The admin has its own stricter CSP: no inline scripts at all.
 - **Merging deploys, so the gate has to be trusted.** Every merge to `main` applies
   migrations, deploys both Workers and smoke-tests them, but only after type checks, unit,
   database and build tests, and a Playwright gate: the owner's journeys plus the attacks on
@@ -162,6 +175,12 @@ is the seed data the demos are loaded from.
   every action is pinned to a commit SHA (Dependabot keeps the pins current). If a deploy
   stops halfway, [the deploy runbook](docs/deploy-runbook.md) says how to tell and how to
   roll back.
+- **Owner photos are WebP bytes in D1, named by their SHA-256.** The browser resizes and
+  encodes an upload into a ladder of sizes, so the Worker only checks each file's headers
+  and stores it; it never decodes an image. A photo's URL names its exact bytes, so it can
+  be cached for a year. The demos' curated photos are WebP sizes made at build time. A
+  restore checks every photo's SHA-256 against its id and fetches only from this project's
+  Workers unless the operator names another host with `--allow-host`.
 - **If the database is unreachable, the site still answers.** Each Worker keeps the last
   good content in memory and serves it, marked stale, when D1 fails or takes longer than
   1.5 s. With nothing held, visitors get a page with the restaurant's phone number,
@@ -169,8 +188,6 @@ is the seed data the demos are loaded from.
 
 ## Known limitations
 
-- **Owners can't upload photos yet.** Images are curated per site at build time; uploads
-  (converted to WebP) are the next milestone.
 - **An export file restores a demo, not a client, on the live database.** `npm run seed --
   --from <file>` restores locally, and `--remote --reset` is allowed only for the two demo
   sites. A client site on the live database is restored from D1 Time Travel instead.
@@ -180,6 +197,19 @@ is the seed data the demos are loaded from.
   it is a manual job. See [backups and restoring them](docs/backup-restore.md).
 - **History has no undo.** It shows the last 50 changes and who made them; going back means
   restoring an export or Time Travel.
+- **A deleted photo can stay in caches for up to a year.** `/media` URLs are named by the
+  photo's SHA-256, so they're served `immutable` for a year, and a matching ETag gets a 304
+  without asking D1. Deleting a photo stops new pages linking to it, but a browser or CDN that
+  already holds the file keeps it. That's the trade for photos that cost no database read
+  once cached; a photo that must disappear at once needs a cache purge as well.
+- **A day that closes after midnight isn't "open" after midnight.** Hours like 17:00–01:00
+  are allowed, but the home page's badge follows the calendar day: at 00:30 it shows the new
+  day's hours, not "open until 01:00".
+- **Migration 0006 rolls forward only.** It is a contract migration: it drops columns the
+  code before it still wrote, so after it deploys, a bad release is fixed by a new one, not
+  by redeploying an older build. A Time Travel restore to before it needs the migrations
+  applied again before that code serves ([deploy runbook](docs/deploy-runbook.md),
+  [backups](docs/backup-restore.md)).
 - **Recovering a lost passkey needs the operator.** Owners can add a second device
   themselves, but if every passkey is lost, the operator sends a new invite.
 - **The edge-case suite can be red while `main` deploys.** That's the price of a fast gate:
@@ -187,10 +217,6 @@ is the seed data the demos are loaded from.
 - **Some demo photos are look-alikes.** No free photo shows real kroppkakor, rabarberpaj or
   Toast Skagen with confirmed shrimp, so close substitutes stand in; `docs/photo-credits.md`
   marks them. Thieboudienne, jordnötssoppa and pannbiff med lök have no photo at all.
-- **Images are served as uploaded JPEGs.** Astro's image pipeline (AVIF/WebP, responsive
-  sizes) isn't used yet, which costs page weight on mobile.
-- **Lighthouse performance is 75–88 on mobile, below the 95 target.** Measured 2026-10-16:
-  3 runs each on `/` and `/menu/` of the bistro demo. The cause is the photos:
-  Largest Contentful Paint is about 3.7–4.2 s, while the server responds in about 50 ms.
-  Accessibility scores 93–96 and best practices 100. axe runs in CI against the admin of
-  both demos; the public pages haven't had an axe pass yet.
+- **Lighthouse covers two pages per demo.** The scores above are for `/` and `/menu/` only.
+  axe runs in CI against the admin of both demos; the public pages have only Lighthouse's
+  accessibility audit.

@@ -1,6 +1,6 @@
 name: E2E edge cases
 
-# The tester's edge-case sweeps (tests/e2e/tester-m5-*), split from the deploy gate in ci.yml
+# The tester's edge-case sweeps (tests/e2e/*.edge.spec.ts), split from the deploy gate in ci.yml
 # (review H1, 2026-10-17). They run on every PR so a reviewer sees them, and nightly so a
 # time-of-day or ordering problem shows up without a PR. Nothing here blocks a deploy: the
 # deploy job in ci.yml needs only the gate. A failed nightly run opens (or comments on) an

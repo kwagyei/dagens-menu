@@ -2,7 +2,8 @@
  * Bring an export's uploaded photos back for a restore (plan M6.4; ADR-014 §5).
  *
  * The export lists each upload's id and a link to its master (the widest size). For each one:
- * take `<dir>/<id>.webp` if a --photos folder has it, otherwise fetch the link; refuse it unless
+ * take `<dir>/<id>.webp` if a --photos folder has it, otherwise fetch the link (only from this
+ * project's Workers over https, or a host named with --allow-host); refuse it unless
  * its SHA-256 is the id (an altered or swapped photo never lands); check it is a clean WebP the
  * upload path would have accepted, at the width the file lists; then make the smaller sizes again
  * with sharp's libwebp at the browser's settings. The master is kept byte for byte, so its id and
@@ -45,12 +46,39 @@ function fromFolder(id: string, dir: string): Uint8Array | null {
   }
 }
 
+/**
+ * The hosts a restore fetches from unasked: this project's Workers, over https (L2). An export
+ * file is the owner's to edit, so any other link could make the operator's machine request a
+ * private address; a client's own domain, or a local Worker, is named with --allow-host.
+ */
+const KNOWN_HOST = /^dagens-menu-[a-z0-9-]+\.kwabenasasuboakye\.workers\.dev$/;
+
+/** An --allow-host value as URL.host spells it: "Localhost:8790" or "https://x.se/" → "localhost:8790", "x.se". */
+function hostOf(value: string): string {
+  try {
+    return new URL(value.includes("://") ? value : `https://${value}`).host;
+  } catch {
+    return "";
+  }
+}
+
+/** Why the restore won't fetch this link, or null if it will. An allowed host may use http. */
+export function linkProblem(url: URL, allowHosts: readonly string[] = []): string | null {
+  if (allowHosts.some((h) => hostOf(h) !== "" && hostOf(h) === url.host)) return null;
+  const allow = `pass --allow-host ${url.host} if you trust it`;
+  if (url.protocol !== "https:") return `the link isn't https; ${allow}`;
+  if (url.port || !KNOWN_HOST.test(url.hostname)) return `${url.host} isn't one of this project's Workers; ${allow}`;
+  return null;
+}
+
 /** Fetch the master, reading no more than a photo can be, and never following a redirect. */
-async function fromLink(upload: ExportedUpload): Promise<Uint8Array> {
+async function fromLink(upload: ExportedUpload, allowHosts: readonly string[]): Promise<Uint8Array> {
   const { id, master } = upload;
   const hint = `pass --photos <folder> with ${id}.webp`;
   const url = new URL(master);
   if (url.username || url.password) refuse(id, `the link carries a user name or password, which a photo link never does`);
+  const problem = linkProblem(url, allowHosts);
+  if (problem) refuse(id, `${problem}, or ${hint}`);
   const signal = AbortSignal.timeout(FETCH_TIMEOUT_MS);
   let response: Response;
   try {
@@ -83,13 +111,19 @@ async function fromLink(upload: ExportedUpload): Promise<Uint8Array> {
   return bytes;
 }
 
-export async function loadUploads(uploads: readonly ExportedUpload[], photosDir?: string, log: (m: string) => void = console.log): Promise<UploadBytes> {
+/** `allowHosts` are hosts the operator trusts beyond this project's Workers (--allow-host). */
+export async function loadUploads(
+  uploads: readonly ExportedUpload[],
+  photosDir?: string,
+  log: (m: string) => void = console.log,
+  allowHosts: readonly string[] = [],
+): Promise<UploadBytes> {
   if (uploads.length > SITE_PHOTO_LIMIT) throw new Error(`the file has ${uploads.length} uploaded photos, more than a site may have (${SITE_PHOTO_LIMIT})`);
   const out: UploadBytes = new Map();
   let siteBytes = 0;
   for (const upload of uploads) {
     const { id } = upload;
-    const master = (photosDir ? fromFolder(id, photosDir) : null) ?? (await fromLink(upload));
+    const master = (photosDir ? fromFolder(id, photosDir) : null) ?? (await fromLink(upload, allowHosts));
 
     const digest = createHash("sha256").update(master).digest("hex");
     if (digest !== id) refuse(id, `the file's SHA-256 is ${digest}, not its id; it has been changed, so it is refused`);

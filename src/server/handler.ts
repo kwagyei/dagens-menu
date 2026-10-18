@@ -8,6 +8,7 @@
  * 4. Answer 304 when the browser already has this page's version for today, without rendering.
  * 5. Otherwise render, then add the security, caching and ETag headers.
  */
+import { thirdPartyOrigins } from "../booking/embed";
 import type { SiteSettings } from "../content/schema";
 import type { SiteContent } from "../content/schema";
 import { checkSiteId } from "../content/site-id";
@@ -70,6 +71,8 @@ export async function handlePage(
     });
   }
 
+  // The public CSP allows the site's own booking provider and map, nothing else.
+  if (route === "public") Object.assign(headers, securityHeaders(route, thirdPartyOrigins(loaded.content.settings)));
   const today = todayFor(loaded.content.hours, loaded.soldOutOn, now);
   const etag = etagFor(loaded.version, today.date, deps.buildId, site, url.pathname);
   const extra: Record<string, string> = loaded.stale ? { "X-Content-Stale": "1" } : {};

@@ -9,10 +9,10 @@ import { defineConfig, devices } from "@playwright/test";
 // Two projects, split by what a test protects:
 // - gate: the owner's journeys and the security model. CI's deploy job needs it, so it must
 //   stay fast and deterministic (CI shards it across runners, about 5 minutes). `npm run test:e2e`.
-// - edge: the tester's edge-case sweeps (tester-m<N>-*). They run on every PR and nightly but
+// - edge: the tester's edge-case sweeps, named by behaviour with an .edge.spec.ts suffix. They run on every PR and nightly but
 //   never block a deploy. `npm run test:e2e:edge`.
 // No retries: a test that needs one is flaky, and a retry would hide it.
-const EDGE = /tester-m\d+.*\.spec\.ts$/;
+const EDGE = /\.edge\.spec\.ts$/;
 const PORT = 8790;
 const SITE = process.env.E2E_SITE ?? "bistro";
 if (!/^[a-z]+$/.test(SITE)) throw new Error(`E2E_SITE must be a site id, got "${SITE}"`);
@@ -30,7 +30,7 @@ export default defineConfig({
     { name: "edge", testMatch: EDGE, use: { ...devices["Pixel 7"] } },
     // Safari is where iPhone owners upload: the encoder, canvas and DataTransfer path in WebKit
     // (plan M6.7). Non-blocking, with the edge suite.
-    { name: "webkit", testMatch: /(photo-upload|tester-m6-browser-pipeline)\.spec\.ts$/, use: { ...devices["iPhone 14"] } },
+    { name: "webkit", testMatch: /(photo-upload|browser-pipeline-images\.edge)\.spec\.ts$/, use: { ...devices["iPhone 14"] } },
   ],
   webServer: {
     command: [

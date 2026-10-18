@@ -18,7 +18,7 @@ const BASE = "http://localhost:8790";
 const NEW = "/admin/photos/new/";
 const sha = (b: Uint8Array) => createHash("sha256").update(b).digest("hex");
 const seed = (...args: string[]) => {
-  const r = spawnSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", ...args], { encoding: "utf-8", timeout: 90_000 });
+  const r = spawnSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--allow-host", "localhost:8790", "--allow-host", "127.0.0.1:9", ...args], { encoding: "utf-8", timeout: 90_000 });
   return { status: r.status, out: `${r.stdout}${r.stderr}` };
 };
 

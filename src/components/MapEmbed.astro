@@ -23,38 +23,25 @@ const mapUrl = settings.mapEmbed;
       style={`border-radius: var(--radius);`}
     >
     </div>
+    <!-- Inert until consent: the consent check ignores <template>, and nothing in it loads. -->
+    <template id="map-embed">
+      <iframe src={mapUrl} class="w-full h-full" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map"></iframe>
+    </template>
   </div>
 )}
 
-{mapUrl && (
-  <script define:vars={{ mapUrl }}>
-    function loadMap() {
-      const container = document.getElementById("map-container");
-      const placeholder = document.getElementById("map-placeholder");
-      if (container && placeholder) {
-        container.innerHTML = `<iframe src="${mapUrl}" class="w-full h-full" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map"></iframe>`;
-        container.classList.remove("hidden");
-        placeholder.classList.add("hidden");
-      }
-    }
+<script>
+  import { onConsent } from "./consent";
 
-    // Load automatically if consent already given
-    window.addEventListener("consent-changed", (e) => {
-      if (e.detail.consent === "accepted") {
-        loadMap();
-      }
-    });
+  function loadMap() {
+    const container = document.getElementById("map-container");
+    const placeholder = document.getElementById("map-placeholder");
+    const embed = document.getElementById("map-embed");
+    if (!container || !placeholder || !(embed instanceof HTMLTemplateElement) || container.childElementCount) return;
+    container.append(embed.content.cloneNode(true));
+    container.classList.remove("hidden");
+    placeholder.classList.add("hidden");
+  }
 
-    // Manual button triggers consent banner if no consent yet
-    const btn = document.getElementById("load-map");
-    btn?.addEventListener("click", () => {
-      const match = document.cookie.match(/(?:^|; )consent=([^;]*)/);
-      const consent = match ? decodeURIComponent(match[1]) : null;
-      if (consent === "accepted") {
-        loadMap();
-      } else {
-        window.dispatchEvent(new Event("open-consent-banner"));
-      }
-    });
-  </script>
-)}
+  onConsent("load-map", loadMap);
+</script>

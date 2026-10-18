@@ -33,7 +33,7 @@ npm run db:migrate:local # apply migrations/ to the local D1 (d1.local.jsonc); a
 npm run seed -- --site bistro [--reset]   # load a demo's JSON into the local D1
 npm run admin -- invite --site bistro --email x@y.se  # owner invite link (also: revoke, list; --remote)
 npm run test:e2e         # Playwright deploy gate: admin journeys + sign-in attacks (~9 min on one runner; CI shards it, ~5 min)
-npm run test:e2e:edge    # Playwright edge-case sweeps (tester-m<N>-*); non-blocking, also nightly
+npm run test:e2e:edge    # Playwright edge-case sweeps (*.edge.spec.ts); non-blocking, also nightly
 ```
 
 When starting the dev server, use background mode:

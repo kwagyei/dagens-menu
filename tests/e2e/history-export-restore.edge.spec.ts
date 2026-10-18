@@ -29,7 +29,8 @@ function d1<T>(sql: string): T[] {
 /** Run the seed CLI; returns exit status and both streams. */
 function seed(args: string[]): { status: number; stdout: string; stderr: string } {
   try {
-    const stdout = execFileSync("npm", ["run", "-s", "seed", "--", ...args], { encoding: "utf-8", stdio: "pipe" });
+    // Photo links in a local export point at the test Worker, which a restore fetches only when named.
+    const stdout = execFileSync("npm", ["run", "-s", "seed", "--", "--allow-host", "localhost:8790", ...args], { encoding: "utf-8", stdio: "pipe" });
     return { status: 0, stdout, stderr: "" };
   } catch (error) {
     const e = error as { status: number; stdout: string; stderr: string };
@@ -137,7 +138,7 @@ test.describe("history page", () => {
   test("labels each change, shows who made it, and the seed CLI as the system", async ({ page }) => {
     // A system entry of its own, as the seed CLI writes it: the page shows only the last 50
     // changes, so the original seed entry is gone once earlier specs have made enough edits.
-    d1("INSERT INTO audit_log (site_id, entity, action, summary) VALUES ('bistro', 'site', 'seed', 'seeded by tester-m5-history')");
+    d1("INSERT INTO audit_log (site_id, entity, action, summary) VALUES ('bistro', 'site', 'seed', 'seeded by the history edge spec')");
     const email = await signedInOwner(page);
     const first = page.locator("li[id^='item-']").first();
     const name = (await first.locator("p.font-semibold").textContent())!;

@@ -6,9 +6,11 @@
  *   npm run seed -- --site bistro --remote --config <deployed config> [--reset]
  *   npm run seed -- --site bistro --from bistro-content-2026-10-16.json --reset   # restore an export
  *   npm run seed -- --site bistro --from <file> --photos <folder> --reset        # photos from a folder
+ *   npm run seed -- --site bistro --from <file> --allow-host localhost:8790 --reset # links to another host
  *
  * A restore brings uploaded photos back too (M6.4): each is fetched from the link in the file,
- * or taken from <folder>/<id>.webp, and refused unless its SHA-256 is its id.
+ * or taken from <folder>/<id>.webp, and refused unless its SHA-256 is its id. Links are fetched
+ * only from this project's Workers over https; name any other host with --allow-host.
  *
  * --from loads an owner's "Export my content" file (plan M5.6) instead of sites/<site>/;
  * the theme still comes from the repository. Validates the content with the schema, registers the curated images by hashing the real
@@ -36,6 +38,7 @@ const { values } = parseArgs({
     config: { type: "string", default: "d1.local.jsonc" },
     from: { type: "string" },
     photos: { type: "string" },
+    "allow-host": { type: "string", multiple: true },
   },
 });
 
@@ -98,7 +101,7 @@ if (values.from) {
   if (read.uploads.length > 0) {
     console.log(`seed: bringing back ${read.uploads.length} uploaded photo(s)${values.photos ? ` (from ${values.photos} where present)` : ""}.`);
     try {
-      uploads = await loadUploads(read.uploads, values.photos);
+      uploads = await loadUploads(read.uploads, values.photos, console.log, values["allow-host"] ?? []);
     } catch (error) {
       fail((error as Error).message);
     }

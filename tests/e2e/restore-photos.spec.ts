@@ -14,7 +14,7 @@ import { signedInOwner } from "./helpers";
 
 const BASE = "http://localhost:8790";
 const NEW = "/admin/photos/new/";
-const seed = (...args: string[]) => execFileSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", ...args], { encoding: "utf-8", stdio: "pipe" });
+const seed = (...args: string[]) => execFileSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--allow-host", "localhost:8790", ...args], { encoding: "utf-8", stdio: "pipe" });
 
 test("upload → export → reset → restore brings the photo back, byte for byte", async ({ page, request }) => {
   await signedInOwner(page);

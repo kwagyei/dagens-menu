@@ -22,19 +22,9 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { checkTarget, fail as failWith, query, root, type D1Target } from "./d1-cli";
-import { CONTENT_TABLES, countRows, EXCLUDED_TABLES } from "./backup-tables";
+import { CONTENT_TABLES, countRows, exportTables, type Manifest } from "./backup-tables";
 
 const fail: (message: string) => never = (message) => failWith("backup", message);
-
-export interface Manifest {
-  formatVersion: 1;
-  /** Applied migrations, oldest first: the schema the files were taken from. */
-  migrations: string[];
-  /** Row count per exported table, in load order. */
-  tables: Record<string, number>;
-  /** Tables deliberately left out (scripts/backup-tables.ts). */
-  excluded: string[];
-}
 
 const stderrOf = (error: unknown) => (error as { stderr?: string }).stderr ?? String(error);
 
@@ -48,22 +38,13 @@ function wrangler(args: string[], what = `wrangler ${args.slice(0, 2).join(" ")}
 
 function exportTo(out: string, target: D1Target): void {
   checkTarget("backup", target);
-  mkdirSync(out, { recursive: true });
-  const migrations = query<{ name: string }>("backup", target, "SELECT name FROM d1_migrations ORDER BY id").map((r) => r.name);
-  const tables: Record<string, number> = {};
-  for (const table of CONTENT_TABLES) {
-    const file = join(out, `${table}.sql`);
-    const where = target.remote ? "--remote" : "--local";
-    wrangler(["d1", "export", target.database, where, "--config", target.config, "--table", table, "--no-schema", "--output", file, "-y"]);
-    if (!existsSync(file)) writeFileSync(file, "");
-    tables[table] = countRows(readFileSync(file, "utf-8"), table);
-  }
-  // A table dropped from the list must not linger in the backup as if it were current.
-  for (const name of readdirSync(out)) {
-    if (name.endsWith(".sql") && !(CONTENT_TABLES as readonly string[]).includes(name.slice(0, -4))) rmSync(join(out, name));
-  }
-  const manifest: Manifest = { formatVersion: 1, migrations, tables, excluded: Object.keys(EXCLUDED_TABLES).sort() };
-  writeFileSync(join(out, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+  const where = target.remote ? "--remote" : "--local";
+  const { tables } = exportTables(out, {
+    migrations: () => query<{ name: string }>("backup", target, "SELECT name FROM d1_migrations ORDER BY id").map((r) => r.name),
+    exportTable: (table, file) => {
+      wrangler(["d1", "export", target.database, where, "--config", target.config, "--table", table, "--no-schema", "--output", file, "-y"]);
+    },
+  });
   console.log(`backup: exported ${Object.entries(tables).map(([t, n]) => `${t} ${n}`).join(", ")}`);
 }
 

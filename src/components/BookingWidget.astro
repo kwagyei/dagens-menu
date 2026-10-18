@@ -1,5 +1,6 @@
 ---
 
+import { checkedEmbed } from "../booking/embed";
 import HoursTable from "./HoursTable.astro";
 import { getLocale, t } from "../i18n";
 
@@ -65,38 +66,32 @@ const provider = settings.booking.provider;
       </button>
     </div>
     <div id="booking-content" class="hidden"></div>
+    <!-- Inert until consent: the consent check ignores <template>, and nothing in it loads. -->
+    <template id="booking-embed" set:html={checkedEmbed(settings.booking.embedCode)} />
   </div>
 )}
 
-{provider === "embed" && settings.booking.embedCode && (
-  <script define:vars={{ embedCode: settings.booking.embedCode }}>
-    function loadBooking() {
-      const content = document.getElementById("booking-content");
-      const placeholder = document.getElementById("booking-placeholder");
-      if (content && placeholder) {
-        content.innerHTML = embedCode;
-        content.classList.remove("hidden");
-        placeholder.classList.add("hidden");
-      }
+<script>
+  import { onConsent } from "./consent";
+
+  // Scripts parsed from HTML never run, so each one is re-created; async = false keeps a
+  // provider's scripts in order.
+  function loadBooking() {
+    const content = document.getElementById("booking-content");
+    const placeholder = document.getElementById("booking-placeholder");
+    const embed = document.getElementById("booking-embed");
+    if (!content || !placeholder || !(embed instanceof HTMLTemplateElement) || content.childElementCount) return;
+    const fragment = embed.content.cloneNode(true) as DocumentFragment;
+    for (const old of fragment.querySelectorAll("script")) {
+      const script = document.createElement("script");
+      for (const { name, value } of old.attributes) script.setAttribute(name, value);
+      script.async = false;
+      old.replaceWith(script);
     }
+    content.append(fragment);
+    content.classList.remove("hidden");
+    placeholder.classList.add("hidden");
+  }
 
-    // Load immediately if consent already given
-    window.addEventListener("consent-changed", (e) => {
-      if (e.detail.consent === "accepted") {
-        loadBooking();
-      }
-    });
-
-    // Manual load button (triggers consent banner if no consent yet)
-    const loadBtn = document.getElementById("booking-load");
-    loadBtn?.addEventListener("click", () => {
-      const match = document.cookie.match(/(?:^|; )consent=([^;]*)/);
-      const consent = match ? decodeURIComponent(match[1]) : null;
-      if (consent === "accepted") {
-        loadBooking();
-      } else {
-        window.dispatchEvent(new Event("open-consent-banner"));
-      }
-    });
-  </script>
-)}
+  onConsent("booking-load", loadBooking);
+</script>

@@ -111,6 +111,18 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ["link mode without a URL", (c) => (c.settings.booking = { provider: "link" }), "settings.booking.bookingUrl", "link mode needs"],
   ["embed mode without code", (c) => (c.settings.booking = { provider: "embed", embedCode: " " }), "settings.booking.embedCode", "embed mode needs"],
   ["non-https booking URL in another mode", (c) => (c.settings.booking = { provider: "none", bookingUrl: "javascript:alert(1)" }), "settings.booking.bookingUrl", "https://"],
+  [
+    "embed code from an unknown host",
+    (c) => (c.settings.booking = { provider: "embed", embedCode: `<script src="https://evil.example/w.js"></script>` }),
+    "settings.booking.embedCode",
+    "one known booking provider",
+  ],
+  [
+    "embed code with inline script",
+    (c) => (c.settings.booking = { provider: "embed", embedCode: `<script>fetch("https://evil.example")</script>` }),
+    "settings.booking.embedCode",
+    "inline script",
+  ],
   ["oversized embed code", (c) => (c.settings.booking = { provider: "embed", embedCode: "x".repeat(5001) }), "settings.booking.embedCode", "5000"],
   // Contact formats
   ["email without a domain", (c) => (c.settings.email = "hej@"), "settings.email", "email address"],
