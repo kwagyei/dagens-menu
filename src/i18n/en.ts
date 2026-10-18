@@ -313,7 +313,8 @@ export default {
   "admin.photos.quotaDatabase": "There's no room for more photos just now. Contact whoever built your website.",
   "admin.photos.yours": "Your photos",
   "admin.photos.yoursLead": "Every photo on your website: yours and the built-in ones. Choose one to change its description or see where it's used.",
-  "admin.photos.none": "You haven't uploaded any photos yet.",
+  "admin.photos.none": "You haven't uploaded any photos of your own yet.",
+  "admin.photos.builtInBelow": "The built-in photos are listed below.",
   "admin.photos.download": "Download at full size",
   "admin.photos.opening": "Opening the photo…",
   "admin.photos.preparing": "Preparing the photo ({n} of {total})…",
@@ -407,4 +408,5 @@ export default {
   "admin.photos.filterUnused": "Not used ({n})",
   "admin.photos.filterAll": "All photos ({n})",
   "admin.nav.photos": "Photos",
+  "admin.nav.pagePhotos": "Page photos",
 } as const;

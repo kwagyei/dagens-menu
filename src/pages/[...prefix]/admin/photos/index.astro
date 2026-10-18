@@ -69,7 +69,12 @@ const here = page.path("/photos/");
       </a>
     </nav>
 
-    {library.filter((i) => i.kind === "upload").length === 0 && !onlyUnused && <p class="admin-muted">{t(locale, "admin.photos.none")}</p>}
+    {library.filter((i) => i.kind === "upload").length === 0 && !onlyUnused && (
+      <p class="admin-muted">
+        {t(locale, "admin.photos.none")}
+        {library.some((i) => i.kind === "static") && ` ${t(locale, "admin.photos.builtInBelow")}`}
+      </p>
+    )}
     {shown.length === 0 ? (
       <p class="admin-muted">{t(locale, "admin.photos.noneUnused")}</p>
     ) : (

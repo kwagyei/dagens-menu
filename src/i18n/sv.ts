@@ -313,7 +313,8 @@ export default {
   "admin.photos.quotaDatabase": "Det finns inte plats för fler foton just nu. Hör av dig till den som byggt webbplatsen.",
   "admin.photos.yours": "Dina foton",
   "admin.photos.yoursLead": "Alla foton på din webbplats: dina egna och de inbyggda. Välj ett för att ändra beskrivningen eller se var det används.",
-  "admin.photos.none": "Du har inte laddat upp några foton än.",
+  "admin.photos.none": "Du har inte laddat upp några egna foton än.",
+  "admin.photos.builtInBelow": "De inbyggda fotona finns i listan nedan.",
   "admin.photos.download": "Ladda ner i full storlek",
   "admin.photos.opening": "Öppnar fotot…",
   "admin.photos.preparing": "Förbereder fotot ({n} av {total})…",
@@ -407,4 +408,5 @@ export default {
   "admin.photos.filterUnused": "Används inte ({n})",
   "admin.photos.filterAll": "Alla foton ({n})",
   "admin.nav.photos": "Foton",
+  "admin.nav.pagePhotos": "Sidornas foton",
 } as const;
