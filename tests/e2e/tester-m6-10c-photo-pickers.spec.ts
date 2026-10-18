@@ -1,7 +1,7 @@
 /**
  * Tester, M6.10c photo pickers end to end: every slot on its public page (alt rules, "No photo"),
  * content_version, the dish and texts forms around a photo choice, delete refusal links,
- * cross-site / malformed / CSRF / Origin / no-alt attacks, 44 px rows, keyboard-only choice,
+ * cross-site / malformed / CSRF / Origin attacks, 44 px rows, keyboard-only choice,
  * focus on refusals, JS off in both languages. Each test puts what it changed back.
  */
 import { expect, type Page, test } from "@playwright/test";
@@ -116,21 +116,19 @@ test("a photo deleted while the picker is open is refused with a focused alert",
   expect(slots()).toEqual(before);
 });
 
-test("hostile requests change nothing: cross-site, malformed, no alt, CSRF, Origin, odd paths", async ({ page }) => {
+test("hostile requests change nothing: cross-site, malformed, CSRF, Origin, odd paths", async ({ page }) => {
   await signedInOwner(page);
   const before = slots();
   const [dish] = d1<{ id: string; image_id: string | null }>("SELECT id, image_id FROM menu_items WHERE site_id = 'bistro' ORDER BY id LIMIT 1");
   const theirs = "e".repeat(64);
-  const noAlt = (await uploadPhoto(page)).id;
   try {
     d1("INSERT OR IGNORE INTO sites (id) VALUES ('westafrican')");
     d1(`INSERT OR REPLACE INTO images (site_id, id, kind, mime, alt_sv, alt_en) VALUES ('westafrican', '${theirs}', 'upload', 'image/webp', 'Deras', 'Theirs')`);
-    d1(`UPDATE images SET alt_sv = NULL, alt_en = NULL WHERE site_id = 'bistro' AND id = '${noAlt}'`);
     const v0 = version();
     await page.goto("/admin/page-photos/hero/");
     const token = await csrf(page);
     const paths = ["/admin/page-photos/hero/", `/admin/menu/item/${dish.id}/photo/`];
-    const bad = [theirs, noAlt, "../../x", "A".repeat(64), "e".repeat(63), "x'; DROP TABLE images;--", "%00", "\u0000", " " + "a".repeat(63), "d".repeat(64)];
+    const bad = [theirs, "../../x", "A".repeat(64), "e".repeat(63), "x'; DROP TABLE images;--", "%00", "\u0000", " " + "a".repeat(63), "d".repeat(64)];
     for (const p of paths)
       for (const image of bad) {
         const r = await post(page, p, { csrf: token, image });

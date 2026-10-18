@@ -80,6 +80,7 @@ function verify(dir: string): void {
   const known = readdirSync(resolve(root, "migrations")).filter((f) => f.endsWith(".sql")).sort();
   const unknown = manifest.migrations.filter((m) => !known.includes(m));
   if (unknown.length) fail(`the backup's schema is newer than this checkout (unknown migrations: ${unknown.join(", ")})`);
+  if (manifest.migrations.length === 0) fail(`${manifestFile} lists no migrations, so the schema its files were taken under is unknown`);
   if (manifest.migrations.join() !== known.slice(0, manifest.migrations.length).join()) {
     fail(`the backup's migrations aren't a prefix of this checkout's (${manifest.migrations.join(", ")})`);
   }
@@ -102,7 +103,7 @@ function verify(dir: string): void {
     const count = (table: string) =>
       (JSON.parse(wrangler(["d1", "execute", "backup-verify", ...local, "--json", "--command", `SELECT count(*) AS n FROM "${table}"`]))[0].results as { n: number }[])[0].n;
     addMigrations(manifest.migrations);
-    if (manifest.migrations.length > 0) wrangler(["d1", "migrations", "apply", "backup-verify", ...local]);
+    wrangler(["d1", "migrations", "apply", "backup-verify", ...local]);
     for (const table of CONTENT_TABLES) {
       const expected = manifest.tables[table];
       if (expected === undefined) fail(`manifest.json has no count for ${table}`);

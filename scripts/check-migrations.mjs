@@ -26,13 +26,17 @@ if (touched.length > 0) {
 }
 const added = changes.map(([, path]) => path);
 
-// A migration that drops or renames something is a contract migration: code from before it
-// breaks against it, so a Worker rollback past it is unsafe. It must say so on its first line,
-// which is what docs/deploy-runbook.md tells the operator to look for (reviewer M1).
+// A migration that drops or renames a table, view or column is a contract migration: code from
+// before it breaks against it, so a Worker rollback past it is unsafe. It must say so on its
+// first line, which is what docs/deploy-runbook.md tells the operator to look for (reviewer M1).
+// ALTER TABLE's COLUMN keyword is optional, so any DROP or RENAME after ALTER TABLE counts.
+// Comments are removed first; a "--" inside a string literal could hide the rest of its line,
+// which errs towards a false negative only for SQL nobody writes in a migration.
+const CONTRACT = /\bDROP\s+(TABLE|VIEW)\b|\bALTER\s+TABLE\s+\S+\s+(DROP|RENAME)\b/i;
 const unmarked = added.filter((path) => {
   const sql = readFileSync(path, "utf-8");
-  const destructive = /\b(DROP\s+(TABLE|COLUMN)|RENAME\s+(TO|COLUMN))\b/i.test(sql.replace(/--[^\n]*/g, ""));
-  return destructive && !sql.startsWith("-- CONTRACT");
+  const code = sql.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--[^\n]*/g, "");
+  return CONTRACT.test(code) && !/^-- CONTRACT\b/.test(sql);
 });
 if (unmarked.length > 0) {
   console.error("A migration that drops or renames something must start with a '-- CONTRACT' line:");
