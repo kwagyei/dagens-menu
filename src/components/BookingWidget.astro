@@ -74,21 +74,14 @@ const provider = settings.booking.provider;
 <script>
   import { onConsent } from "./consent";
 
-  // Scripts parsed from HTML never run, so each one is re-created; async = false keeps a
-  // provider's scripts in order.
+  // The embed is a sandboxed provider <iframe> (src/booking/embed.ts): placing it is all
+  // there is to do, and nothing from the provider runs on this page.
   function loadBooking() {
     const content = document.getElementById("booking-content");
     const placeholder = document.getElementById("booking-placeholder");
     const embed = document.getElementById("booking-embed");
     if (!content || !placeholder || !(embed instanceof HTMLTemplateElement) || content.childElementCount) return;
-    const fragment = embed.content.cloneNode(true) as DocumentFragment;
-    for (const old of fragment.querySelectorAll("script")) {
-      const script = document.createElement("script");
-      for (const { name, value } of old.attributes) script.setAttribute(name, value);
-      script.async = false;
-      old.replaceWith(script);
-    }
-    content.append(fragment);
+    content.append(embed.content.cloneNode(true));
     content.classList.remove("hidden");
     placeholder.classList.add("hidden");
   }

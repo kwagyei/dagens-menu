@@ -34,17 +34,18 @@ export function routeClass(pathname: string): RouteClass {
 }
 
 // Pages load nothing from another origin on load (the consent check enforces it); the inline
-// scripts Astro emits need 'unsafe-inline'. After consent, a page may load the site's chosen
-// booking provider and map (src/booking/embed.ts), so only those origins are added.
+// scripts Astro emits need 'unsafe-inline'. After consent, a page may frame the site's chosen
+// booking provider and map (src/booking/embed.ts), so only those origins are added, and only
+// to frame-src: no third party ever runs script on the site's (and the admin's) origin.
 function publicCsp({ booking, map }: ThirdPartyOrigins = { booking: [], map: [] }): string {
   const plus = (base: string, origins: string[]) => [base, ...origins].join(" ");
   return [
     "default-src 'self'",
-    plus("script-src 'self' 'unsafe-inline'", booking),
-    plus("style-src 'self' 'unsafe-inline'", booking),
-    plus("img-src 'self' data:", booking),
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
     plus("frame-src 'self'", [...booking, ...map]),
-    plus("connect-src 'self'", booking),
+    "connect-src 'self'",
     "font-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",

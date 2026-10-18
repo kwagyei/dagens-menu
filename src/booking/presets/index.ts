@@ -1,12 +1,17 @@
 export interface BookingPreset {
   name: string;
   mode: "embed" | "link";
+  /**
+   * Example embed code: always an <iframe> of the provider's booking page, never a <script>
+   * (src/booking/embed.ts, security review M1). Absent where the provider's iframe address
+   * isn't known here: paste the iframe code from the provider's own embed settings.
+   */
   embedPattern?: string;
   urlPattern?: string;
   requiresConsent: boolean;
   /**
-   * The origins an embed may load from. A page's CSP allows these, and only these, when the
-   * site's embed code uses this provider (src/booking/embed.ts).
+   * The origins an embed may frame. A page's CSP allows these, and only these, as frames when
+   * the site's embed code uses this provider (src/booking/embed.ts).
    */
   origins: string[];
   docs: string;
@@ -16,7 +21,6 @@ const presets: Record<string, BookingPreset> = {
   waiteraid: {
     name: "WaiterAid / BokaBord",
     mode: "embed",
-    embedPattern: `<script src="https://app.waiteraid.com/widget/RESTAURANT_ID.js"></script>`,
     requiresConsent: true,
     origins: ["https://app.waiteraid.com"],
     docs: "https://waiteraid.com",
@@ -32,7 +36,6 @@ const presets: Record<string, BookingPreset> = {
   formitable: {
     name: "Formitable",
     mode: "embed",
-    embedPattern: `<script src="https://www.formitable.com/sdk/v1.js"></script><div data-formitable-widget="RESTAURANT_ID"></div>`,
     requiresConsent: true,
     origins: ["https://www.formitable.com"],
     docs: "https://formitable.com",
@@ -40,7 +43,7 @@ const presets: Record<string, BookingPreset> = {
   easytable: {
     name: "easyTable",
     mode: "embed",
-    embedPattern: `<script src="https://book.easytable.com/widget/RESTAURANT_ID.js"></script>`,
+    embedPattern: `<iframe src="https://book.easytable.com/book/?id=RESTAURANT_ID" title="Boka bord" style="width:100%;min-height:800px;border:none;"></iframe>`,
     urlPattern: "https://book.easytable.com/book/?id=RESTAURANT_ID",
     requiresConsent: true,
     origins: ["https://book.easytable.com"],
@@ -49,7 +52,6 @@ const presets: Record<string, BookingPreset> = {
   quandoo: {
     name: "Quandoo",
     mode: "embed",
-    embedPattern: `<script src="https://booking-widget.quandoo.com/index.js" data-merchant-id="RESTAURANT_ID" data-theme="light"></script>`,
     requiresConsent: true,
     origins: ["https://booking-widget.quandoo.com"],
     docs: "https://www.quandoo.com",
