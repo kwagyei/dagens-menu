@@ -3,9 +3,11 @@
  * every table is either exported or excluded with a reason, photo bytes and personal data are
  * never exported, and the export order loads with foreign keys on.
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CONTENT_TABLES, countRows, EXCLUDED_TABLES } from "../scripts/backup-tables";
+import { CONTENT_TABLES, countRows, EXCLUDED_TABLES, exportTables } from "../scripts/backup-tables";
 
 const schema = readdirSync("migrations")
   .filter((f) => f.endsWith(".sql"))
@@ -76,5 +78,34 @@ describe("countRows", () => {
 
   it("refuses a file that holds another table's rows", () => {
     expect(() => countRows(`INSERT INTO "users" VALUES('x');`, "sites")).toThrow(/another table/);
+  });
+});
+
+describe("the weekly export (exportTables)", () => {
+  it("never asks for, writes or keeps image_variants, even with a stale file left in the folder", () => {
+    const out = mkdtempSync(join(tmpdir(), "backup-export-"));
+    // A folder reused from an older backup that (wrongly) held photo bytes.
+    writeFileSync(join(out, "image_variants.sql"), `INSERT INTO "image_variants" ("site_id") VALUES('bistro');\n`);
+    const asked: string[] = [];
+    const manifest = exportTables(out, {
+      migrations: () => ["0001_content.sql"],
+      exportTable: (table, file) => {
+        asked.push(table);
+        writeFileSync(file, `PRAGMA defer_foreign_keys=TRUE;\nINSERT INTO "${table}" ("site_id") VALUES('bistro');\n`);
+      },
+    });
+    expect(asked).toEqual([...CONTENT_TABLES]);
+    expect(asked).not.toContain("image_variants");
+    expect(existsSync(join(out, "image_variants.sql"))).toBe(false);
+    for (const name of readdirSync(out).filter((n) => n.endsWith(".sql"))) expect(readFileSync(join(out, name), "utf-8")).not.toContain("image_variants");
+    expect(Object.keys(manifest.tables)).toEqual([...CONTENT_TABLES]);
+    expect(manifest.excluded).toContain("image_variants");
+    expect(JSON.parse(readFileSync(join(out, "manifest.json"), "utf-8")).excluded).toContain("image_variants");
+  });
+
+  it("counts an empty table that wrangler wrote no file for as 0 rows", () => {
+    const out = mkdtempSync(join(tmpdir(), "backup-export-"));
+    const manifest = exportTables(out, { migrations: () => [], exportTable: () => {} });
+    expect(Object.values(manifest.tables).every((n) => n === 0)).toBe(true);
   });
 });
