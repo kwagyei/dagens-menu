@@ -6,6 +6,7 @@ import { adminPage } from "../../../admin/page";
 import { RESTAURANT_TIME_ZONE } from "../../../content/hours";
 import { recentChanges } from "../../../db/audit";
 import { t } from "../../../i18n";
+import { localizedSummary } from "../../../i18n/summaries";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -51,7 +52,7 @@ const heading = (entity: string, action: string) =>
             <p class="font-semibold">
               {heading(c.entity, c.action)}
             </p>
-            <p class="text-sm break-words">{c.summary}</p>
+            <p class="text-sm break-words">{localizedSummary(c.summary, c.entity, locale)}</p>
             <p class="text-sm admin-muted">
               <time datetime={c.at}>{when.format(new Date(c.at))}</time> · {c.by ?? t(locale, "admin.history.system")}
             </p>
