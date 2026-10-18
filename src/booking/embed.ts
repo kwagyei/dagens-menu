@@ -36,6 +36,25 @@ const RAW_TEXT = new Set(["iframe"]);
  * Not allow-top-navigation, so it can't send the visitor's page elsewhere.
  */
 export const SANDBOX = "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox";
+/** The map's frame: the same, minus forms (a map has none to send). */
+export const MAP_SANDBOX = "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox";
+/**
+ * What an embed's `allow` may hand the provider: taking a payment, and full screen. Nothing
+ * else a booking needs, and the site's Permissions-Policy doesn't block every powerful feature
+ * (USB, serial, screen capture, the clipboard), so the rest are refused (tester, 18 Oct).
+ */
+const ALLOWED_FEATURES = new Set(["payment", "fullscreen"]);
+const ALLOW_ORIGIN = /^(\*|'(src|self|none)'|https:\/\/[a-z0-9.-]+(:\d+)?)$/i;
+
+function allowProblem(value: string): string | null {
+  for (const directive of value.split(";")) {
+    const [feature, ...origins] = directive.trim().split(/\s+/).filter(Boolean);
+    if (!feature) continue;
+    if (!ALLOWED_FEATURES.has(feature.toLowerCase())) return `may not grant ${feature} to the provider (allow); only ${[...ALLOWED_FEATURES].join(" and ")}`;
+    if (origins.some((o) => !ALLOW_ORIGIN.test(o))) return `has an allow value it can't read ("${directive.trim()}")`;
+  }
+  return null;
+}
 
 const START = /^<([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[a-zA-Z_:][-a-zA-Z0-9_:.]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*(\/?)>/;
 const END = /^<\/([a-zA-Z][a-zA-Z0-9-]*)\s*>/;
@@ -67,6 +86,7 @@ function attrProblem(tag: string, name: string, value: string | undefined): stri
   if (name.startsWith("on")) return `may not contain event handlers (${name})`;
   if (!GLOBAL_ATTRS.has(name) && !TAG_ATTRS[tag].has(name) && !/^data-[a-z0-9-]+$/.test(name)) return `may not use the ${name} attribute on <${tag}>`;
   if (name === "style" && /url\s*\(|expression|@import|\\|behavior/i.test(value ?? "")) return "may not load anything from a style attribute";
+  if (name === "allow") return allowProblem(value ?? "");
   if ((name === "src" || name === "href") && !originOf(value ?? "")) return `must use https:// URLs, got "${value ?? ""}"`;
   return null;
 }

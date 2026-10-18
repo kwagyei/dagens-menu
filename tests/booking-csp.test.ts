@@ -90,6 +90,9 @@ describe("embed code checks", () => {
     ["srcdoc", `<iframe src="https://widget.thefork.com/x" srcdoc="&lt;script&gt;x()&lt;/script&gt;"></iframe>`, "srcdoc"],
     ["a style that loads", `<div style="background:url(https://evil.example/x.png)"></div>${FORK}`, "style attribute"],
     ["a src with user info", `<iframe src="https://widget.thefork.com@evil.example/"></iframe>`, "https://"],
+    ["a powerful feature handed to the provider", `<iframe src="https://widget.thefork.com/x" allow="usb *"></iframe>`, "may not grant usb"],
+    ["screen capture beside payment", `<iframe src="https://widget.thefork.com/x" allow="payment *; display-capture"></iframe>`, "may not grant display-capture"],
+    ["an allow origin it can't read", `<iframe src="https://widget.thefork.com/x" allow="payment javascript:x"></iframe>`, "can't read"],
     ["noscript, which the browser reads as text", `<noscript><img src="https://evil.example/p.gif"></noscript>${FORK}`, "<noscript>"],
   ];
   it.each(bad)("refuses %s", (_, code, problem) => {
