@@ -183,6 +183,11 @@ is the seed data the demos are loaded from.
   it is a manual job. See [backups and restoring them](docs/backup-restore.md).
 - **History has no undo.** It shows the last 50 changes and who made them; going back means
   restoring an export or Time Travel.
+- **A deleted photo can stay in caches for up to a year.** `/media` URLs are named by the
+  photo's SHA-256, so they're served `immutable` for a year, and a matching ETag gets a 304
+  without asking D1. Deleting a photo stops new pages linking to it, but a browser or CDN that
+  already holds the file keeps it. That's the trade for photos that cost no database read
+  once cached; a photo that must disappear at once needs a cache purge as well.
 - **Recovering a lost passkey needs the operator.** Owners can add a second device
   themselves, but if every passkey is lost, the operator sends a new invite.
 - **The edge-case suite can be red while `main` deploys.** That's the price of a fast gate:
