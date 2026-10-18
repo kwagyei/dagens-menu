@@ -195,3 +195,26 @@ test("the sticky wrapper adds no layout shift to the menu or the home page", asy
     expect(await page.evaluate(() => (window as unknown as { cls: number }).cls), path).toBeLessThan(0.02);
   }
 });
+
+test("clicking a link that is partly under a fade still follows it (the bar doesn't move under the pointer)", async ({ page }) => {
+  // CI, 18 Oct: re-centring on focus moved the bar between press and release, so the browser
+  // fired no click. Re-centring is for keyboard focus only.
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/menu/");
+  const bar = page.locator("nav.catbar");
+  // Scroll the bar so the second link straddles the left edge: its right half under the fade.
+  const href = await bar.evaluate((el) => {
+    const link = el.querySelectorAll("a")[1] as HTMLElement;
+    el.scrollLeft += link.getBoundingClientRect().left + link.getBoundingClientRect().width / 2 - el.getBoundingClientRect().left - 16;
+    el.dispatchEvent(new Event("scroll"));
+    return link.getAttribute("href")!;
+  });
+  await expect(page.locator(".catbar-wrap")).toHaveAttribute("data-more", /left|both/);
+  const box = (await bar.locator(`a[href="${href}"]`).boundingBox())!;
+  const frame = (await bar.boundingBox())!;
+  // Press inside the bar, on the link, under the left fade.
+  const x = frame.x + 24;
+  expect(box.x < x && x < box.x + box.width, "the link doesn't straddle the left fade").toBe(true);
+  await page.mouse.click(x, box.y + box.height / 2);
+  await expect(page).toHaveURL(new RegExp(`${href}$`));
+});

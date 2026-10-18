@@ -101,9 +101,12 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
     };
     const FADE = 48; // the fades' width (3rem)
     // A link reached with Tab is never left under a fade (tester, 18 Oct). Instant, and the fades
-    // are updated at once, so focus and fades agree before the next key.
+    // are updated at once, so focus and fades agree before the next key. Keyboard focus only: a
+    // click focuses on press, and moving the bar then would put a different link under the
+    // release, so the browser would fire no click at all.
     bar.addEventListener("focusin", (event) => {
       const link = event.target as HTMLElement;
+      if (!link.matches(":focus-visible")) return;
       const box = link.getBoundingClientRect();
       const frame = bar.getBoundingClientRect();
       if (box.left < frame.left + FADE || box.right > frame.right - FADE) {
