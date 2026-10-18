@@ -72,11 +72,38 @@ describe("embed code checks", () => {
     ["a protocol-relative URL", `<script src="//app.waiteraid.com/w.js"></script>`, "https://"],
     ["a tag the CSP isn't built for", `<img src="https://app.waiteraid.com/p.gif">`, "<img>"],
     ["no provider at all", `<div data-x="1"></div>`, "must load"],
+    ["a closing tag for the page's own <template>", `</template><script src="https://app.waiteraid.com/w.js"></script>`, "closes nothing"],
+    ["a comment", `<!-- x --><script src="https://app.waiteraid.com/w.js"></script>`, "can't read"],
+    ["a self-closed div the browser leaves open", `<div/><script src="https://app.waiteraid.com/w.js"></script>`, "self-close"],
+    ["an element left open", `<div><script src="https://app.waiteraid.com/w.js"></script>`, "leaves <div> open"],
+    ["text inside an iframe", `<iframe src="https://widget.thefork.com/x"><p>x</p></iframe>`, "empty"],
+    ["srcdoc", `<iframe src="https://widget.thefork.com/x" srcdoc="&lt;script&gt;x()&lt;/script&gt;"></iframe>`, "srcdoc"],
+    ["a link that isn't a stylesheet", `<link rel="preload" href="https://www.formitable.com/x.js"><script src="https://www.formitable.com/sdk/v1.js"></script>`, "stylesheet"],
+    ["a style that loads", `<div style="background:url(https://evil.example/x.png)"></div><script src="https://app.waiteraid.com/w.js"></script>`, "style attribute"],
+    ["a src with user info", `<iframe src="https://widget.thefork.com@evil.example/"></iframe>`, "https://"],
+    ["noscript, which the browser reads as text", `<noscript><img src="https://evil.example/p.gif"></noscript><script src="https://app.waiteraid.com/w.js"></script>`, "<noscript>"],
   ];
   it.each(bad)("refuses %s", (_, code, problem) => {
     const result = embedProvider(code);
     expect("problem" in result && result.problem).toContain(problem);
     expect(checkedEmbed(code)).toBe("");
+  });
+
+  it.each(embedPresets)("%s: accepts its own sample embed and serializes it unchanged", (_, preset) => {
+    const code = sample(preset.embedPattern!);
+    expect(checkedEmbed(code)).toBe(code.replace(/allow="payment \*"/, 'allow="payment *"'));
+  });
+
+  it("gives the page its own serialization: entities decoded once, then escaped again", () => {
+    const code = `<p title='a "b"'>Fisk &amp; chips &lt;3</p><iframe SRC="https://widget.thefork.com/x?a=1&amp;b=2" allowfullscreen></iframe>`;
+    expect(checkedEmbed(code)).toBe(
+      `<p title="a &quot;b&quot;">Fisk &amp; chips &lt;3</p><iframe src="https://widget.thefork.com/x?a=1&amp;b=2" allowfullscreen></iframe>`,
+    );
+  });
+
+  it("checks a URL as the browser will read it, after its character references", () => {
+    expect(embedProvider(`<script src="https&#58;//evil.example/x.js"></script>`)).toMatchObject({ problem: expect.stringContaining("one known booking provider") });
+    expect(embedProvider(`<a href="&#x6a;avascript:alert(1)">x</a><script src="https://app.waiteraid.com/w.js"></script>`)).toMatchObject({ problem: expect.stringContaining("https://") });
   });
 
   it("accepts a provider's script with its widget markup and a fallback link elsewhere", () => {
