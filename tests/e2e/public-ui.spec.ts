@@ -2,7 +2,8 @@
  * The public site's basics on a phone (UI review PR A and PR B): the menu button is reachable
  * and works without JavaScript, each page has one booking button, a site with nothing to
  * consent to asks for no consent, each highlight shows its own dish, and the menu's category
- * bar stays on one row at the top.
+ * bar stays on one row at the top. From the 18 Oct owner review: the home page opens the About
+ * story, and the category bar shows that it scrolls and which category is on screen.
  */
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
@@ -131,3 +132,55 @@ test("on a wide screen the modern home puts Meny and Boka bord at the far right 
   const word = (await page.locator(".hero-dag__word svg:visible").boundingBox())!;
   expect(word.y, "the name overlaps the photo").toBeLessThan(photo.y + photo.height);
 });
+
+test("the home page opens the About story and links to the rest (owner feedback B5, C5)", async ({ page }) => {
+  await page.goto("/");
+  const story = page.locator("section.home-story");
+  await expect(story.getByRole("heading", { name: "Vår historia" })).toBeVisible();
+  const opening = (await story.locator("p").innerText()).trim();
+  expect(pages.about.story.sv.startsWith(opening), "the teaser is the story's own opening").toBe(true);
+  expect(opening).toMatch(/[.!?]$/);
+  await story.getByRole("link", { name: "Läs mer om oss" }).click();
+  await expect(page).toHaveURL(/\/about\/$/);
+  await page.goto("/en/");
+  await expect(page.locator("section.home-story").getByRole("link", { name: "Read more about us" })).toHaveAttribute("href", "/en/about/");
+});
+
+test("the category bar fades where it has more, and marks the category on screen (owner feedback B4)", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/menu/");
+  const bar = page.locator("nav.catbar");
+  const wrap = page.locator(".catbar-wrap");
+  const overflows = await bar.evaluate((el) => el.scrollWidth > el.clientWidth + 2);
+  // At 320 px both demos' bars are wider than the screen; the fade shows there is more.
+  expect(overflows, "the bar fits at 320 px, so this test can't see the fade").toBe(true);
+  await expect(wrap).toHaveAttribute("data-more", "right");
+  // The fade is an overlay; the bar's own background stays solid, so nothing shows through.
+  // The fade eases in over 0.2 s: wait for where it settles, not a frame mid-transition.
+  await expect.poll(() => wrap.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
+  expect(await wrap.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
+
+  const ids = menu.categories.filter((c) => c.items.length > 0).map((c) => c.id);
+  const last = ids[ids.length - 1];
+  await page.locator(`#cat-${last}`).scrollIntoViewIfNeeded();
+  await page.mouse.wheel(0, 200);
+  const lastLink = bar.locator(`a[href="#cat-${last}"]`);
+  await expect(lastLink).toHaveAttribute("aria-current", "location");
+  await expect(bar.locator("a[aria-current]")).toHaveCount(1);
+  // The bar scrolled to keep the marked category in view, so now there is more on the left.
+  await expect(lastLink).toBeInViewport({ ratio: 0.9 });
+  await expect(wrap).toHaveAttribute("data-more", /left|both/);
+});
+
+test("without JavaScript the category bar still jumps to each category, with no fade or marking", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 320, height: 640 } });
+  const page = await context.newPage();
+  await page.goto("/menu/");
+  const bar = page.locator("nav.catbar");
+  await expect(page.locator(".catbar-wrap")).not.toHaveAttribute("data-more", /./);
+  await expect(bar.locator("a[aria-current]")).toHaveCount(0);
+  const first = menu.categories.find((c) => c.items.length > 0)!.id;
+  await expect(bar.locator(`a[href="#cat-${first}"]`)).toBeVisible();
+  await context.close();
+});
+

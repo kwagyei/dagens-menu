@@ -285,6 +285,7 @@ export default {
   "home.fullMenu": "See the full menu",
   "home.seeMenu": "See the menu",
   "home.fromKitchen": "From the kitchen",
+  "home.story.more": "Read more about us",
   "menu.intro": "Tell us about any allergies and we'll help you choose.",
   "menu.vat": "All prices include VAT.",
   "menu.regularPrice": "Regular price",

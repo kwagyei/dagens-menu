@@ -14,6 +14,7 @@ import Base from "../layouts/Base.astro";
 import MenuRow from "../components/MenuRow.astro";
 import SiteNav from "../components/SiteNav.astro";
 import { formatPrice, localized, resolveHighlights } from "../content/load";
+import { teaser } from "../content/teaser";
 import { getLocale, localePath, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
@@ -23,6 +24,8 @@ const siteName = localized(settings.name, locale);
 const tagline = localized(pages.home.tagline, locale);
 const voice = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
 const highlights = resolveHighlights(menu, pages.home.highlights, today.soldOut);
+// The opening of the About story, so visitors meet it on the home page (owner feedback B5, C5).
+const story = teaser(localized(pages.about.story, locale));
 const todayText = `${t(locale, "hours.today")}: ${today.hours ? `${today.hours.open}–${today.hours.close}` : t(locale, "hours.closed")}`;
 
 // The hero photo sits behind the name and the booking button: decorative (alt="", ADR-015 §4).
@@ -101,6 +104,14 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
         <a class="btn btn-primary" href={localePath(locale, "/menu/")}>{t(locale, "home.fullMenu")}</a>
       </section>
 
+      {story && (
+        <section class="home-story" aria-labelledby="story-title">
+          <h2 class="section-title" id="story-title">{t(locale, "about.story.heading")}</h2>
+          <p>{story}</p>
+          <a class="link-strong" href={localePath(locale, "/about/")}>{t(locale, "home.story.more")}</a>
+        </section>
+      )}
+
       {lunch && lunchItems.length > 0 && (
         <section class="home-lunch" aria-labelledby="lunch-title">
           <svg class="arc" viewBox="0 0 360 70" aria-hidden="true" focusable="false">
@@ -173,6 +184,14 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {story && (
+        <section class="home-story" aria-labelledby="story-title">
+          <h2 class="section-title" id="story-title">{t(locale, "about.story.heading")}</h2>
+          <p>{story}</p>
+          <a class="link-strong" href={localePath(locale, "/about/")}>{t(locale, "home.story.more")}</a>
         </section>
       )}
     </>

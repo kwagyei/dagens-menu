@@ -2,7 +2,8 @@
 import Photo from "./Photo.astro";
 /**
  * The menu: a category bar on one row that stays at the top while scrolling, then every
- * category in order. Classic sets it as a printed card, text only. Modern gives each dish
+ * category in order. With JavaScript the bar also fades at the edge that has more categories
+ * and marks the category being read (owner feedback B4, 18 Oct); without it, it works as before. Classic sets it as a printed card, text only. Modern gives each dish
  * with a photo a round plate beside its description. Both use one price style and one left
  * edge, and keep sold-out and off-menu dishes in place with a label (UI review P2-5).
  */
@@ -20,11 +21,13 @@ const tagName = (tag: string) => t(locale, `menu.tag.${tag}` as Parameters<typeo
 const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `allergen.${a}` as Parameters<typeof t>[1])).join(", ");
 ---
 
-<nav class="catbar" aria-label={t(locale, "menu.categories")}>
-  {categories.map((category) => (
-    <a href={`#cat-${category.id}`}>{localized(category.name, locale)}</a>
-  ))}
-</nav>
+<div class="catbar-wrap">
+  <nav class="catbar" aria-label={t(locale, "menu.categories")}>
+    {categories.map((category) => (
+      <a href={`#cat-${category.id}`}>{localized(category.name, locale)}</a>
+    ))}
+  </nav>
+</div>
 
 {theme.style === "classic" ? (
   <div class="menu-card">
@@ -72,3 +75,74 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
     <p class="menu-note">{t(locale, "menu.vat")}</p>
   </div>
 )}
+
+<script>
+  // The category bar shows that it scrolls (a fade on the edge with more) and marks the category
+  // on screen, scrolling the bar to keep that one in view (owner feedback B4, 18 Oct).
+  const bar = document.querySelector<HTMLElement>(".catbar");
+  const wrap = bar?.parentElement;
+  if (bar && wrap) {
+    // On the wrapper, which doesn't scroll: its fades stay at the edges and over a solid background.
+    const edges = () => {
+      const left = bar.scrollLeft > 2;
+      const right = bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 2;
+      wrap.dataset.more = left && right ? "both" : left ? "left" : right ? "right" : "none";
+    };
+    edges();
+    bar.addEventListener("scroll", edges, { passive: true });
+    window.addEventListener("resize", edges);
+
+    // How far to scroll the bar to bring `link` to its middle; positions on screen, so the
+    // classic bar's padding doesn't skew it.
+    const toCentre = (link: HTMLElement) => {
+      const box = link.getBoundingClientRect();
+      const frame = bar.getBoundingClientRect();
+      return box.left + box.width / 2 - (frame.left + frame.width / 2);
+    };
+    const FADE = 48; // the fades' width (3rem)
+    // A link reached with Tab is never left under a fade (tester, 18 Oct). Instant, and the fades
+    // are updated at once, so focus and fades agree before the next key. Keyboard focus only: a
+    // click focuses on press, and moving the bar then would put a different link under the
+    // release, so the browser would fire no click at all.
+    bar.addEventListener("focusin", (event) => {
+      const link = event.target as HTMLElement;
+      if (!link.matches(":focus-visible")) return;
+      const box = link.getBoundingClientRect();
+      const frame = bar.getBoundingClientRect();
+      if (box.left < frame.left + FADE || box.right > frame.right - FADE) {
+        bar.scrollLeft += toCentre(link);
+        edges();
+      }
+    });
+
+    const links = new Map([...bar.querySelectorAll<HTMLAnchorElement>("a[href^='#cat-']")].map((a) => [a.hash.slice(1), a]));
+    const onScreen = new Set<string>();
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let current: string | undefined;
+    const mark = () => {
+      // The first category, in page order, in the reading band of the screen.
+      const id = [...links.keys()].find((key) => onScreen.has(key));
+      if (!id || id === current) return;
+      current = id;
+      for (const [key, link] of links) {
+        if (key === id) link.setAttribute("aria-current", "location");
+        else link.removeAttribute("aria-current");
+      }
+      bar.scrollTo({ left: bar.scrollLeft + toCentre(links.get(id)!), behavior: still.matches ? "auto" : "smooth" });
+    };
+    const watch = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) onScreen.add(entry.target.id);
+          else onScreen.delete(entry.target.id);
+        }
+        mark();
+      },
+      { rootMargin: "-25% 0px -55% 0px" },
+    );
+    for (const id of links.keys()) {
+      const section = document.getElementById(id);
+      if (section) watch.observe(section);
+    }
+  }
+</script>
