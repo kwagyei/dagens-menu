@@ -76,7 +76,7 @@ const here = page.path("/photos/");
       </p>
     )}
     {shown.length === 0 ? (
-      <p class="admin-muted">{t(locale, "admin.photos.noneUnused")}</p>
+      onlyUnused && <p class="admin-muted">{t(locale, "admin.photos.noneUnused")}</p>
     ) : (
       <ul class="space-y-3" id="uploads">
         {shown.map((image) => {
