@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { adminProblems, publicPageProblems } from "../scripts/smoke.mjs";
+import { adminProblems, galleryProblems, photoProblems, publicPageProblems, UNKNOWN_MEDIA, unknownMediaProblems } from "../scripts/smoke.mjs";
 
 const html = (title: string, body = "") => `<html><head><title>${title}</title></head><body>${body}</body></html>`;
 const good = (etag = 'W/"abc1234-1-2026-10-16-x"') =>
@@ -33,5 +33,31 @@ describe("adminProblems", () => {
   it("wants the sign-in page up, uncached, with a CSP", () => {
     expect(adminProblems({ status: 200, headers: new Headers({ "cache-control": "no-store", "content-security-policy": "default-src 'self'" }) })).toEqual([]);
     expect(adminProblems({ status: 503, headers: new Headers({ "cache-control": "no-cache" }) })).toHaveLength(3);
+  });
+});
+
+describe("photo checks", () => {
+  const gallery = (items: string) => html("Galleri | Bistro Norden", `<ul class="gallery-magazine">${items}</ul>`);
+  const img = (src: string, alt: string) => `<li><figure><img src="${src}" srcset="${src} 800w" alt="${alt}" loading="lazy"></figure></li>`;
+
+  it("takes a gallery whose photos all have alt, and returns the first photo", () => {
+    const page = gallery(img("/images/bistro/v/a-800.webp", "Dukat bord") + img(`/media/${"a".repeat(64)}-800.webp`, "Fisk"));
+    expect(galleryProblems("/gallery/", page)).toEqual({ problems: [], photo: "/images/bistro/v/a-800.webp" });
+  });
+
+  it("names an empty gallery and a photo without alt", () => {
+    expect(galleryProblems("/gallery/", html("x")).problems).toEqual(["/gallery/: the gallery lists no photos"]);
+    expect(galleryProblems("/gallery/", gallery(img("/a.webp", "Ok") + img("/b.webp", "  "))).problems).toEqual(["/gallery/: gallery photo 2 (/b.webp) has no alt text"]);
+  });
+
+  it("wants the photo served as WebP", () => {
+    expect(photoProblems("/a.webp", { status: 200, headers: new Headers({ "content-type": "image/webp" }) })).toEqual([]);
+    expect(photoProblems("/a.webp", { status: 404, headers: new Headers({ "content-type": "text/html" }) })).toHaveLength(2);
+  });
+
+  it("wants an unknown /media id to be a sandboxed 404", () => {
+    expect(UNKNOWN_MEDIA).toMatch(/^\/media\/[0-9a-f]{64}-400\.webp$/);
+    expect(unknownMediaProblems({ status: 404, headers: new Headers({ "content-security-policy": "default-src 'none'; sandbox" }) })).toEqual([]);
+    expect(unknownMediaProblems({ status: 200, headers: new Headers({ "content-security-policy": "default-src 'self'" }) })).toHaveLength(2);
   });
 });
