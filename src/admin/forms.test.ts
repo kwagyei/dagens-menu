@@ -107,7 +107,7 @@ describe("parseHoursForm", () => {
     const parsed = parseHoursForm(week({ monday_close: "", tuesday_open: "9", wednesday_close: "11:00", wednesday_open: "11:00" }), "sv");
     expect(parsed.weekly).toBeNull();
     expect(Object.keys(parsed.errors)).toEqual(["monday", "tuesday", "wednesday"]);
-    expect(parsed.errors.wednesday).toBe("Öppnar och stänger samma tid.");
+    expect(parsed.errors.wednesday).toBe("Öppnings- och stängningstiden är samma. Ändra en av dem.");
     expect(parsed.values.days.tuesday.open).toBe("9");
   });
 });

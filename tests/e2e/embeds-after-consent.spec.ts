@@ -47,7 +47,7 @@ test.describe("third-party embeds", () => {
     const policy = response?.headers()["content-security-policy"] ?? "";
     expect(policy).toContain("script-src 'self' 'unsafe-inline';");
     expect(policy).toContain(`frame-src 'self' ${BOOKING} ${MAP};`);
-    await expect(page.getByRole("button", { name: "Ladda bokning" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Visa bokningen" })).toBeVisible();
     expect(requested).toEqual([]);
 
     await page.getByRole("dialog").getByRole("button", { name: "Acceptera" }).click();
@@ -72,7 +72,7 @@ test.describe("third-party embeds", () => {
     await page.goto("/contact/");
     await page.getByRole("dialog").getByRole("button", { name: "Avböj" }).click();
     await page.goto("/book/");
-    await page.getByRole("button", { name: "Ladda bokning" }).click();
+    await page.getByRole("button", { name: "Visa bokningen" }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     expect(requested).toEqual([]);
   });
@@ -82,7 +82,7 @@ test.describe("third-party embeds", () => {
     const response = await page.goto("/contact/");
     expect(response?.headers()["content-security-policy"]).toContain(`frame-src 'self' ${BOOKING} ${MAP};`);
     await page.getByRole("dialog").getByRole("button", { name: "Avböj" }).click();
-    await page.getByRole("button", { name: "Ladda karta" }).click();
+    await page.getByRole("button", { name: "Visa kartan" }).click();
     expect(requested).toEqual([]);
 
     await page.getByRole("dialog").getByRole("button", { name: "Acceptera" }).click();
@@ -112,7 +112,7 @@ test.describe("each booking preset loads after consent", () => {
       }
       const response = await page.goto("/book/");
       for (const origin of preset.origins) expect(response?.headers()["content-security-policy"]).toContain(origin);
-      await expect(page.getByRole("button", { name: "Ladda bokning" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Visa bokningen" })).toBeVisible();
       expect(reached).toEqual([]);
 
       await page.getByRole("dialog").getByRole("button", { name: "Acceptera" }).click();
