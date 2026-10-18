@@ -277,6 +277,7 @@ export default {
   "admin.texts.field.about_chef_en": "About the chef, English",
   "nav.main": "Main navigation",
   "nav.open": "Open the menu",
+  "nav.close": "Close the menu",
   "nav.skip": "Skip to content",
   "home.taste.1": "Taste",
   "home.taste.2": "the season",
