@@ -34,3 +34,22 @@ describe("teaser (the home page's opening of the About story)", () => {
     }
   });
 });
+
+describe("teaser never loses text at an inner full stop (tester, 18 Oct)", () => {
+  const long = (start: string) => `${start} ${"Sedan kommer en mening som fyller ut texten långt förbi gränsen för hemsidan.".repeat(4)}`;
+
+  it.each([
+    ["a decimal", "Vi bakar bröd i 2.5 timmar varje morgon."],
+    ["an abbreviation before a lowercase word", "Vi serverar t.ex. fisk från västkusten."],
+    ["a time", "Vi öppnar kl. 12 varje dag i veckan."],
+  ])("%s stays inside its sentence", (_name, first) => {
+    expect(teaser(long(first), 120)).toBe(first);
+  });
+
+  it("is always the text's own beginning", () => {
+    for (const text of [long("Vi bakar bröd i 2.5 timmar."), long("Bl.a. surdeg och t.ex. råg."), long("Hej!”Ja.” Nej.")]) {
+      const out = teaser(text, 90).replace(/…$/, "");
+      expect(text.startsWith(out)).toBe(true);
+    }
+  });
+});

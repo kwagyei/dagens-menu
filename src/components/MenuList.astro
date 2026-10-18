@@ -92,6 +92,26 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
     bar.addEventListener("scroll", edges, { passive: true });
     window.addEventListener("resize", edges);
 
+    // How far to scroll the bar to bring `link` to its middle; positions on screen, so the
+    // classic bar's padding doesn't skew it.
+    const toCentre = (link: HTMLElement) => {
+      const box = link.getBoundingClientRect();
+      const frame = bar.getBoundingClientRect();
+      return box.left + box.width / 2 - (frame.left + frame.width / 2);
+    };
+    const FADE = 48; // the fades' width (3rem)
+    // A link reached with Tab is never left under a fade (tester, 18 Oct). Instant, and the fades
+    // are updated at once, so focus and fades agree before the next key.
+    bar.addEventListener("focusin", (event) => {
+      const link = event.target as HTMLElement;
+      const box = link.getBoundingClientRect();
+      const frame = bar.getBoundingClientRect();
+      if (box.left < frame.left + FADE || box.right > frame.right - FADE) {
+        bar.scrollLeft += toCentre(link);
+        edges();
+      }
+    });
+
     const links = new Map([...bar.querySelectorAll<HTMLAnchorElement>("a[href^='#cat-']")].map((a) => [a.hash.slice(1), a]));
     const onScreen = new Set<string>();
     const still = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -105,8 +125,7 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
         if (key === id) link.setAttribute("aria-current", "location");
         else link.removeAttribute("aria-current");
       }
-      const link = links.get(id)!;
-      bar.scrollTo({ left: link.offsetLeft - (bar.clientWidth - link.offsetWidth) / 2, behavior: still.matches ? "auto" : "smooth" });
+      bar.scrollTo({ left: bar.scrollLeft + toCentre(links.get(id)!), behavior: still.matches ? "auto" : "smooth" });
     };
     const watch = new IntersectionObserver(
       (entries) => {
