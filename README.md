@@ -123,7 +123,10 @@ is the seed data the demos are loaded from.
   (`scripts/check-no-third-party.mjs`).
 - **Strict headers on every page.** The Worker sets the CSP and security headers itself,
   because `public/_headers` only reaches static files. Pages may load only their own
-  origin; the one allowance is `'unsafe-inline'` for the scripts Astro inlines. The page's
+  origin, plus the site's own booking provider and map once a visitor consents; the other
+  allowance is `'unsafe-inline'` for the scripts Astro inlines. Booking embed code must load
+  from exactly one known provider, with no inline script, and the CSP is built from that
+  provider's origins (`src/booking/embed.ts`). The page's
   ETag combines the build, the site, the path, the content version and the restaurant's
   date, so unchanged pages come back as 304s.
 - **Passkeys, no passwords, no sign-up.** A password hash strong enough to matter doesn't

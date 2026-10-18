@@ -4,6 +4,8 @@
  * so pages get their headers here.
  */
 
+import type { ThirdPartyOrigins } from "../booking/embed";
+
 /** "admin-upload" is the photo upload page: the admin, plus WebAssembly for its encoder (ADR-013). */
 export type RouteClass = "public" | "admin" | "admin-upload";
 
@@ -31,21 +33,25 @@ export function routeClass(pathname: string): RouteClass {
   return /^\/(en\/)?admin(\/|$)/.test(path) ? "admin" : "public";
 }
 
-// Pages load nothing from another origin (the consent check enforces it); the inline
-// scripts Astro emits need 'unsafe-inline'.
-const PUBLIC_CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "frame-src 'self'",
-  "connect-src 'self'",
-  "font-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-].join("; ");
+// Pages load nothing from another origin on load (the consent check enforces it); the inline
+// scripts Astro emits need 'unsafe-inline'. After consent, a page may load the site's chosen
+// booking provider and map (src/booking/embed.ts), so only those origins are added.
+function publicCsp({ booking, map }: ThirdPartyOrigins = { booking: [], map: [] }): string {
+  const plus = (base: string, origins: string[]) => [base, ...origins].join(" ");
+  return [
+    "default-src 'self'",
+    plus("script-src 'self' 'unsafe-inline'", booking),
+    plus("style-src 'self' 'unsafe-inline'", booking),
+    plus("img-src 'self' data:", booking),
+    plus("frame-src 'self'", [...booking, ...map]),
+    plus("connect-src 'self'", booking),
+    "font-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join("; ");
+}
 
 // The admin runs only its own bundled script and inline styles (the theme's colours): no
 // inline scripts, no frames, nothing from elsewhere (ADR-011 §9).
@@ -67,9 +73,10 @@ const ADMIN_CSP = [
 // 'wasm-unsafe-eval' allows WebAssembly only, not JavaScript eval (ADR-013, CSP).
 const ADMIN_UPLOAD_CSP = ADMIN_CSP.replace("script-src 'self'", "script-src 'self' 'wasm-unsafe-eval'").replace("img-src 'self' data:", "img-src 'self' data: blob:");
 
-export function securityHeaders(route: RouteClass): Record<string, string> {
+/** `thirdParty` widens a public page's CSP to the site's own booking provider and map. */
+export function securityHeaders(route: RouteClass, thirdParty?: ThirdPartyOrigins): Record<string, string> {
   return {
-    "Content-Security-Policy": route === "admin-upload" ? ADMIN_UPLOAD_CSP : route === "admin" ? ADMIN_CSP : PUBLIC_CSP,
+    "Content-Security-Policy": route === "admin-upload" ? ADMIN_UPLOAD_CSP : route === "admin" ? ADMIN_CSP : publicCsp(thirdParty),
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",

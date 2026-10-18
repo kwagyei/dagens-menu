@@ -1,13 +1,14 @@
 /**
  * set:html bypasses Astro's escaping. Owners now type the text pages show, so every use must
- * go through an escaper; this test fails when a new one appears that doesn't.
+ * go through an escaper, or for the operator's booking embed, the check its CSP is built from;
+ * this test fails when a new one appears that doesn't.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { expect, it } from "vitest";
 
 const SRC = resolve(import.meta.dirname, "..");
-const ALLOWED = [/set:html=\{serializeJsonLd\(/];
+const ALLOWED = [/set:html=\{serializeJsonLd\(/, /set:html=\{checkedEmbed\(/];
 
 function* astroFiles(dir: string): Generator<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {

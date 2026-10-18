@@ -11,6 +11,7 @@
  * rules (unique ids, highlights) report on a later pass once field errors are fixed.
  */
 import { z } from "zod";
+import { embedProvider } from "../booking/embed";
 import { MAX_PRICE_ORE } from "./price";
 import { ALLERGENS, BOOKING_MODES, MENU_TAGS, WEEKDAYS } from "./vocabulary";
 
@@ -214,7 +215,16 @@ const settingsFields = z.strictObject({
   // value can't sit unchecked until someone switches the mode.
   booking: z.strictObject({
     provider: z.enum(BOOKING_MODES),
-    embedCode: z.string().max(TEXT_LIMITS.embed).optional(),
+    // The page's CSP allows only the provider this code loads from (src/booking/embed.ts).
+    embedCode: z
+      .string()
+      .max(TEXT_LIMITS.embed)
+      .superRefine((code, ctx) => {
+        if (!code.trim()) return;
+        const provider = embedProvider(code);
+        if ("problem" in provider) ctx.addIssue({ code: "custom", message: `embed code ${provider.problem}` });
+      })
+      .optional(),
     bookingUrl: httpsUrl.optional(),
   }),
   mapEmbed: z.union([z.literal(""), httpsUrl]),
