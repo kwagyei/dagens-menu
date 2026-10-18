@@ -95,10 +95,11 @@ test("the photo library pages, in both languages, and the description form rejec
 
 const PUBLIC = ["/", "/menu/", "/book/", "/about/", "/gallery/", "/contact/", "/privacy/"];
 
-test("every public page, in both languages, at phone width, with the menu closed and open", async ({ page }) => {
+test("every public page, and the 404 page, in both languages, at phone width, with the menu closed and open", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of [...PUBLIC, ...PUBLIC.map((p) => `/en${p}`)]) {
-    await page.goto(path);
+  for (const path of [...PUBLIC, ...PUBLIC.map((p) => `/en${p}`), "/finns-inte/", "/en/no-such-page/"]) {
+    const response = await page.goto(path);
+    if (path.includes("finns-inte") || path.includes("no-such-page")) expect(response?.status(), path).toBe(404);
     await expectNoViolations(page, path);
     await page.locator("#menu-toggle").click();
     await expect(page.locator("#nav-menu")).toBeVisible();
@@ -111,11 +112,13 @@ test("the menu button says what it will do: open, then close (reviewer M5 follow
   for (const [path, open, close] of [["/menu/", "Öppna menyn", "Stäng menyn"], ["/en/menu/", "Open the menu", "Close the menu"]]) {
     await page.goto(path);
     const toggle = page.locator("#menu-toggle");
-    await expect(toggle).toHaveAccessibleName(open);
+    // Anchored: exactly one name, never both labels run together.
+    const exactly = (name: string) => new RegExp(`^${name}$`);
+    await expect(toggle).toHaveAccessibleName(exactly(open));
     await toggle.click();
-    await expect(toggle).toHaveAccessibleName(close);
+    await expect(toggle).toHaveAccessibleName(exactly(close));
     await toggle.click();
-    await expect(toggle).toHaveAccessibleName(open);
+    await expect(toggle).toHaveAccessibleName(exactly(open));
   }
 });
 
