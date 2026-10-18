@@ -5,13 +5,18 @@
  *   npm run admin -- invite --site bistro --email owner@example.se [--url https://…] [--remote]
  *   npm run admin -- revoke --site bistro --email owner@example.se [--remote]
  *   npm run admin -- list   --site bistro [--remote]
+ *   npm run admin -- purge  --site bistro [--remote] [--dry-run]
  *
+ * purge (ADR-016.2) removes what the app already refuses (expired or idle sessions, expired
+ * invites and challenges) and history older than 180 days; run it once a month per site.
  * Local by default (d1.local.jsonc); --remote acts on the real database and needs the
  * site's wrangler config (--config wrangler.<site>.jsonc). The invite link is printed once
  * and never stored: send it to the owner yourself, by SMS or email.
  */
 import { parseArgs } from "node:util";
 import { INVITE_TTL_MS, issueInvite, revokeStatements } from "../src/auth/invites";
+import { type PurgeCounts, purgeCountStatement, purgeStatements } from "../src/auth/purge";
+import { renderSql } from "../src/db/sql";
 import { checkTarget, type D1Target, execute, fail as failWith, query, targetName } from "./d1-cli";
 
 const fail: (message: string) => never = (message) => failWith("admin", message);
@@ -23,13 +28,16 @@ const { values, positionals } = parseArgs({
     email: { type: "string" },
     url: { type: "string" },
     remote: { type: "boolean", default: false },
+    "dry-run": { type: "boolean", default: false },
     database: { type: "string", default: "dagens-menu" },
     config: { type: "string" },
   },
 });
 
 const command = positionals[0];
-if (!["invite", "revoke", "list"].includes(command ?? "")) fail("usage: admin <invite|revoke|list> --site <id> [--email <address>] [--remote]");
+if (!["invite", "revoke", "list", "purge"].includes(command ?? "")) {
+  fail("usage: admin <invite|revoke|list|purge> --site <id> [--email <address>] [--remote] [--dry-run]");
+}
 const site = values.site;
 if (!site || !/^[a-z0-9-]+$/.test(site)) fail("--site <id> is required, e.g. --site bistro");
 const config = values.config ?? (values.remote ? `wrangler.${site}.jsonc` : "d1.local.jsonc");
@@ -82,4 +90,19 @@ if (command === "list") {
   );
   if (rows.length === 0) console.log(`admin: nobody has access to "${site}" (${targetName(target)}).`);
   else console.table(rows);
+}
+
+if (command === "purge") {
+  // One moment for both the counts and the deletes, so they describe the same rows.
+  const now = new Date();
+  const [counts] = query<PurgeCounts>("admin", target, renderSql([purgeCountStatement(site, now)]).replace(/;$/, ""));
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  console.log(`admin: purge "${site}" (${targetName(target)}), rows that would go:`);
+  console.table(counts);
+  if (values["dry-run"]) console.log("admin: dry run, nothing deleted.");
+  else if (total === 0) console.log("admin: nothing to delete.");
+  else {
+    execute("admin", target, purgeStatements(site, now));
+    console.log(`admin: deleted ${total} row(s).${counts.audit_log > 0 ? " The history notes how many old entries were removed." : ""}`);
+  }
 }
