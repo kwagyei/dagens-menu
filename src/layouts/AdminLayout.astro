@@ -109,5 +109,8 @@ const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathn
     <main id="admin-main" tabindex="-1" class="max-w-2xl mx-auto px-4 py-8">
       <slot />
     </main>
+    <script>
+      import "../admin/return-focus";
+    </script>
   </body>
 </html>

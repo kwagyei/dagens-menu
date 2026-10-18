@@ -55,3 +55,36 @@ test("marking a dish sold out and back works with the keyboard alone", async ({ 
   await page.keyboard.press("Enter");
   await expect(page.locator("li[id^='item-']").first().getByRole("button", { name: "Slutsåld idag" })).toBeVisible();
 });
+
+test("after a move, the dish's button has focus and is on screen, and the admin's script isn't blocked", async ({ page }) => {
+  // Walkthrough 18 Oct: iPhone Safari ignores autofocus, so the page landed at the top after
+  // every move. src/admin/return-focus.ts focuses the control and scrolls it into view when
+  // the browser didn't (its logic is unit-tested). Chromium can't be made to ignore autofocus
+  // the way iOS does, so this checks the outcome, and that the script arrives as a file: the
+  // admin's CSP allows no inline script, and an inlined copy was silently blocked.
+  const blocked: string[] = [];
+  page.on("console", (m) => {
+    if (m.type() === "error" && /Content Security Policy/.test(m.text())) blocked.push(m.text());
+  });
+  await signedInOwner(page);
+  await page.goto("/admin/");
+  const last = page.locator("li[id^='item-']").last();
+  const id = (await last.getAttribute("id"))!;
+  await last.getByRole("button", { name: /^Flytta upp/ }).click();
+  await page.waitForURL(/[?&]changed=/);
+  // The same direction's button, or the other one if the dish reached the top (then "up" is disabled).
+  const moved = page.locator(`#${id}`).getByRole("button", { name: /^Flytta (upp|ned)/ }).and(page.locator(":focus"));
+  await expect(moved).toHaveCount(1);
+  await expect(moved).toBeInViewport();
+  expect(await page.evaluate(() => [...document.scripts].some((s) => /AdminLayout/.test(s.src)))).toBe(true);
+  await page.locator(`#${id}`).getByRole("button", { name: /^Flytta ned/ }).click(); // undo
+  await page.waitForURL(/[?&]changed=/);
+  expect(blocked).toEqual([]);
+});
+
+test("the page photos have their own link in the admin menu", async ({ page }) => {
+  await signedInOwner(page);
+  await page.getByRole("navigation").getByRole("link", { name: "Sidornas foton" }).click();
+  await expect(page.getByRole("heading", { name: "Sidornas foton" })).toBeVisible();
+});
+
