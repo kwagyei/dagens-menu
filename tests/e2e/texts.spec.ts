@@ -110,5 +110,5 @@ test("booking and the map are not on the owner's page", async ({ page }) => {
   await signedInOwner(page);
   await openTexts(page);
   await expect(page.locator("[name*='booking'], [name*='map'], [name*='embed']")).toHaveCount(0);
-  await expect(page.getByText("Bokning och karta sköts av den som byggt sidan")).toBeVisible();
+  await expect(page.getByText("Bokning och karta sköts av den som byggt webbplatsen")).toBeVisible();
 });
