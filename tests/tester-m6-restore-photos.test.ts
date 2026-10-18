@@ -57,6 +57,8 @@ afterEach(() => {
   routes.clear();
 });
 
+/** The test server's host, which the restore fetches from only when allowed (--allow-host). */
+const local = () => [new URL(base).host];
 const path = (id: string, w: number) => `/media/${id}-${w}.webp`;
 const up = (id: string, variants: number[], master = `${base}${path(id, variants.at(-1)!)}`) => ({ id, variants, master });
 const serve = (p: string, body: Uint8Array | string, headers: Record<string, string> = {}) =>
@@ -65,7 +67,7 @@ const serve = (p: string, body: Uint8Array | string, headers: Record<string, str
 describe("area 1 (node half): sizes made again", () => {
   it("a 400 px master restores as a single size, byte for byte", async () => {
     serve(path(id400, 400), one400);
-    const got = (await loadUploads([up(id400, [400])], undefined, quiet)).get(id400)!;
+    const got = (await loadUploads([up(id400, [400])], undefined, quiet, local())).get(id400)!;
     expect(got.map((v) => v.width)).toEqual([400]);
     expect(sha(got[0].bytes)).toBe(id400);
   });
@@ -82,7 +84,7 @@ describe("area 1 (node half): sizes made again", () => {
     expect(big.length).toBeLessThanOrEqual(1_048_576);
     const id = sha(big);
     serve(path(id, 1600), big);
-    const got = (await loadUploads([up(id, [400, 800, 1200, 1600])], undefined, quiet)).get(id)!;
+    const got = (await loadUploads([up(id, [400, 800, 1200, 1600])], undefined, quiet, local())).get(id)!;
     expect(got.map((v) => [v.width, v.height])).toEqual([
       [400, 600],
       [800, 1200],
@@ -110,27 +112,27 @@ describe("area 2: hostile links", () => {
   it("never follows a redirect, even to the right bytes: the link must be the photo (F5)", async () => {
     routes.set(path(id1600, 1600), (res) => res.writeHead(302, { Location: `${base}/elsewhere` }).end());
     serve("/elsewhere", master1600);
-    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet)).rejects.toThrow(new RegExp(`^photo ${id1600}: couldn't fetch`));
+    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet, local())).rejects.toThrow(new RegExp(`^photo ${id1600}: couldn't fetch`));
   });
 
   it("refuses a link with a user name or password in it (F5)", async () => {
     const withUser = { ...up(id1600, [400, 800, 1200, 1600]), master: `http://user:secret@127.0.0.1:1/media/${id1600}-1600.webp` };
-    await expect(loadUploads([withUser], undefined, quiet)).rejects.toThrow(/user name or password/);
+    await expect(loadUploads([withUser], undefined, quiet, local())).rejects.toThrow(/user name or password/);
   });
 
   it("a redirect to file:// is refused with a line naming the photo", async () => {
     routes.set(path(id1600, 1600), (res) => res.writeHead(302, { Location: "file:///etc/passwd" }).end());
-    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet)).rejects.toThrow(new RegExp(`^photo ${id1600}: couldn't fetch`));
+    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet, local())).rejects.toThrow(new RegExp(`^photo ${id1600}: couldn't fetch`));
   });
 
   it("a 200 with an HTML page is refused by the hash check", async () => {
     serve(path(id1600, 1600), "<!doctype html><title>Login</title>", { "Content-Type": "text/html" });
-    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet)).rejects.toThrow(/has been changed/);
+    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet, local())).rejects.toThrow(/has been changed/);
   });
 
   it("an id whose link serves another photo's bytes is refused", async () => {
     serve(path(id1600, 1600), other);
-    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet)).rejects.toThrow(/has been changed/);
+    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet, local())).rejects.toThrow(/has been changed/);
   });
 
   // Finding (see the M6.4 tester report), fixed in the same PR.
@@ -152,7 +154,7 @@ describe("area 2: hostile links", () => {
       res.on("close", () => (left = 0));
       pump();
     });
-    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet)).rejects.toThrow(/^photo /);
+    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet, local())).rejects.toThrow(/^photo /);
     console.log(`tester: huge response: the server sent ${sent} bytes before the client stopped`);
     expect(sent, "the client reads the whole body before refusing it").toBeLessThan(8 * (1 << 20));
   }, 30_000);
@@ -165,14 +167,14 @@ describe("area 2: hostile links", () => {
       res.writeHead(200, { "Content-Type": "image/webp" });
       res.write(master1600.subarray(0, 1000)); // then nothing
     });
-    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet)).rejects.toThrow(new RegExp(`^photo ${id1600}: `));
+    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet, local())).rejects.toThrow(new RegExp(`^photo ${id1600}: `));
   });
 
   it("a server that never answers times out with a line naming the photo", async () => {
     const realTimeout = AbortSignal.timeout.bind(AbortSignal);
     vi.spyOn(AbortSignal, "timeout").mockImplementation(() => realTimeout(300));
     routes.set(path(id1600, 1600), () => {}); // no headers
-    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet)).rejects.toThrow(new RegExp(`^photo ${id1600}: couldn't fetch .*pass --photos`));
+    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet, local())).rejects.toThrow(new RegExp(`^photo ${id1600}: couldn't fetch .*pass --photos`));
   });
 
   // Finding (see the M6.4 tester report), fixed in the same PR.
@@ -181,14 +183,14 @@ describe("area 2: hostile links", () => {
       res.writeHead(200, { "Content-Type": "image/webp", "Content-Length": String(master1600.length) });
       res.write(master1600.subarray(0, 1000), () => res.destroy());
     });
-    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet)).rejects.toThrow(new RegExp(`^photo ${id1600}: `));
+    await expect(loadUploads([up(id1600, [400, 800, 1200, 1600])], undefined, quiet, local())).rejects.toThrow(new RegExp(`^photo ${id1600}: `));
   });
 
   // Finding (see the M6.4 tester report), fixed in the same PR.
   it("the file's widths are checked against the photo itself", async () => {
     // The file says [400, 800] with a -800 link, but the bytes behind the id are 1600 wide.
     serve(path(id1600, 800), master1600);
-    const result = loadUploads([up(id1600, [400, 800])], undefined, quiet);
+    const result = loadUploads([up(id1600, [400, 800])], undefined, quiet, local());
     await expect(result, "a 1600 px photo listed as 800 px").rejects.toThrow(/^photo /);
   });
 
@@ -199,7 +201,7 @@ describe("area 2: hostile links", () => {
     for (let i = 40; i < broken.length; i++) broken[i] = (i * 31) & 0xff;
     const id = sha(broken);
     serve(path(id, 1600), broken);
-    await expect(loadUploads([up(id, [400, 800, 1200, 1600])], undefined, quiet)).rejects.toThrow(new RegExp(`^photo ${id}: its image data can't be decoded`));
+    await expect(loadUploads([up(id, [400, 800, 1200, 1600])], undefined, quiet, local())).rejects.toThrow(new RegExp(`^photo ${id}: its image data can't be decoded`));
   });
 });
 
@@ -229,7 +231,7 @@ describe("area 2: the reader refuses links that aren't to a photo", () => {
     if (!r.ok) expect(r.error).not.toContain("\n");
   });
 
-  it("accepts a link to any other host, with credentials or a private address (documented)", () => {
+  it("reads a link to any other host: the fetch, not the file, decides which hosts it trusts (L2)", () => {
     for (const master of [`https://user:pw@evil.example/media/${id}-800.webp`, `http://169.254.169.254/media/${id}-800.webp`, `http://localhost:22/media/${id}-800.webp`]) {
       const r = readExportFile(fileWith([entry(master)]), SITE, op);
       expect(r.ok, master).toBe(true);
@@ -272,7 +274,7 @@ describe("area 4: the --photos folder", () => {
     const dir = mkdtempSync(join(tmpdir(), "photos-"));
     writeFileSync(join(dir, `${id1600}.webp`), other);
     serve(path(id1600, 1600), master1600);
-    await expect(loadUploads([upload()], dir, quiet)).rejects.toThrow(/has been changed/);
+    await expect(loadUploads([upload()], dir, quiet, local())).rejects.toThrow(/has been changed/);
   });
 
   it("a symlink to the right photo is read through", async () => {
@@ -280,14 +282,14 @@ describe("area 4: the --photos folder", () => {
     writeFileSync(join(dir, "real.webp"), master1600);
     symlinkSync(join(dir, "real.webp"), join(dir, `${id1600}.webp`));
     vi.stubGlobal("fetch", vi.fn());
-    expect((await loadUploads([upload()], dir, quiet)).get(id1600)!.length).toBe(4);
+    expect((await loadUploads([upload()], dir, quiet, local())).get(id1600)!.length).toBe(4);
   });
 
   it("a symlink to another file is refused, and its content isn't echoed", async () => {
     const dir = mkdtempSync(join(tmpdir(), "photos-"));
     writeFileSync(join(dir, "secret.txt"), "SECRET-TOKEN-123");
     symlinkSync(join(dir, "secret.txt"), join(dir, `${id1600}.webp`));
-    const error = await loadUploads([upload()], dir, quiet).catch((e: Error) => e);
+    const error = await loadUploads([upload()], dir, quiet, local()).catch((e: Error) => e);
     expect(String(error)).toMatch(/has been changed/);
     expect(String(error)).not.toContain("SECRET");
   });
@@ -296,20 +298,20 @@ describe("area 4: the --photos folder", () => {
     const dir = mkdtempSync(join(tmpdir(), "photos-"));
     symlinkSync(join(dir, "missing.webp"), join(dir, `${id1600}.webp`));
     serve(path(id1600, 1600), master1600);
-    expect((await loadUploads([upload()], dir, quiet)).get(id1600)!.length).toBe(4);
+    expect((await loadUploads([upload()], dir, quiet, local())).get(id1600)!.length).toBe(4);
   });
 
   it("a missing file falls back to the link", async () => {
     const dir = mkdtempSync(join(tmpdir(), "photos-"));
     serve(path(id1600, 1600), master1600);
-    expect((await loadUploads([upload()], dir, quiet)).get(id1600)!.length).toBe(4);
+    expect((await loadUploads([upload()], dir, quiet, local())).get(id1600)!.length).toBe(4);
   });
 
   it("an uppercase file name: found or fetched, but the restore never differs", async () => {
     const dir = mkdtempSync(join(tmpdir(), "photos-"));
     writeFileSync(join(dir, `${id1600.toUpperCase()}.WEBP`), master1600);
     serve(path(id1600, 1600), master1600);
-    const got = (await loadUploads([upload()], dir, quiet)).get(id1600)!;
+    const got = (await loadUploads([upload()], dir, quiet, local())).get(id1600)!;
     expect(sha(got.at(-1)!.bytes)).toBe(id1600);
   });
 
@@ -318,13 +320,13 @@ describe("area 4: the --photos folder", () => {
     const dir = mkdtempSync(join(tmpdir(), "photos-"));
     mkdirSync(join(dir, `${id1600}.webp`));
     serve(path(id1600, 1600), master1600);
-    await expect(loadUploads([upload()], dir, quiet)).rejects.toThrow(new RegExp(`^photo ${id1600}: `));
+    await expect(loadUploads([upload()], dir, quiet, local())).rejects.toThrow(new RegExp(`^photo ${id1600}: `));
   });
 
   it("several uploads: one bad one refuses the whole restore, and says which", async () => {
     const dir = mkdtempSync(join(tmpdir(), "photos-"));
     writeFileSync(join(dir, `${id400}.webp`), one400);
     writeFileSync(join(dir, `${otherId}.webp`), master1600); // wrong bytes
-    await expect(loadUploads([up(id400, [400]), up(otherId, [400, 800])], dir, quiet)).rejects.toThrow(new RegExp(`^photo ${otherId}: `));
+    await expect(loadUploads([up(id400, [400]), up(otherId, [400, 800])], dir, quiet, local())).rejects.toThrow(new RegExp(`^photo ${otherId}: `));
   });
 });
