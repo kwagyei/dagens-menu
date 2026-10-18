@@ -1,0 +1,72 @@
+---
+// The page photos (plan M6.10c): the large photos this design draws on the public pages, each with the photo
+// it shows now and a link to change it. Plain links, no JavaScript.
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import { thumbnail } from "../../../../admin/library";
+import { adminPage } from "../../../../admin/page";
+import { listLibrary } from "../../../../db/library";
+import { PAGE_SLOTS, pagePhotos, shownSlots } from "../../../../db/photo-choice";
+import { t, type TranslationKey } from "../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const [chosen, library] = await Promise.all([pagePhotos(repo), listLibrary(repo)]);
+const byId = new Map(library.map((i) => [i.id, i]));
+const slotName = (slot: string) => t(locale, `admin.photos.slot.${slot}` as TranslationKey);
+const upperFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+// Only the places this design draws; a hidden place that still holds a photo is listed apart,
+// to be cleared (M6.10c tester M1, M2).
+const shown = shownSlots(Astro.locals.content.theme.style);
+const hidden = PAGE_SLOTS.filter((slot) => !shown.includes(slot) && chosen?.[slot]);
+---
+
+<AdminLayout title={t(locale, "admin.pagePhotos.heading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <div class="space-y-2">
+      <h1 class="text-3xl font-bold">{t(locale, "admin.pagePhotos.heading")}</h1>
+      <p class="admin-muted">{t(locale, "admin.pagePhotos.lead")}</p>
+    </div>
+    <ul class="space-y-3" id="page-photos">
+      {shown.map((slot) => {
+        const photo = chosen?.[slot] ? byId.get(chosen[slot]!) : undefined;
+        const thumb = photo ? thumbnail(photo) : null;
+        const name = photo?.alt ? photo.alt[locale] : t(locale, "admin.pick.none");
+        return (
+          <li class="admin-card p-3 flex flex-wrap items-center gap-3" id={`slot-${slot}`}>
+            {thumb && <img src={thumb.src} alt="" width="72" height={Math.round((72 * thumb.height) / thumb.width)} loading="lazy" class="rounded shrink-0" />}
+            <div class="min-w-0 flex-1 space-y-1">
+              <p class="font-medium">{upperFirst(slotName(slot))}</p>
+              <p class="text-sm admin-muted">{t(locale, "admin.pagePhotos.current").replace("{photo}", name)}</p>
+            </div>
+            <a class="admin-small-button inline-flex items-center" href={page.path(`/page-photos/${slot}/`)} aria-label={`${t(locale, "admin.pagePhotos.change")}: ${slotName(slot)}`}>{t(locale, "admin.pagePhotos.change")}</a>
+          </li>
+        );
+      })}
+    </ul>
+    {hidden.length > 0 && (
+      <section class="space-y-3" aria-labelledby="hidden-heading">
+        <h2 class="text-xl font-semibold" id="hidden-heading">{t(locale, "admin.pagePhotos.hiddenHeading")}</h2>
+        <p class="admin-muted">{t(locale, "admin.pagePhotos.hiddenLead")}</p>
+        <ul class="space-y-3" id="page-photos-hidden">
+          {hidden.map((slot) => {
+            const photo = byId.get(chosen![slot]!);
+            const name = photo?.alt ? photo.alt[locale] : chosen![slot]!.slice(0, 12);
+            return (
+              <li class="admin-card p-3 flex flex-wrap items-center gap-3" id={`slot-${slot}`}>
+                <div class="min-w-0 flex-1 space-y-1">
+                  <p class="font-medium">{upperFirst(slotName(slot))}</p>
+                  <p class="text-sm admin-muted">{t(locale, "admin.pagePhotos.current").replace("{photo}", name)}</p>
+                </div>
+                <a class="admin-small-button inline-flex items-center" href={page.path(`/page-photos/${slot}/`)} aria-label={`${t(locale, "admin.pagePhotos.clear")}: ${slotName(slot)}`}>{t(locale, "admin.pagePhotos.clear")}</a>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    )}
+  </section>
+</AdminLayout>

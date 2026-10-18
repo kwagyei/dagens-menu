@@ -2,10 +2,15 @@
  * The photo library end to end (plan M6.10; ADR-014 §4, §6): every photo listed with where
  * it's used, the unused filter, alt edits with the row_version guard, and deletes that refuse
  * a photo in use (409, with the places), a built-in photo (409) and an unknown one (404).
- * Until the dish photo picker (M6.10c), a photo is put on a dish with SQL on the local D1.
+ * Uses are set up with SQL on the local D1, to keep these specs about the library; the
+ * pickers that set them are tested in photo-pickers.spec.ts.
  */
 import { expect, type Page, test } from "@playwright/test";
 import { d1, freshIp, signedInOwner, uploadPhoto as upload } from "./helpers";
+
+// Several uploads, picks and local SQL calls per test: up to ~35 s on CI runners, over the
+// 30 s default, so each test gets 90 s (as tester-m6-media does).
+test.describe.configure({ timeout: 90_000 });
 
 const BASE = "http://localhost:8790";
 const LIBRARY = "/admin/photos/";
@@ -85,7 +90,7 @@ test("a photo in use can't be deleted: the page lists where with links, and a fo
     await page.goto(`/admin/photos/${photo.id}/`);
     await expect(page.locator("#photo-uses")).toContainText(`rätten ${dish.name_sv}`);
     await expect(page.getByRole("link", { name: "Ta bort det här fotot" })).toHaveCount(0);
-    await expect(page.locator("#photo-uses a")).toHaveAttribute("href", `/admin/menu/item/${dish.id}/`);
+    await expect(page.locator("#photo-uses a")).toHaveAttribute("href", `/admin/menu/item/${dish.id}/photo/`);
 
     const shown = await page.goto(`/admin/photos/${photo.id}/delete/`);
     expect(shown!.status()).toBe(409);

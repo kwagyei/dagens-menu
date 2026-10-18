@@ -7,6 +7,10 @@
 import { expect, type Page, test } from "@playwright/test";
 import { d1, freshIp, signedInOwner, uploadPhoto } from "./helpers";
 
+// Several uploads, picks and local SQL calls per test: up to ~35 s on CI runners, over the
+// 30 s default, so each test gets 90 s (as tester-m6-media does).
+test.describe.configure({ timeout: 90_000 });
+
 const BASE = "http://localhost:8790";
 const GALLERY = "/admin/gallery/";
 const rows = () => d1<{ id: string; image_id: string; position: number; site_id: string }>("SELECT site_id, id, image_id, position FROM gallery_images ORDER BY site_id, position, id");

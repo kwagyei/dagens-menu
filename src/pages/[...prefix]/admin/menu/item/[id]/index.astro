@@ -7,6 +7,9 @@ import { type FieldErrors, type ItemFormValues, kronorText, parseItemForm, rowVe
 import { adminPage } from "../../../../../../admin/page";
 import { MAX_FEATURED, setFeatured } from "../../../../../../db/menu";
 import { getMenuItem, updateMenuItem } from "../../../../../../db/repository";
+import { getLibraryImage } from "../../../../../../db/library";
+import { dishPhoto } from "../../../../../../db/photo-choice";
+import { thumbnail } from "../../../../../../admin/library";
 import { t } from "../../../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
@@ -66,12 +69,23 @@ if (Astro.request.method === "POST") {
   }
   if (!conflict) Astro.response.status = 422;
 }
+
+// The dish's photo is chosen on its own page (M6.10c); this shows which one it is now.
+const photoId = await dishPhoto(repo, id);
+const photo = photoId ? await getLibraryImage(repo, photoId) : null;
+const photoThumb = photo ? thumbnail(photo) : null;
+const photoName = photo?.alt ? photo.alt[locale] : t(locale, "admin.pick.none");
 ---
 
 <AdminLayout title={t(locale, "admin.item.editHeading")} csrf={page.csrf}>
   <section class="space-y-6">
     <h1 class="text-3xl font-bold">{t(locale, "admin.item.editHeading")}</h1>
     {conflict && <p class="admin-message" role="alert" tabindex="-1" autofocus>{t(locale, "admin.item.conflict")}</p>}
+    <div class="admin-card p-3 flex flex-wrap items-center gap-3" id="dish-photo">
+      {photoThumb && <img src={photoThumb.src} alt="" width="72" height={Math.round((72 * photoThumb.height) / photoThumb.width)} class="rounded shrink-0" />}
+      <p class="min-w-0 flex-1">{t(locale, "admin.dishPhoto.link").replace("{photo}", photoName)}</p>
+      <a class="admin-small-button inline-flex items-center" href={page.path(`/menu/item/${id}/photo/`)}>{t(locale, "admin.dishPhoto.change")}</a>
+    </div>
     <ItemForm
       locale={locale}
       csrf={page.csrf}
