@@ -254,6 +254,15 @@
   .home-lunch > .home-lunch__list { grid-column: 2; grid-row: 1 / span 2; }
 }
 
+/* The opening of the About story, with a link to the rest (both designs). */
+.home-story { padding: 2.25rem var(--pad); display: grid; gap: 0.875rem; }
+.home-story p { max-width: 38rem; font-size: 1.0625rem; line-height: 1.6; }
+[data-style="classic"] .home-story { justify-items: center; text-align: center; border-top: 1px solid var(--color-border); }
+[data-style="classic"] .home-story p { font: italic 500 1.25rem/1.45 var(--font-heading); }
+@media (min-width: 56.25rem) {
+  .home-story { padding-block: 4rem; }
+}
+
 /* ================================================================
    Home: modern
    ================================================================ */

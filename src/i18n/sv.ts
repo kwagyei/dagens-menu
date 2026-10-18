@@ -285,6 +285,7 @@ export default {
   "home.fullMenu": "Se hela menyn",
   "home.seeMenu": "Se menyn",
   "home.fromKitchen": "Från köket",
+  "home.story.more": "Läs mer om oss",
   "menu.intro": "Säg till om du har allergier, så hjälper vi dig.",
   "menu.vat": "Alla priser inklusive moms.",
   "menu.regularPrice": "Ordinarie pris",
