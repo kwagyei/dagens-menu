@@ -5,17 +5,21 @@
  */
 import { describe, expect, it } from "vitest";
 import bistroHours from "../sites/bistro/content/hours.json";
+import bistroSettings from "../sites/bistro/content/settings.json";
 import westafricanHours from "../sites/westafrican/content/hours.json";
+import westafricanSettings from "../sites/westafrican/content/settings.json";
 import type { SiteContent } from "../src/content/schema";
 import { handlePage, type PageState } from "../src/server/handler";
 import { msToStockholmMidnight } from "./e2e/clock";
 
 const HOURS = { bistro: bistroHours, westafrican: westafricanHours };
+// The handler reads settings too (the public CSP is built from booking and the map).
+const SETTINGS = { bistro: bistroSettings, westafrican: westafricanSettings };
 
 /** What the Worker calls "today" for a request at `at`: the date, the hours and the sold-out dishes. */
 async function todayAt(site: keyof typeof HOURS, at: string, soldOutOn: Record<string, string> = {}): Promise<PageState["today"]> {
   let state: PageState | undefined;
-  const content = { hours: HOURS[site] } as unknown as SiteContent;
+  const content = { hours: HOURS[site], settings: SETTINGS[site] } as unknown as SiteContent;
   await handlePage(
     new Request("https://x.workers.dev/"),
     {
@@ -35,7 +39,7 @@ async function todayAt(site: keyof typeof HOURS, at: string, soldOutOn: Record<s
 }
 
 describe("the weekday decides whether the badge and footer show a time range", () => {
-  // tester-m6-prb-public.spec.ts:58 (fixed in #55) and tester-m5-hours.spec.ts:264 (7edf06f).
+  // public-layout-regressions.edge.spec.ts:58 (fixed in #55) and hours-admin-attacks.edge.spec.ts:264 (7edf06f).
   it("the bistro is closed on a Sunday, so its badge says Stängt", async () => {
     expect((await todayAt("bistro", "2026-10-18T10:00:00Z")).hours).toBeNull();
   });
@@ -70,14 +74,14 @@ describe("Stockholm midnight changes what a test set up a moment earlier", () =>
   });
 
   it("a dish sold out at 23:59 is on sale again at 00:01, so a spec's undo button is gone", async () => {
-    // menu.spec.ts, keyboard.spec.ts, history.spec.ts, tester-m5.spec.ts, tester-m5-history.spec.ts.
+    // menu.spec.ts, keyboard.spec.ts, history.spec.ts, menu-admin-attacks.edge.spec.ts, history-export-restore.edge.spec.ts.
     const soldOutOn = { dish00000001: "2026-10-17" };
     expect((await todayAt("bistro", before, soldOutOn)).soldOut).toEqual(["dish00000001"]);
     expect((await todayAt("bistro", after, soldOutOn)).soldOut).toEqual([]);
   });
 
   it("an exception added for 'today' at 23:59 is yesterday's at 00:01", async () => {
-    // tester-m5-hours.spec.ts: today's exception, the badge, and "+2 years exactly".
+    // hours-admin-attacks.edge.spec.ts: today's exception, the badge, and "+2 years exactly".
     expect((await todayAt("bistro", before)).date).toBe("2026-10-17");
     expect((await todayAt("bistro", after)).date).toBe("2026-10-18");
   });
