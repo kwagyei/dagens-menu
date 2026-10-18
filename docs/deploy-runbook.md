@@ -65,12 +65,20 @@ the new schema while at least one site runs older code.
      --command "SELECT name, applied_at FROM d1_migrations ORDER BY id DESC LIMIT 5"
    ```
 
-2. Read the migrations this deploy applied. Each one must be **expand only** (new tables,
-   new nullable columns, new indexes), as `0004_session_passkey.sql` states. Then the old
-   code keeps working against the new schema, and rolling a Worker back is safe.
-3. If a migration removed or renamed something the old code reads, a Worker rollback will
-   break that site. Roll forward instead: fix the code and merge. Never edit or delete a
-   shipped migration; undo it with a new one.
+2. Read the migrations this deploy applied. Most are **expand only** (new tables, new
+   nullable columns, new indexes), as `0004_session_passkey.sql` states. Then the old code
+   keeps working against the new schema, and rolling a Worker back is safe.
+3. A migration whose first line is `-- CONTRACT` removed or renamed something older code
+   writes (`check-migrations.mjs` refuses a DROP or RENAME without that line). Once it is
+   applied, **roll forward only**: a `wrangler rollback` to code from before it breaks that
+   site. Fix the code and merge instead. Never edit or delete a shipped migration; undo it with
+   a new one.
+
+   The first is `0006_image_library_contract.sql`. Code from before it can't add to the
+   gallery or seed, so between its migration step and the new Workers going live (about a
+   minute), "Add to gallery" and deleting a photo may fail; the public pages keep working.
+   Merge contract migrations off-peak, and count the rows they would refuse on production
+   first (for 0006: images without alt, which must be 0).
 4. Only if the data itself is damaged: D1 Time Travel restores the database to a moment
    before the deploy (the run's start time is on the Actions page). It also discards every
    owner edit made since, on both sites, so it's the last resort.

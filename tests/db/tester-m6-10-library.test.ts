@@ -109,26 +109,6 @@ describe("delete safety: every use type keeps the photo", () => {
     await db.prepare("UPDATE menu_items SET image_id = ?, available = 0 WHERE site_id = 'bistro' AND id = ?").bind(id, DISH).run();
     expect(await deleteImage(bistro, id)).toMatchObject({ ok: false, error: "in-use" });
   });
-
-  // Tester F1 (Low), fixed: home_highlights.image_id is part of the unused check.
-  it("deleteUnusedImages with a legacy home_highlights.image_id: does not 500, keeps that photo, deletes the others", async () => {
-    const legacy = await uploaded();
-    const free = await uploaded();
-    await db.prepare("UPDATE home_highlights SET image_id = ? WHERE site_id = 'bistro' AND item_id = (SELECT item_id FROM home_highlights WHERE site_id = 'bistro' LIMIT 1)").bind(legacy).run();
-    expect(await n("SELECT count(*) AS n FROM home_highlights WHERE image_id = ?", legacy)).toBe(1);
-    // The usage check doesn't know this column; the FK refuses the batch, and the retry is identical.
-    let result: unknown;
-    let thrown: unknown;
-    try {
-      result = await deleteUnusedImages(bistro);
-    } catch (error) {
-      thrown = error;
-    }
-    expect(thrown, `deleteUnusedImages threw: ${String((thrown as Error)?.message)}`).toBeUndefined();
-    expect(result).toEqual({ deleted: 1 });
-    expect(await exists("bistro", legacy)).toBe(1);
-    expect(await exists("bistro", free)).toBe(0);
-  });
 });
 
 describe("races between the confirmation and the POST", () => {

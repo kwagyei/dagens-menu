@@ -34,7 +34,7 @@ const hidden = PAGE_SLOTS.filter((slot) => !shown.includes(slot) && chosen?.[slo
       {shown.map((slot) => {
         const photo = chosen?.[slot] ? byId.get(chosen[slot]!) : undefined;
         const thumb = photo ? thumbnail(photo) : null;
-        const name = photo?.alt ? photo.alt[locale] : t(locale, "admin.pick.none");
+        const name = photo ? photo.alt[locale] : t(locale, "admin.pick.none");
         return (
           <li class="admin-card p-3 flex flex-wrap items-center gap-3" id={`slot-${slot}`}>
             {thumb && <img src={thumb.src} alt="" width="72" height={Math.round((72 * thumb.height) / thumb.width)} loading="lazy" class="rounded shrink-0" />}
@@ -54,7 +54,7 @@ const hidden = PAGE_SLOTS.filter((slot) => !shown.includes(slot) && chosen?.[slo
         <ul class="space-y-3" id="page-photos-hidden">
           {hidden.map((slot) => {
             const photo = byId.get(chosen![slot]!);
-            const name = photo?.alt ? photo.alt[locale] : chosen![slot]!.slice(0, 12);
+            const name = photo ? photo.alt[locale] : chosen![slot]!.slice(0, 12);
             return (
               <li class="admin-card p-3 flex flex-wrap items-center gap-3" id={`slot-${slot}`}>
                 <div class="min-w-0 flex-1 space-y-1">

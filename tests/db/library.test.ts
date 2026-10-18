@@ -130,7 +130,7 @@ describe("deleteImage", () => {
     await db.batch([
       db.prepare("UPDATE menu_items SET image_id = ? WHERE site_id = 'bistro' AND id = ?").bind(id, DISH),
       db.prepare("UPDATE page_content SET story_image_id = ? WHERE site_id = 'bistro'").bind(id),
-      db.prepare("INSERT INTO gallery_images (site_id, id, image_id, alt_sv, alt_en, position) VALUES ('bistro', 'zzzzzzzzzzzz', ?, 'a', 'a', 99)").bind(id),
+      db.prepare("INSERT INTO gallery_images (site_id, id, image_id, position) VALUES ('bistro', 'zzzzzzzzzzzz', ?, 99)").bind(id),
     ]);
     const result = await deleteImage(bistro, id);
     expect(result).toMatchObject({ ok: false, error: "in-use" });
@@ -139,13 +139,25 @@ describe("deleteImage", () => {
     expect(await count("SELECT count(*) AS n FROM audit_log WHERE entity = 'image' AND action = 'delete'")).toBe(0);
   });
 
-  it("a reference the usage check doesn't know (a race, or an old highlight) is caught by the foreign key as in use", async () => {
+  it("a use added between the check and the delete is caught by the foreign key as in use", async () => {
     const id = await uploaded();
-    const highlight = await db.prepare("SELECT item_id FROM home_highlights WHERE site_id = 'bistro' LIMIT 1").first<string>("item_id");
-    await db.prepare("UPDATE home_highlights SET image_id = ? WHERE site_id = 'bistro' AND item_id = ?").bind(id, highlight).run();
-    expect(await deleteImage(bistro, id)).toEqual({ ok: false, error: "in-use", uses: [] });
-    expect(await count("SELECT count(*) AS n FROM images WHERE id = ?", id)).toBe(1);
-    expect(await count("SELECT count(*) AS n FROM audit_log WHERE entity = 'image' AND action = 'delete'")).toBe(0);
+    // A trigger stands in for the race: it adds a gallery use while the delete runs, after
+    // the statement's own "nothing uses it" check passed.
+    await db
+      .prepare(
+        `CREATE TRIGGER race_adds_a_use BEFORE DELETE ON images BEGIN
+           INSERT INTO gallery_images (site_id, id, image_id, position) VALUES (OLD.site_id, 'racerace0001', OLD.id, 99);
+         END`,
+      )
+      .run();
+    try {
+      const result = await deleteImage(bistro, id);
+      expect(result).toMatchObject({ ok: false, error: "in-use" });
+      expect(await count("SELECT count(*) AS n FROM images WHERE id = ?", id)).toBe(1);
+      expect(await count("SELECT count(*) AS n FROM audit_log WHERE entity = 'image' AND action = 'delete'")).toBe(0);
+    } finally {
+      await db.prepare("DROP TRIGGER race_adds_a_use").run();
+    }
   });
 
   it("refuses a built-in photo, even an unused one", async () => {

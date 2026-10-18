@@ -110,7 +110,6 @@ export function seedStatements(
     if (isUploadRef(entry.ref)) {
       const variants = uploads.get(entry.ref);
       if (!variants?.length) throw new Error(`${entry.ref} is an uploaded photo, but its bytes weren't given (restore it with --from).`);
-      if (!entry.alt) throw new Error(`uploaded photo ${entry.ref} has no alt text`);
       const master = variants[variants.length - 1];
       imageIds.set(entry.ref, entry.ref);
       out.push(
@@ -142,13 +141,12 @@ export function seedStatements(
         image.mime,
         entry.width ?? image.width ?? null,
         entry.height ?? image.height ?? null,
-        entry.alt?.sv ?? null,
-        entry.alt?.en ?? null,
+        entry.alt.sv,
+        entry.alt.en,
       ),
     );
   }
   const imageId = (ref: string | undefined) => (ref === undefined ? null : (imageIds.get(ref) ?? null));
-  const altOf = new Map(content.images.map((i) => [i.ref, i.alt]));
 
   const s = content.settings;
   out.push(
@@ -214,7 +212,7 @@ export function seedStatements(
   content.pages.home.highlights.forEach((itemId, position) => {
     out.push(
       stmt(
-        "INSERT INTO home_highlights (site_id, item_id, position, image_id) VALUES (?, ?, ?, NULL)",
+        "INSERT INTO home_highlights (site_id, item_id, position) VALUES (?, ?, ?)",
         site,
         itemId,
         position,
@@ -266,22 +264,9 @@ export function seedStatements(
     ),
   );
 
-  // gallery_images still has its own NOT NULL alt until the contract migration: fill it with
-  // the image's alt (the schema guarantees a gallery photo has one).
+  // A gallery photo's alt is the image's own (migration 0006 dropped the gallery's copy).
   content.gallery.images.forEach((g, position) => {
-    const alt = altOf.get(g.image);
-    if (!alt) throw new Error(`gallery photo ${g.image} has no alt text in the image library`);
-    out.push(
-      stmt(
-        "INSERT INTO gallery_images (site_id, id, image_id, alt_sv, alt_en, position) VALUES (?, ?, ?, ?, ?, ?)",
-        site,
-        newId(),
-        imageId(g.image),
-        alt.sv,
-        alt.en,
-        position,
-      ),
-    );
+    out.push(stmt("INSERT INTO gallery_images (site_id, id, image_id, position) VALUES (?, ?, ?, ?)", site, newId(), imageId(g.image), position));
   });
 
   out.push(stmt("INSERT INTO audit_log (site_id, entity, action, summary) VALUES (?, 'site', 'seed', ?)", site, summary));

@@ -61,11 +61,6 @@ export async function exportSite(db: D1Database, site: string): Promise<Exported
   // A curated image is referred to by its path, an upload by its id (ADR-014 §1).
   const refOf = new Map(images.results.map((r) => [str(r.id), r.kind === "static" ? str(r.path) : str(r.id)]));
   const imagePath = (id: unknown) => (id === null || id === undefined ? undefined : refOf.get(str(id)));
-  // Until the operator re-seeds after migration 0005, curated rows have no alt of their own;
-  // a gallery photo's alt is still on its gallery row, so the live gallery keeps its text.
-  // The first row wins when a photo is in the gallery twice (M6.3 tester F5).
-  const galleryAlt = new Map<string, { sv: string; en: string }>();
-  for (const g of gallery.results) if (!galleryAlt.has(str(g.image_id))) galleryAlt.set(str(g.image_id), { sv: str(g.alt_sv), en: str(g.alt_en) });
 
   const content: StoredContent = {
     settings: {
@@ -138,7 +133,7 @@ export async function exportSite(db: D1Database, site: string): Promise<Exported
     images: images.results.map((r) =>
       compact({
         ref: refOf.get(str(r.id))!,
-        alt: r.alt_sv === null || r.alt_en === null ? galleryAlt.get(str(r.id)) : { sv: str(r.alt_sv), en: str(r.alt_en) },
+        alt: { sv: str(r.alt_sv), en: str(r.alt_en) },
         width: optional(r.width as number | null),
         height: optional(r.height as number | null),
       }),

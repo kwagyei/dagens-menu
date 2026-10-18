@@ -8,7 +8,10 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test } from "@playwright/test";
-import { dishRow, signedInOwner } from "./helpers";
+import { clearOfMidnight, dishRow, signedInOwner } from "./helpers";
+
+// Sold out is for today only: the undo at the end needs the same day. Midnight must not fall inside a test.
+test.beforeEach(clearOfMidnight);
 
 test("a change shows in the history, newest first, with who made it", async ({ page }) => {
   const email = await signedInOwner(page);

@@ -37,7 +37,7 @@ export function curatedSizes(width: number, height: number): Array<{ width: numb
  * from before M6.3's re-seed, or a file too small for the ladder): the caller then falls back
  * to the original file, so a photo is never lost over it.
  */
-export function photoSources(image: LibraryImage): PhotoSources | null {
+export function photoSources(image: Pick<LibraryImage, "ref" | "width" | "height">): PhotoSources | null {
   if (!image.width || !image.height) return null;
   let sizes: Array<{ width: number; height: number; url: string }>;
   if (isUploadRef(image.ref)) {

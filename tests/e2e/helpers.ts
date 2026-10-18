@@ -1,6 +1,7 @@
 /** Shared setup for admin e2e tests: real invites from the CLI, a virtual passkey, a fresh IP. */
 import { execFileSync } from "node:child_process";
-import { expect, type Page } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
+import { msToStockholmMidnight } from "./clock";
 
 /** The site the Worker under test serves (playwright.config.ts). */
 export const SITE = process.env.E2E_SITE ?? "bistro";
@@ -17,6 +18,22 @@ export const plusDays = (iso: string, n: number): string => new Date(Date.parse(
 
 /** A Stockholm date n days from today. */
 export const daysAhead = (n: number): string => plusDays(stockholmToday(), n);
+
+/**
+ * For test.beforeEach in a spec whose test means "today" across more than one request: an
+ * exception for today, a dish sold out today, the home badge. If Stockholm midnight could fall
+ * inside the test (it is closer than the test's timeout), wait until it has passed and give
+ * the test that time back. Otherwise the Worker's "today" changes halfway: the nightly edge run
+ * starts at 23:30 Stockholm time in winter. The assertions are unchanged; each test just runs
+ * wholly on one date, which may be either side of midnight.
+ */
+export async function clearOfMidnight(): Promise<void> {
+  const info = test.info();
+  const wait = msToStockholmMidnight(new Date());
+  if (wait > info.timeout) return;
+  info.setTimeout(info.timeout + wait + 2_000);
+  await new Promise((resolve) => setTimeout(resolve, wait + 1_000));
+}
 
 let n = 0;
 let ip = 0;

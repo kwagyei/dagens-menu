@@ -19,7 +19,7 @@ beforeEach(async () => {
     db.prepare("DELETE FROM users"),
     db.prepare("INSERT INTO sites (id) VALUES ('bistro')"),
     db.prepare("INSERT INTO sites (id) VALUES ('westafrican')"),
-    db.prepare("INSERT INTO images (site_id, id, kind, path, mime) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg')").bind(IMG),
+    db.prepare("INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg', 'Foto', 'Photo')").bind(IMG),
     db.prepare(
       `INSERT INTO settings (site_id, name_sv, name_en, tagline_sv, tagline_en, cuisine_sv, cuisine_en, address, phone, email)
        VALUES ('bistro', 'Bistro', 'Bistro', 'Mat', 'Food', 'Svensk', 'Swedish', 'Gatan 1', '+46 8 123 45 67', 'hej@x.se')`,
@@ -97,7 +97,7 @@ describe("length caps are the schema's job (by design: SQLite counts code points
 
 describe("images.path is not tied to the site's folder", () => {
   const insert = (path: string) =>
-    attempt("INSERT INTO images (site_id, id, kind, path, mime) VALUES ('bistro', ?, 'static', ?, 'image/jpeg')", "b".repeat(64), path);
+    attempt("INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', ?, 'image/jpeg', 'Foto', 'Photo')", "b".repeat(64), path);
   it("rejects another site's folder", async () => {
     expect(await insert("/images/westafrican/x.jpg")).toMatch(/CHECK/);
   });
@@ -149,7 +149,7 @@ describe("cross-site references are impossible (composite foreign keys)", () => 
     ["an item in another site's category", `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position)
        VALUES ('westafrican', 'item00000002', '${CAT}', 'A', 'A', 'B', 'B', 1, 0)`],
     ["a highlight of another site's item", `INSERT INTO home_highlights (site_id, item_id, position) VALUES ('westafrican', '${ITEM}', 0)`],
-    ["a gallery entry using another site's image", `INSERT INTO gallery_images (site_id, id, image_id, alt_sv, alt_en, position) VALUES ('westafrican', 'gal000000001', '${IMG}', 'a', 'a', 0)`],
+    ["a gallery entry using another site's image", `INSERT INTO gallery_images (site_id, id, image_id, position) VALUES ('westafrican', 'gal000000001', '${IMG}', 0)`],
     ["a membership-less session on another site", `INSERT INTO sessions (token_hash, user_id, site_id, created_at, last_seen_at, expires_at)
        VALUES ('${"f".repeat(64)}', '${USER}', 'westafrican', '2026-10-16T10:00:00Z', '2026-10-16T10:00:00Z', '2026-11-16T10:00:00Z')`],
   ])("rejects %s", async (_name, sql) => {

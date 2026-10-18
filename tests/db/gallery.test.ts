@@ -65,7 +65,7 @@ describe("addToGallery", () => {
     expect(await addToGallery(bistro, id)).toEqual({ ok: true });
     const list = await listGallery(bistro);
     expect(list.at(-1)).toMatchObject({ imageId: id, ref: id, alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` } });
-    expect(await count("SELECT count(*) AS n FROM gallery_images WHERE image_id = ? AND alt_sv = ?", id, `Foto ${counter}`)).toBe(1);
+    expect(await count("SELECT count(*) AS n FROM gallery_images WHERE image_id = ?", id)).toBe(1);
     expect(await version()).toBeGreaterThan(v!);
     expect(await count("SELECT count(*) AS n FROM audit_log WHERE entity = 'gallery_image' AND action = 'create' AND user_id = 'owner1'")).toBe(1);
     // The library now counts it as used, by position.
@@ -80,12 +80,6 @@ describe("addToGallery", () => {
     expect(await addToGallery(bistro, id)).toEqual({ ok: false, error: "already" });
     expect(await count("SELECT count(*) AS n FROM gallery_images WHERE image_id = ?", id)).toBe(1);
     expect(await version()).toBe(v);
-  });
-
-  it("refuses a photo without alt (an old curated row)", async () => {
-    const id = await uploaded();
-    await db.prepare("UPDATE images SET alt_sv = NULL, alt_en = NULL WHERE id = ?").bind(id).run();
-    expect(await addToGallery(bistro, id)).toEqual({ ok: false, error: "no-alt" });
   });
 
   it("refuses when the gallery is full", async () => {
