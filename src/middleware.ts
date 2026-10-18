@@ -5,6 +5,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { env } from "cloudflare:workers";
 import { guardAdminRequest } from "./auth/guard";
+import { usableSecret } from "./auth/secret";
 import { getSession, readCookie, SESSION_COOKIE } from "./auth/sessions";
 import { bundledSettings, bundledTheme } from "./content/bundled";
 import { D1ContentSource } from "./content/d1-source";
@@ -45,8 +46,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const admin = isAdminRoute(routeClass(context.url.pathname));
   if (admin) {
     // Without a signing secret the admin can't work safely: refuse all of it, cleanly.
-    if (!env.SESSION_SECRET || env.SESSION_SECRET.length < 32) {
-      console.error("admin: SESSION_SECRET is not set (32+ characters); the admin is unavailable.");
+    if (!usableSecret(env.SESSION_SECRET)) {
+      console.error("admin: SESSION_SECRET is not set (32+ random characters, not the example's placeholder); the admin is unavailable.");
       const api = /\/admin\/api\//.test(decodedPath(context.url.pathname));
       return new Response(api ? JSON.stringify({ error: "not-configured" }) : "The admin is not configured.", {
         status: 503,

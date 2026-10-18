@@ -69,12 +69,17 @@ async function csrfOf(page: Page, path = "/admin/security/") {
   return (await page.locator('input[name="csrf"]').first().getAttribute("value"))!;
 }
 
-/** Give the signed-in owner a second passkey (Chrome holds one built-in authenticator at a time). */
+/**
+ * Give the signed-in owner a second passkey: confirm with the current one (security review
+ * M2), then create on a new device (Chrome holds one built-in authenticator at a time).
+ */
 async function addSecondDevice(page: Page, auth: Awaited<ReturnType<typeof authenticator>>) {
   await page.goto("/admin/security/");
+  await page.getByRole("button", { name: "Lägg till en enhet" }).click();
+  await expect(page.getByRole("button", { name: "Skapa den nya passkeyn" })).toBeVisible();
   await auth.remove(auth.id);
   await auth.add();
-  await page.getByRole("button", { name: "Lägg till en enhet" }).click();
+  await page.getByRole("button", { name: "Skapa den nya passkeyn" }).click();
   await expect(page.getByText("Den nya passkeyn är sparad.")).toBeVisible();
 }
 
@@ -155,7 +160,9 @@ test.describe("security events in the history (reviewer M3)", () => {
     await expect(page.getByText("Passkeyn är borttagen", { exact: false })).toBeVisible();
     await page.getByRole("button", { name: "Logga ut överallt" }).click();
     await expect(page.getByRole("heading", { name: "Logga in" })).toBeVisible();
-    // The device in this browser lost its passkey: back in through a recovery invite.
+    // The device in this browser lost its passkey: back in through a recovery invite, from
+    // another network (the per-IP limit is 10 ceremony calls a minute, and this is the 11th).
+    await page.context().setExtraHTTPHeaders({ "CF-Connecting-IP": freshIp() });
     await page.goto(invite(email));
     await page.getByRole("button", { name: "Skapa passkey" }).click();
     await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
@@ -231,6 +238,17 @@ test.describe("CSRF and redirects", () => {
 });
 
 test.describe("security page", () => {
+  test("a body that isn't a form reads as an expired form, not a 500 (security review L1)", async ({ page, context, request }) => {
+    await enrol(page);
+    const res = await request.post("/admin/security/", {
+      headers: { ...SAME, Cookie: await cookieHeader(context), "Content-Type": "multipart/form-data; boundary=x" },
+      data: "not a multipart body",
+      maxRedirects: 0,
+    });
+    expect(res.status()).toBe(303);
+    expect(res.headers().location).toBe("/admin/security/?done=expired");
+  });
+
   test("the last passkey can't be removed, even by a hand-made post", async ({ page, context, request }) => {
     const { email } = await enrol(page);
     const [only] = passkeyIds(email);

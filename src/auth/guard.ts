@@ -11,8 +11,11 @@
  *   a 503 rather than run unlimited (review L2): a config slip must not quietly drop the limit.
  * - Forms posted while signed in carry a token tied to the session (formToken), checked by
  *   the page that handles the post.
+ * - Body size: an admin post must say how big it is, and be at most ADMIN_BODY_LIMIT, before
+ *   anything reads it (security review L1, 18 Oct). The photo upload page has its own,
+ *   larger limit (src/admin/upload.ts).
  */
-import { decodedPath, securityHeaders } from "../server/http";
+import { decodedPath, routeClass, securityHeaders } from "../server/http";
 import { hmac, hmacVerify } from "./crypto";
 
 export interface RateLimiter {
@@ -28,10 +31,22 @@ const refusal = (status: number, text: string, extra: Record<string, string> = {
 /** Paths that cost a passkey ceremony or reveal an invite: the rate-limited ones. */
 const AUTH_PATH = /^\/(en\/)?admin\/(invite\/|api\/)/;
 
+/**
+ * The largest admin post other than a photo upload. The texts page is the biggest form: four
+ * long fields at their input limit, each character up to 9 bytes once form-encoded, plus the
+ * short ones, comes to about 330 KB.
+ */
+export const ADMIN_BODY_LIMIT = 512 * 1024;
+
 export async function guardAdminRequest(request: Request, site: string, limiter: RateLimiter | undefined): Promise<Response | null> {
   const url = new URL(request.url);
   if (changes(request.method) && request.headers.get("Origin") !== url.origin) {
     return refusal(403, "Cross-site request refused");
+  }
+  if (changes(request.method) && routeClass(url.pathname) !== "admin-upload") {
+    const length = request.headers.get("Content-Length");
+    if (length === null || !/^\d+$/.test(length)) return refusal(411, "Length required");
+    if (Number(length) > ADMIN_BODY_LIMIT) return refusal(413, "Too large");
   }
   if (AUTH_PATH.test(decodedPath(url.pathname))) {
     if (!limiter) {

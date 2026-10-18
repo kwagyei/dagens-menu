@@ -6,7 +6,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { guardAdminRequest, type RateLimiter } from "../../src/auth/guard";
 
 const site = "https://bistro.example";
-const req = (path: string, method = "POST") => new Request(`${site}${path}`, { method, headers: method === "GET" ? {} : { Origin: site } });
+// A post says how long its body is, as a browser's does (the guard refuses one that doesn't).
+const req = (path: string, method = "POST") => new Request(`${site}${path}`, { method, headers: method === "GET" ? {} : { Origin: site, "Content-Length": "0" } });
 
 afterEach(() => vi.restoreAllMocks());
 

@@ -2,8 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { embedProvider, thirdPartyOrigins } from "../src/booking/embed";
 
-const GOOD = `<script src="https://app.waiteraid.com/widget/1.js"></script>`;
 const FORK = `<iframe src="https://widget.thefork.com/abc"></iframe>`;
+const GOOD = FORK;
 const refused = (code: string) => expect("problem" in embedProvider(code)).toBe(true);
 
 describe("embedProvider refuses what would run or load outside the provider", () => {
@@ -15,6 +15,9 @@ describe("embedProvider refuses what would run or load outside the provider", ()
     ["iframe srcdoc with escaped script", `<iframe src="https://widget.thefork.com/a" srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"></iframe>`],
     ["</template> breakout loads the provider before consent", `</template>${GOOD}`],
     ["comment hiding", `<!-- <script src="https://app.waiteraid.com/x.js"> -->${GOOD}`],
+    ["a known provider's script (security review M1)", `<script src="https://app.waiteraid.com/widget/1.js"></script>`],
+    ["a script hidden in mixed case beside a frame", `${FORK}<ScRiPt src="https://widget.thefork.com/x.js"></ScRiPt>`],
+    ["a sandbox of its own", `<iframe src="https://widget.thefork.com/a" sandbox></iframe>`],
     ["userinfo host", `<iframe src="https://widget.thefork.com@evil.example/"></iframe>`],
     ["data url", `<iframe src="data:text/html,<script>alert(1)</script>"></iframe>`],
     ["meta refresh", `<meta http-equiv="refresh" content="0;url=https://evil.example">${GOOD}`],

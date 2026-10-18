@@ -7,13 +7,14 @@ import type { AstroGlobal, APIContext } from "astro";
 import { env } from "cloudflare:workers";
 import type { ApiResult, CeremonyContext } from "../auth/passkeys";
 import { CHALLENGE_COOKIE } from "../auth/passkeys";
+import { usableSecret } from "../auth/secret";
 import { readCookie } from "../auth/sessions";
 
 export class AdminNotConfiguredError extends Error {}
 
 export function adminSecret(): string {
   const secret = env.SESSION_SECRET;
-  if (!secret || secret.length < 32) throw new AdminNotConfiguredError("SESSION_SECRET is not set (32+ characters).");
+  if (!usableSecret(secret)) throw new AdminNotConfiguredError("SESSION_SECRET is not set (32+ random characters, not the example's placeholder).");
   return secret;
 }
 

@@ -32,9 +32,9 @@ date themselves.
   lists both languages, and Open Graph tags with a photo for shared links.
 - A menu with EU-14 allergens, dietary tags and sold-out items, plus schema.org `Restaurant`
   and `Menu` JSON-LD for search results.
-- A booking widget in three modes (embed, link-out, phone/email fallback). Embed code is
-  accepted from five known providers (WaiterAid, TheFork, Formitable, easyTable, Quandoo);
-  BokaBord.se is a link-out preset.
+- A booking widget in three modes (embed, link-out, phone/email fallback). An embed is a
+  sandboxed `<iframe>` from one of five known providers (WaiterAid, TheFork, Formitable,
+  easyTable, Quandoo); BokaBord.se is a link-out preset.
 - A cookie consent banner with equally weighted Accept and Decline. The map and booking
   embeds load only after consent.
 - The privacy page is generated from the site settings, so it only describes services
@@ -132,10 +132,13 @@ is the seed data the demos are loaded from.
 - **Strict headers on every page, scoped per route and per site.** The Worker sets the CSP
   and security headers itself, because `public/_headers` only reaches static files.
   - Public pages allow their own origin and `'unsafe-inline'` for the scripts Astro inlines.
-    A site with a booking embed or a map adds only that provider's origins, and the map's
-    origin as a frame; the scripts that use them run only after consent. Booking embed code
-    must load from exactly one known provider, with no inline script, and the CSP is built
-    from that provider's list (`src/booking/embed.ts`), so a pasted snippet can't widen it.
+    A site with a booking embed or a map adds only that provider's origin and the map's,
+    both as frames only, loaded after consent. A booking provider runs only in a sandboxed,
+    cross-origin `<iframe>`, never as a script on the site: the admin shares the site's
+    origin, so a provider script could otherwise act as a signed-in owner. Embed code must
+    frame exactly one known provider, and the CSP is built from that provider's list
+    (`src/booking/embed.ts`), so a pasted snippet can't widen it. Providers that offer only a
+    script widget use link mode instead.
   - The admin allows no inline scripts at all; only the photo upload page adds WebAssembly,
     for its encoder.
   - Every `/media` answer, including a 404, is `default-src 'none'; sandbox`, so a crafted
@@ -188,6 +191,14 @@ is the seed data the demos are loaded from.
 
 ## Known limitations
 
+- **Booking widgets that are only a script can't be embedded.** A provider runs only in a
+  sandboxed `<iframe>`, because the admin shares the site's origin and a provider script
+  there could act as a signed-in owner. A provider that offers no iframe or hosted booking
+  page is used in link mode, which opens its booking page in a new tab.
+- **Adding a device takes the current passkey.** The owner confirms with an existing passkey
+  before a new one is created, so a session left signed in can't add a passkey that would
+  survive "sign out everywhere". An owner who has lost every passkey gets a new invite from
+  the operator, as before.
 - **An export file restores a demo, not a client, on the live database.** `npm run seed --
   --from <file>` restores locally, and `--remote --reset` is allowed only for the two demo
   sites. A client site on the live database is restored from D1 Time Travel instead.

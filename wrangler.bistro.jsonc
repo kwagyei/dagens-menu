@@ -3,6 +3,9 @@
 // in, the content comes from D1 for this site id.
 {
   "name": "dagens-menu-bistro",
+  // No preview URLs: an uploaded but untested version must never answer on a public URL
+  // against the production database (security review L3, 18 Oct).
+  "preview_urls": false,
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "vars": { "SITE_ID": "bistro" },

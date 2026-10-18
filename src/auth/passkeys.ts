@@ -205,6 +205,32 @@ function handleMatches(handle: string, userId: string): boolean {
   }
 }
 
+type StoredPasskey = { id: string; user_id: string; public_key: ArrayBuffer; counter: number; transports: string };
+
+/**
+ * Check a passkey's signature over `challenge`, with user verification. The new sign counter,
+ * or null if it doesn't verify (including a counter that went backwards: a sign of a cloned
+ * authenticator).
+ */
+async function verifiedAssertion(ctx: CeremonyContext, challenge: string, row: StoredPasskey, response: unknown): Promise<number | null> {
+  // WebAuthn §7.2: a discoverable assertion names its user, and it must be the passkey's owner.
+  const handle = (response as { response?: { userHandle?: unknown } })?.response?.userHandle;
+  if (typeof handle !== "string" || !handleMatches(handle, row.user_id)) return null;
+  try {
+    const result = await verifyAuthenticationResponse({
+      response: response as Parameters<typeof verifyAuthenticationResponse>[0]["response"],
+      expectedChallenge: challenge,
+      expectedOrigin: ctx.origin,
+      expectedRPID: ctx.rpID,
+      credential: { id: row.id, publicKey: new Uint8Array(row.public_key), counter: row.counter, transports: JSON.parse(row.transports) },
+      requireUserVerification: true,
+    });
+    return result.verified ? result.authenticationInfo.newCounter : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Sign-in step 1: a challenge for any passkey of this site (discoverable, no username). */
 export async function loginOptions(ctx: CeremonyContext): Promise<ApiResult> {
   const options = await generateAuthenticationOptions({ rpID: ctx.rpID, userVerification: USER_VERIFICATION });
@@ -224,27 +250,10 @@ export async function loginVerify(ctx: CeremonyContext, response: unknown): Prom
        WHERE p.id = ? AND p.site_id = ?`,
     )
     .bind(assertion.id, ctx.site)
-    .first<{ id: string; user_id: string; public_key: ArrayBuffer; counter: number; transports: string }>();
+    .first<StoredPasskey>();
   if (!row) return refuse(401, "unknown-passkey");
-  // WebAuthn §7.2: a discoverable sign-in names its user, and it must be the passkey's owner.
-  const handle = assertion.response?.userHandle;
-  if (typeof handle !== "string" || !handleMatches(handle, row.user_id)) return refuse(401, "verification-failed");
-  let newCounter: number;
-  try {
-    const result = await verifyAuthenticationResponse({
-      response: response as Parameters<typeof verifyAuthenticationResponse>[0]["response"],
-      expectedChallenge: challenge,
-      expectedOrigin: ctx.origin,
-      expectedRPID: ctx.rpID,
-      credential: { id: row.id, publicKey: new Uint8Array(row.public_key), counter: row.counter, transports: JSON.parse(row.transports) },
-      requireUserVerification: true,
-    });
-    if (!result.verified) return refuse(401, "verification-failed");
-    newCounter = result.authenticationInfo.newCounter;
-  } catch {
-    // Includes a sign counter that went backwards: a sign of a cloned authenticator.
-    return refuse(401, "verification-failed");
-  }
+  const newCounter = await verifiedAssertion(ctx, challenge, row, response);
+  if (newCounter === null) return refuse(401, "verification-failed");
   const session = await newSession(row.user_id, ctx.site, row.id, ctx.now);
   try {
     await ctx.db.batch(
@@ -261,8 +270,50 @@ export async function loginVerify(ctx: CeremonyContext, response: unknown): Prom
   return ok({ ok: true }, [clearChallenge, sessionCookie(session.token, session.expiresAt)]);
 }
 
-/** Adding another device while signed in (Admin → Security). */
+/**
+ * Adding another device while signed in (Admin → Security) takes three steps, so a session
+ * alone (a tablet left signed in, a stolen cookie) can't add a passkey that would outlive
+ * "sign out everywhere" (security review M2, 18 Oct):
+ *
+ * 1. addPasskeyOptions: a challenge for one of this person's own passkeys.
+ * 2. addPasskeyConfirm: that passkey's signature, with user verification. Only then are the
+ *    registration options issued, with a challenge cookie bound to this session that lasts
+ *    5 minutes: the confirmation is that fresh.
+ * 3. addPasskeyVerify: the new passkey, against that challenge.
+ */
 export async function addPasskeyOptions(ctx: CeremonyContext, session: Session): Promise<ApiResult> {
+  const options = await generateAuthenticationOptions({
+    rpID: ctx.rpID,
+    userVerification: USER_VERIFICATION,
+    allowCredentials: await registeredCredentials(ctx, session.userId),
+  });
+  return ok({ confirm: options }, [await challengeCookie(ctx, `add-confirm:${session.tokenHash}`, options.challenge)]);
+}
+
+export async function addPasskeyConfirm(ctx: CeremonyContext, session: Session, response: unknown): Promise<ApiResult> {
+  const challenge = await expectedChallenge(ctx, `add-confirm:${session.tokenHash}`);
+  if (!challenge) return refuse(400, "challenge-expired");
+  const id = (response as { id?: unknown })?.id;
+  if (typeof id !== "string") return refuse(400, "verification-failed");
+  // Only the signed-in person's own passkey on this site confirms it's them.
+  const row = await ctx.db
+    .prepare("SELECT id, user_id, public_key, counter, transports FROM passkeys WHERE id = ? AND user_id = ? AND site_id = ?")
+    .bind(id, session.userId, ctx.site)
+    .first<StoredPasskey>();
+  if (!row) return refuse(401, "unknown-passkey");
+  const newCounter = await verifiedAssertion(ctx, challenge, row, response);
+  if (newCounter === null) return refuse(401, "verification-failed");
+  try {
+    await ctx.db.batch(
+      prepare(ctx.db, [
+        ...redeemChallenge(ctx, challenge),
+        stmt("UPDATE passkeys SET counter = ?, last_used_at = ? WHERE id = ?", newCounter, isoSeconds(ctx.now), row.id),
+      ]),
+    );
+  } catch (error) {
+    if (isConstraintError(error)) return refuse(401, "challenge-used");
+    throw error;
+  }
   return registrationOptionsFor(ctx, session.userId, session.email, `add:${session.tokenHash}`);
 }
 

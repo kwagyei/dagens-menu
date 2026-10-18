@@ -50,11 +50,12 @@ describe("handlePage", () => {
   it("widens a public page's CSP to the site's own booking provider and map only", async () => {
     const withEmbeds = {
       ...content,
-      settings: { ...content.settings, booking: { provider: "embed" as const, embedCode: `<script src="https://app.waiteraid.com/widget/x.js"></script>` }, mapEmbed: "https://www.google.com/maps/embed?pb=x" },
+      settings: { ...content.settings, booking: { provider: "embed" as const, embedCode: `<iframe src="https://app.waiteraid.com/booking/x"></iframe>` }, mapEmbed: "https://www.google.com/maps/embed?pb=x" },
     };
     const res = await handlePage(get("/book/"), deps({}, { content: withEmbeds }), page);
     const policy = res.headers.get("Content-Security-Policy");
-    expect(policy).toContain("script-src 'self' 'unsafe-inline' https://app.waiteraid.com;");
+    // Frames only: no provider ever runs script on the site's origin (security review M1).
+    expect(policy).toContain("script-src 'self' 'unsafe-inline';");
     expect(policy).toContain("frame-src 'self' https://app.waiteraid.com https://www.google.com;");
     const admin = await handlePage(get("/admin/"), deps({}, { content: withEmbeds }), page);
     expect(admin.headers.get("Content-Security-Policy")).not.toMatch(/waiteraid|google/);

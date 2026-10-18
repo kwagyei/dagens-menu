@@ -8,7 +8,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../../src/auth/crypto";
 import { issueInvite, revokeStatements } from "../../src/auth/invites";
 import {
-  addPasskeyOptions,
   addPasskeyVerify,
   type CeremonyContext,
   enrolOptions,
@@ -20,6 +19,7 @@ import {
 import { getSession, type Session, signOutEverywhere } from "../../src/auth/sessions";
 import { recentChanges } from "../../src/db/audit";
 import { prepare, stmt } from "../../src/db/sql";
+import { confirmedAddOptions } from "./add-device";
 import { SoftAuthenticator } from "./soft-authenticator";
 
 const db = env.DB;
@@ -79,7 +79,7 @@ async function login(auth: SoftAuthenticator) {
 }
 
 async function addDevice(signedIn: Session, auth = new SoftAuthenticator()) {
-  const options = await addPasskeyOptions(ctx(), signedIn);
+  const options = await confirmedAddOptions((c) => ctx(c), signedIn, BISTRO.origin, BISTRO.rpID);
   const response = await auth.register(options.body.options as never, BISTRO.origin, BISTRO.rpID);
   const result = await addPasskeyVerify(ctx(cookieValue(options.cookies[0])), signedIn, response);
   expect(result.status).toBe(200);
@@ -151,7 +151,7 @@ describe("M3: security events are audited", () => {
     const signedIn = await session(token);
     const second = await addDevice(signedIn);
     // Registering the same credential again is refused, and not audited.
-    const options = await addPasskeyOptions(ctx(), signedIn);
+    const options = await confirmedAddOptions((c) => ctx(c), signedIn, BISTRO.origin, BISTRO.rpID);
     const again = await second.register(options.body.options as never, BISTRO.origin, BISTRO.rpID);
     expect((await addPasskeyVerify(ctx(cookieValue(options.cookies[0])), signedIn, again)).status).toBe(409);
     const added = (await auditRows()).filter((r) => r.entity === "passkey" && r.action === "create");

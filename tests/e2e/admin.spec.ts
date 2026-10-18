@@ -105,10 +105,13 @@ test("security: add a second device, remove the first (which signs it out), sign
   await page.getByRole("link", { name: "Säkerhet" }).click();
   await expect(page.getByText("Din enda passkey kan inte tas bort")).toBeVisible();
 
-  // A second phone: Chrome allows one built-in authenticator at a time, so swap devices.
+  // First confirm with this phone's passkey (security review M2), then a second phone: Chrome
+  // allows one built-in authenticator at a time, so swap devices before creating.
+  await page.getByRole("button", { name: "Lägg till en enhet" }).click();
+  await expect(page.getByRole("status")).toHaveText("Bekräftat. Skapa nu passkeyn på den nya enheten.");
   await auth.remove(auth.id);
   await auth.addAnother();
-  await page.getByRole("button", { name: "Lägg till en enhet" }).click();
+  await page.getByRole("button", { name: "Skapa den nya passkeyn" }).click();
   await expect(page.getByText("Den nya passkeyn är sparad.")).toBeVisible();
   await expect(page.getByText(/^Passkey 2$/)).toBeVisible();
 
@@ -124,7 +127,9 @@ test("security: add a second device, remove the first (which signs it out), sign
 
   await page.getByRole("button", { name: "Logga ut överallt" }).click();
   await expect(page.getByRole("heading", { name: "Logga in" })).toBeVisible();
-  // The remaining passkey (on the second device) still signs in.
+  // The remaining passkey (on the second device) still signs in. That device is on another
+  // network: this test's 11th ceremony call in one minute would hit the per-IP limit of 10.
+  await page.context().setExtraHTTPHeaders({ "CF-Connecting-IP": freshIp() });
   await page.getByRole("button", { name: "Logga in med passkey" }).click();
   await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
 });

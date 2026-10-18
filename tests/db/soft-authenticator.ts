@@ -49,6 +49,8 @@ function derSignature(raw: Uint8Array): Uint8Array {
 }
 
 export class SoftAuthenticator {
+  /** Every credential a SoftAuthenticator has registered, by id: who can sign for it. */
+  static readonly registered = new Map<string, SoftAuthenticator>();
   credentialId = crypto.getRandomValues(new Uint8Array(16));
   counter: number;
   userHandle = "";
@@ -65,6 +67,7 @@ export class SoftAuthenticator {
   async register(options: { challenge: string; user: { id: string } }, origin: string, rpID: string) {
     this.keys = (await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"])) as CryptoKeyPair;
     this.userHandle = options.user.id;
+    SoftAuthenticator.registered.set(this.id, this);
     const jwk = (await crypto.subtle.exportKey("jwk", this.keys.publicKey)) as JsonWebKey;
     const cose = cbor(
       new Map<Cbor, Cbor>([

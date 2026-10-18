@@ -113,7 +113,7 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ["non-https booking URL in another mode", (c) => (c.settings.booking = { provider: "none", bookingUrl: "javascript:alert(1)" }), "settings.booking.bookingUrl", "https://"],
   [
     "embed code from an unknown host",
-    (c) => (c.settings.booking = { provider: "embed", embedCode: `<script src="https://evil.example/w.js"></script>` }),
+    (c) => (c.settings.booking = { provider: "embed", embedCode: `<iframe src="https://evil.example/w"></iframe>` }),
     "settings.booking.embedCode",
     "one known booking provider",
   ],
@@ -121,7 +121,13 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
     "embed code with inline script",
     (c) => (c.settings.booking = { provider: "embed", embedCode: `<script>fetch("https://evil.example")</script>` }),
     "settings.booking.embedCode",
-    "inline script",
+    "<script>",
+  ],
+  [
+    "embed code that runs a known provider's script on the site (security review M1)",
+    (c) => (c.settings.booking = { provider: "embed", embedCode: `<script src="https://app.waiteraid.com/widget/1.js"></script>` }),
+    "settings.booking.embedCode",
+    "only in its own <iframe>",
   ],
   ["oversized embed code", (c) => (c.settings.booking = { provider: "embed", embedCode: "x".repeat(5001) }), "settings.booking.embedCode", "5000"],
   // Contact formats
