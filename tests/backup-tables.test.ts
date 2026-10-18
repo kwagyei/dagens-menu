@@ -13,13 +13,20 @@ const schema = readdirSync("migrations")
   .map((f) => readFileSync(`migrations/${f}`, "utf8"))
   .join("\n");
 
-/** Each table the migrations create, with the tables it references. */
+/**
+ * Each table the migrations leave, with the tables it references. Read in order, so a rebuild
+ * (create the new table, drop the old, rename the new, as 0006 does) ends as the one table.
+ */
 const tables = new Map<string, Set<string>>();
-for (const match of schema.matchAll(/CREATE TABLE (\w+) \(([\s\S]*?)\n\)/g)) {
-  tables.set(match[1], new Set([...match[2].matchAll(/REFERENCES (\w+)/g)].map((m) => m[1])));
-}
-for (const match of schema.matchAll(/ALTER TABLE (\w+) ADD COLUMN [^;]*REFERENCES (\w+)/g)) {
-  tables.get(match[1])?.add(match[2]);
+const statements = /CREATE TABLE (\w+) \(([\s\S]*?)\n\)|ALTER TABLE (\w+) ADD COLUMN [^;]*REFERENCES (\w+)|DROP TABLE (\w+)|ALTER TABLE (\w+) RENAME TO (\w+)/g;
+for (const [, created, body, altered, referenced, dropped, from, to] of schema.matchAll(statements)) {
+  if (created) tables.set(created, new Set([...body.matchAll(/REFERENCES (\w+)/g)].map((m) => m[1])));
+  else if (altered) tables.get(altered)?.add(referenced);
+  else if (dropped) tables.delete(dropped);
+  else if (from) {
+    tables.set(to, tables.get(from)!);
+    tables.delete(from);
+  }
 }
 
 describe("backup table list", () => {

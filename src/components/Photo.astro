@@ -47,7 +47,7 @@ const locale = getLocale(Astro.url);
 const image = ref ? Astro.locals.content.images.find((i) => i.ref === ref) : undefined;
 if (ref && !image) console.error(`photo: ${ref} is not in the image library; not shown`);
 const sources = image ? photoSources(image) : null;
-const alt = !image || DECORATIVE.has(slot) ? "" : image.alt ? localized(image.alt, locale) : "";
+const alt = !image || DECORATIVE.has(slot) ? "" : localized(image.alt, locale);
 ---
 
 {image && (sources ? (

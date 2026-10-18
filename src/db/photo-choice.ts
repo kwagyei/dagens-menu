@@ -1,9 +1,9 @@
 /**
  * Choosing which library photo a dish or a page slot shows (plan M6.10c; ADR-014 §4).
  *
- * - A choice is one guarded UPDATE of one column: the photo must be this site's and have its
- *   alt, or the choice is "no photo". Another site's id, an unknown one or a malformed one
- *   changes nothing and reads as not found.
+ * - A choice is one guarded UPDATE of one column: the photo must be this site's (and so has
+ *   its alt, since migration 0006), or the choice is "no photo". Another site's id, an
+ *   unknown one or a malformed one changes nothing and reads as not found.
  * - The row's row_version is left alone, like the sold-out toggle: a photo choice is its own
  *   field, so it never makes a dish or texts form open in another tab stale.
  * - A choice that is already the current one writes nothing (no audit row, same version).
@@ -26,8 +26,8 @@ const SHOWN: Record<"classic" | "modern", readonly PageSlot[]> = {
 };
 export const shownSlots = (style: "classic" | "modern"): readonly PageSlot[] => SHOWN[style];
 
-/** "this site's photo, with its alt" as a SQL condition on the bound site and image id. */
-const PHOTO_OK = "EXISTS (SELECT 1 FROM images WHERE site_id = ? AND id = ? AND alt_sv IS NOT NULL AND alt_en IS NOT NULL)";
+/** "this site's photo" as a SQL condition on the bound site and image id. */
+const PHOTO_OK = "EXISTS (SELECT 1 FROM images WHERE site_id = ? AND id = ?)";
 
 /** The photo a dish shows: its image id, or null for none; undefined if there is no such dish. */
 export async function dishPhoto(ctx: RepoContext, itemId: string): Promise<string | null | undefined> {

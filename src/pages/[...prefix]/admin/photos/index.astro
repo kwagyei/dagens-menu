@@ -76,7 +76,7 @@ const here = page.path("/photos/");
       <ul class="space-y-3" id="uploads">
         {shown.map((image) => {
           const thumb = thumbnail(image);
-          const alt = image.alt ? localized(image.alt, locale) : "";
+          const alt = localized(image.alt, locale);
           const uses = describeUses(image.uses, locale);
           return (
             <li class="admin-card p-3 flex gap-3 items-center" id={`photo-${image.id.slice(0, 12)}`}>

@@ -7,6 +7,7 @@
  * the alt text, then names the image by the SHA-256 of its largest size.
  */
 import { cleanText, visibleLength, TEXT_LIMITS } from "../content/schema";
+import { bytesParam } from "../db/blob-hex";
 import { UPLOAD_BYTES, type Upload, type UploadVariant } from "../db/photos";
 import { t } from "../i18n";
 import { checkLadder, inspectWebp, LADDER_STEPS, MAX_VARIANT_BYTES } from "../server/upload-validate";
@@ -51,9 +52,6 @@ function altError(locale: Locale, value: string): string | undefined {
   if (visibleLength(clean) > TEXT_LIMITS.short) return t(locale, "admin.form.tooLong").replace("{max}", String(TEXT_LIMITS.short));
   return undefined;
 }
-
-/** The 32-byte digest as hex; a plain loop, so it runs in Node tests too (toHex is workerd-only there). */
-const hex = (buffer: ArrayBuffer) => Array.from(new Uint8Array(buffer), (b) => b.toString(16).padStart(2, "0")).join("");
 
 /** Alt text as one line, the way the library stores it. */
 const oneLine = (v: string) => cleanText(v).replace(/\s+/g, " ").trim();
@@ -113,6 +111,6 @@ export async function readUploadForm(form: FormData, locale: Locale): Promise<Re
   if (errors.alt_sv || errors.alt_en) return { values, errors, upload: null };
 
   const master = variants[variants.length - 1];
-  const id = hex(await crypto.subtle.digest("SHA-256", master.bytes as Uint8Array<ArrayBuffer>));
+  const id = bytesParam(new Uint8Array(await crypto.subtle.digest("SHA-256", master.bytes as Uint8Array<ArrayBuffer>)));
   return { values, errors, upload: { id, variants, alt: { sv: oneLine(values.alt_sv), en: oneLine(values.alt_en) } } };
 }

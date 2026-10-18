@@ -349,7 +349,6 @@ export default {
   "admin.gallery.busy": "Någon annan ändrade galleriet nyss. Försök igen.",
   "admin.gallery.unknown": "Inget ändrades. Ladda om sidan och försök igen.",
   "admin.gallery.notFound": "Fotot finns inte längre bland dina foton.",
-  "admin.gallery.noAlt": "Fotot har ingen beskrivning än. Beskriv det först och lägg sedan till det.",
   "admin.gallery.full": "Galleriet rymmer högst {limit} foton. Ta bort ett först.",
   "admin.gallery.already": "Fotot finns redan i galleriet.",
   "admin.gallery.removed": "Fotot är borttaget från galleriet. Det finns kvar bland dina foton.",

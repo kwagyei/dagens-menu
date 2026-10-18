@@ -47,7 +47,7 @@ if (Astro.request.method === "POST") {
 
 const [gallery, library] = await Promise.all([listGallery(repo), listLibrary(repo)]);
 const inGallery = new Set(gallery.map((g) => g.imageId));
-const addable = library.filter((i) => !inGallery.has(i.id) && i.alt);
+const addable = library.filter((i) => !inGallery.has(i.id));
 
 const done = Astro.url.searchParams.get("done");
 const message: Record<string, string> = {
@@ -55,13 +55,12 @@ const message: Record<string, string> = {
   removed: t(locale, "admin.gallery.removed"),
   already: t(locale, "admin.gallery.already"),
   full: t(locale, "admin.gallery.full").replace("{limit}", String(GALLERY_LIMIT)),
-  "no-alt": t(locale, "admin.gallery.noAlt"),
   "not-found": t(locale, "admin.gallery.notFound"),
   busy: t(locale, "admin.gallery.busy"),
   expired: t(locale, "admin.error.form"),
   unknown: t(locale, "admin.gallery.unknown"),
 };
-const problem = done === "already" || done === "full" || done === "no-alt" || done === "not-found" || done === "busy" || done === "expired" || done === "unknown";
+const problem = done === "already" || done === "full" || done === "not-found" || done === "busy" || done === "expired" || done === "unknown";
 
 // After a move, focus returns to the button just used; at the top or bottom, to the other one.
 const [changedId, changedDir] = (Astro.url.searchParams.get("changed") ?? "").split(":");
@@ -92,7 +91,7 @@ const focusMove = (id: string, index: number, dir: Direction) => {
       <ol class="space-y-3" id="gallery">
         {gallery.map((entry, index) => {
           const thumb = thumbnail(entry);
-          const alt = entry.alt ? localized(entry.alt, locale) : "";
+          const alt = localized(entry.alt, locale);
           const position = t(locale, "admin.gallery.position").replace("{n}", String(index + 1)).replace("{total}", String(gallery.length));
           return (
             <li class="admin-card p-3 flex flex-wrap gap-3 items-center" id={`gallery-${entry.id}`}>

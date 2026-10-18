@@ -92,12 +92,11 @@ describe("tester M6.10c: interactions", () => {
     expect(await setPagePhoto(bistro, "kitchen", id)).toEqual({ ok: false, error: "not-found" });
   });
 
-  it("a photo whose alt is removed after being chosen can still be unchosen; choosing it again is refused", async () => {
+  it("a chosen photo's alt can't be removed (migration 0006), so the page never shows it without one", async () => {
     const id = await uploaded();
     await setPagePhoto(bistro, "hero", id);
-    await db.prepare("UPDATE images SET alt_sv = NULL, alt_en = NULL WHERE id = ?").bind(id).run().catch(() => {});
+    await expect(db.prepare("UPDATE images SET alt_sv = NULL, alt_en = NULL WHERE id = ?").bind(id).run()).rejects.toThrow(/alt text in Swedish and English/);
     expect(await setPagePhoto(bistro, "hero", null)).toEqual({ ok: true });
-    expect(await setPagePhoto(bistro, "hero", id)).toMatchObject({ ok: false });
   });
 
   it("a built-in photo (static) can be chosen, and page choices bump content_version and audit once", async () => {

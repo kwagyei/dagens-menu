@@ -122,7 +122,8 @@ function upgradeFromV1(content: Raw, repository: LibraryImage[]): { content: Raw
     };
   }
   // The library: the repository's entries, with this file's gallery alts, plus any referenced
-  // file the repository no longer lists (kept without alt; the schema decides if that's valid).
+  // file the repository no longer lists. That one has no alt, so the schema refuses the file
+  // and names it: the operator adds it back to the repository's library, with alt, first.
   const library = new Map<string, Raw>(repository.map((i) => [i.ref, { ...i }]));
   for (const [ref, alt] of galleryAlt) library.set(ref, { ...(library.get(ref) ?? { ref }), alt });
   try {

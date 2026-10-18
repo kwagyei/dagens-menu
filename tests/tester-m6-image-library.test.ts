@@ -56,9 +56,11 @@ describe("image library: accepted by design", () => {
   it("the same image twice in the gallery", () => {
     expect(issuesAfter((c) => c.gallery.images.push({ ...c.gallery.images[0] }))).toEqual([]);
   });
+});
 
-  it("an unused library entry without alt (expand release)", () => {
-    expect(issuesAfter((c) => c.images.push({ ref: "/images/bistro/unused.jpg" }))).toEqual([]);
+describe("image library: refused", () => {
+  it("an unused library entry without alt (since the contract migration, 0006)", () => {
+    expect(issuesAfter((c) => c.images.push({ ref: "/images/bistro/unused.jpg" }))).toEqual([expect.objectContaining({ path: expect.stringMatching(/^images\.\d+\.alt$/) })]);
   });
 });
 

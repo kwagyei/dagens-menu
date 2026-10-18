@@ -78,12 +78,10 @@ describe("setDishPhoto", () => {
     expect(await audits()).toBe(n! + 1);
   });
 
-  it("refuses another site's photo, an unknown one, a malformed one and a photo without alt; nothing changes", async () => {
+  it("refuses another site's photo, an unknown one and a malformed one; nothing changes", async () => {
     const before = await dishPhoto(bistro, DISH);
     const theirs = await uploaded("westafrican");
-    const noAlt = await uploaded();
-    await db.prepare("UPDATE images SET alt_sv = NULL, alt_en = NULL WHERE id = ?").bind(noAlt).run();
-    for (const id of [theirs, "d".repeat(64), "../x", "A".repeat(64), noAlt]) expect(await setDishPhoto(bistro, DISH, id)).toEqual({ ok: false, error: "not-found" });
+    for (const id of [theirs, "d".repeat(64), "../x", "A".repeat(64)]) expect(await setDishPhoto(bistro, DISH, id)).toEqual({ ok: false, error: "not-found" });
     expect(await dishPhoto(bistro, DISH)).toBe(before);
   });
 
