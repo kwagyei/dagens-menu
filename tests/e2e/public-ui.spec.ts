@@ -156,7 +156,8 @@ test("the category bar fades where it has more, and marks the category on screen
   expect(overflows, "the bar fits at 320 px, so this test can't see the fade").toBe(true);
   await expect(wrap).toHaveAttribute("data-more", "right");
   // The fade is an overlay; the bar's own background stays solid, so nothing shows through.
-  expect(await wrap.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
+  // The fade eases in over 0.2 s: wait for where it settles, not a frame mid-transition.
+  await expect.poll(() => wrap.evaluate((el) => getComputedStyle(el, "::after").opacity)).toBe("1");
   expect(await wrap.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
 
   const ids = menu.categories.filter((c) => c.items.length > 0).map((c) => c.id);
