@@ -4,7 +4,10 @@
  * without a mouse.
  */
 import { expect, type Page, test } from "@playwright/test";
-import { signedInOwner } from "./helpers";
+import { clearOfMidnight, signedInOwner } from "./helpers";
+
+// Sold out is for today only: the toggle is read back after the redirect. Midnight must not fall inside a test.
+test.beforeEach(clearOfMidnight);
 
 /** Whether the focused element draws a visible focus indicator. */
 const focusVisible = (page: Page) =>
