@@ -96,7 +96,7 @@ test("open == close and closed-with-times: nothing is saved for the first, close
   await group(page, "Tisdag").getByLabel("Öppnar").fill("09:00");
   await page.getByRole("button", { name: "Spara öppettiderna" }).click();
   expect(page.url()).toContain("/admin/hours/");
-  await expect(page.locator("#monday-error")).toContainText("samma tid");
+  await expect(page.locator("#monday-error")).toContainText("stängningstiden är samma");
   await expect(mon.getByLabel("Öppnar")).toHaveValue("10:00");
   await expect(mon.getByLabel("Stänger")).toHaveValue("10:00");
   await expect(group(page, "Tisdag").getByLabel("Öppnar")).toHaveValue("09:00");
