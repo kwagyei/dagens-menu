@@ -37,6 +37,12 @@ async function post(url: string, body: unknown): Promise<Record<string, unknown>
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 const fragmentToken = () => window.location.hash.slice(1);
 
+/**
+ * Only an explicit abort reads as "cancelled". A closed passkey prompt reaches the page as the
+ * same NotAllowedError as an authenticator that can't verify the user (no PIN or biometric):
+ * WebAuthn doesn't say which, by design. "That didn't work, try again" fits both, "cancelled"
+ * would mislead the second (tester L1, 18 Oct: kept as is).
+ */
 const isCancelled = (error: unknown) =>
   error instanceof WebAuthnError ? error.code === "ERROR_CEREMONY_ABORTED" : error instanceof DOMException && error.name === "NotAllowedError";
 const alreadyHere = (error: unknown) =>
