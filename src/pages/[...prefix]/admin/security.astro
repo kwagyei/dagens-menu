@@ -20,8 +20,9 @@ if (!session) return signInRedirect(Astro);
 
 const secret = adminSecret();
 if (Astro.request.method === "POST") {
-  const form = await Astro.request.formData();
-  if (!(await checkFormToken(secret, session.tokenHash, form.get("csrf")))) return Astro.redirect(`${here}?done=expired`, 303);
+  // A body that isn't a form reads as an expired form, not a 500 (security review L1).
+  const form = await Astro.request.formData().catch(() => null);
+  if (!form || !(await checkFormToken(secret, session.tokenHash, form.get("csrf")))) return Astro.redirect(`${here}?done=expired`, 303);
   const action = form.get("action");
   if (action === "remove") {
     // Never the last passkey (recovery is an operator invite); the sign-ins made with it end.

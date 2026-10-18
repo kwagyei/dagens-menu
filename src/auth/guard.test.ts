@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
-import { checkFormToken, formToken, guardAdminRequest, type RateLimiter } from "./guard";
+import { ADMIN_BODY_LIMIT, checkFormToken, formToken, guardAdminRequest, type RateLimiter } from "./guard";
 
 const SECRET = "s".repeat(32);
 const site = "https://bistro.example";
-const req = (path: string, init: RequestInit & { headers?: Record<string, string> } = {}) => new Request(`${site}${path}`, init);
+/** A request as a browser sends it: a post says how long its body is, unless a test says otherwise. */
+const req = (path: string, init: RequestInit & { headers?: Record<string, string> } = {}) => {
+  const headers: Record<string, string> = { ...init.headers };
+  if (init.method === "POST" && !Object.keys(headers).some((h) => h.toLowerCase() === "content-length")) headers["Content-Length"] = "0";
+  return new Request(`${site}${path}`, { ...init, headers });
+};
 
 /** Allows `max` calls per key, like the Workers binding within one window. */
 function limiter(max: number): RateLimiter & { calls: string[] } {
@@ -111,5 +116,37 @@ describe("form tokens", () => {
     expect(await checkFormToken(SECRET, "b".repeat(64), token)).toBe(false);
     expect(await checkFormToken(SECRET, "a".repeat(64), undefined)).toBe(false);
     expect(await checkFormToken(SECRET, "a".repeat(64), "forged")).toBe(false);
+  });
+});
+
+describe("guardAdminRequest: body size before anything reads it (security review L1)", () => {
+  const post = (path: string, length: string | null) => {
+    const r = new Request(`${site}${path}`, { method: "POST", headers: { Origin: site } });
+    if (length !== null) r.headers.set("Content-Length", length);
+    return guardAdminRequest(r, "bistro", limiter(100));
+  };
+
+  it("refuses a post that doesn't say its length", async () => {
+    expect((await post("/admin/logout", null))?.status).toBe(411);
+    expect((await post("/admin/api/add-confirm", "lots"))?.status).toBe(411);
+  });
+
+  it("refuses a post over the limit, on pages and on the passkey endpoints", async () => {
+    expect((await post("/admin/security/", String(ADMIN_BODY_LIMIT + 1)))?.status).toBe(413);
+    expect((await post("/en/admin/texts/", String(ADMIN_BODY_LIMIT + 1)))?.status).toBe(413);
+    expect((await post("/admin/api/login-verify", "99999999999"))?.status).toBe(413);
+  });
+
+  it("lets a post up to the limit through", async () => {
+    expect(await post("/admin/texts/", String(ADMIN_BODY_LIMIT))).toBeNull();
+  });
+
+  it("leaves the photo upload to its own, larger limit", async () => {
+    expect(await post("/admin/photos/new/", String(ADMIN_BODY_LIMIT + 1))).toBeNull();
+    expect(await post("/en/admin/photos/new/", null)).toBeNull();
+  });
+
+  it("the limit fits the texts page at its input limits: 4 long fields, every character 9 bytes encoded", () => {
+    expect(4 * 2 * 3000 * 9 + 20 * 2 * 300 * 9).toBeLessThan(ADMIN_BODY_LIMIT);
   });
 });

@@ -238,6 +238,17 @@ test.describe("CSRF and redirects", () => {
 });
 
 test.describe("security page", () => {
+  test("a body that isn't a form reads as an expired form, not a 500 (security review L1)", async ({ page, context, request }) => {
+    await enrol(page);
+    const res = await request.post("/admin/security/", {
+      headers: { ...SAME, Cookie: await cookieHeader(context), "Content-Type": "multipart/form-data; boundary=x" },
+      data: "not a multipart body",
+      maxRedirects: 0,
+    });
+    expect(res.status()).toBe(303);
+    expect(res.headers().location).toBe("/admin/security/?done=expired");
+  });
+
   test("the last passkey can't be removed, even by a hand-made post", async ({ page, context, request }) => {
     const { email } = await enrol(page);
     const [only] = passkeyIds(email);
