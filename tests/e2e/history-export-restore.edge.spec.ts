@@ -137,7 +137,7 @@ test.describe("history page", () => {
   test("labels each change, shows who made it, and the seed CLI as the system", async ({ page }) => {
     // A system entry of its own, as the seed CLI writes it: the page shows only the last 50
     // changes, so the original seed entry is gone once earlier specs have made enough edits.
-    d1("INSERT INTO audit_log (site_id, entity, action, summary) VALUES ('bistro', 'site', 'seed', 'seeded by tester-m5-history')");
+    d1("INSERT INTO audit_log (site_id, entity, action, summary) VALUES ('bistro', 'site', 'seed', 'seeded by the history edge spec')");
     const email = await signedInOwner(page);
     const first = page.locator("li[id^='item-']").first();
     const name = (await first.locator("p.font-semibold").textContent())!;

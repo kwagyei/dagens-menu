@@ -22,6 +22,21 @@ const offendingLines = (pattern: RegExp, allowed: RegExp) =>
       .map(({ at }) => at),
   );
 
+describe("test file names", () => {
+  // Named by what they test, not by who wrote them (review L5). An edge-case sweep ends in
+  // .edge.spec.ts, which is what sends it to the non-blocking edge project (playwright.config.ts).
+  const names = ["tests", "tests/db", "tests/e2e", "src/server"].flatMap((d) => readdirSync(d).map((f) => `${d}/${f}`));
+  it("never start with tester-", () => {
+    expect(names.filter((n) => /\/tester-/.test(n) && /^(tests\/(db|e2e)|src\/server)\//.test(n))).toEqual([]);
+  });
+
+  it("route every spec to exactly one of gate and edge by its suffix alone", () => {
+    const specs = names.filter((n) => n.startsWith("tests/e2e/") && n.endsWith(".spec.ts"));
+    expect(specs.filter((n) => n.endsWith(".edge.spec.ts")).length).toBeGreaterThan(10);
+    expect(specs.filter((n) => /edge/.test(n.split("/").pop()!) && !n.endsWith(".edge.spec.ts"))).toEqual([]);
+  });
+});
+
 describe("e2e specs", () => {
   it("exist (so the rules below check something)", () => {
     expect(specs.length).toBeGreaterThan(5);
@@ -44,7 +59,7 @@ describe("e2e specs", () => {
   });
 
   it("never expect today's hours to be a time range: every day is closed on some site (bistro Sunday, Chez Abena Monday)", () => {
-    // tester-m6-prb-public.spec.ts asserted "Idag: 12:00–22:00"-shaped text and failed on a Sunday (#55).
+    // public-layout-regressions.edge.spec.ts asserted "Idag: 12:00–22:00"-shaped text and failed on a Sunday (#55).
     expect(offendingLines(/(Idag|Today):[^\n]*(\d\d:\d\d|\\d)/, /Stängt|Closed/)).toEqual([]);
   });
 

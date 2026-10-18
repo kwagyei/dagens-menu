@@ -1,7 +1,7 @@
 /**
  * A software WebAuthn authenticator for workerd tests: ES256 keys, "none" attestation and a
  * minimal CBOR encoder, so the real ceremony functions can be driven end to end (registering,
- * signing in, replaying) without a browser. Written for tests/db/tester-m4-ceremonies.test.ts.
+ * signing in, replaying) without a browser. Written for tests/db/passkey-ceremony-attacks.test.ts.
  */
 import { base64url, fromBase64url } from "../../src/auth/crypto";
 
