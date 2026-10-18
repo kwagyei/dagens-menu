@@ -107,10 +107,13 @@ const when = (iso: string) =>
         data-passkey="add"
         data-next={`${here}?done=added`}
         data-status="add-status"
+        data-create="add-create"
+        data-confirmed={t(locale, "admin.security.addConfirmed")}
         data-working={t(locale, "admin.working")}
         data-cancelled={t(locale, "admin.error.cancelled")}
         data-failed={t(locale, "admin.error.failed")}
       >{t(locale, "admin.security.addDevice")}</button>
+      <button class="admin-button" type="button" id="add-create" hidden>{t(locale, "admin.security.addCreate")}</button>
       <p class="admin-message" data-needs-js>{t(locale, "admin.noScript")}</p>
       <p id="add-status" role="status" aria-live="polite"></p>
     </div>

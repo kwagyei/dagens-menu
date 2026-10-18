@@ -8,7 +8,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { base64url, sha256Hex, sign } from "../../src/auth/crypto";
 import { findInvite, issueInvite, revokeStatements } from "../../src/auth/invites";
 import {
-  addPasskeyOptions,
   addPasskeyVerify,
   type CeremonyContext,
   enrolOptions,
@@ -18,6 +17,7 @@ import {
 } from "../../src/auth/passkeys";
 import { getSession } from "../../src/auth/sessions";
 import { prepare } from "../../src/db/sql";
+import { confirmedAddOptions } from "./add-device";
 import { SoftAuthenticator } from "./soft-authenticator";
 
 const db = env.DB;
@@ -248,7 +248,7 @@ describe("adding a device", () => {
   it("registering the same credential twice answers with a refusal, not an exception", async () => {
     const { auth, session } = await enrol();
     const s = (await getSession(db, "bistro", session, now))!;
-    const opt = await addPasskeyOptions(ctx(), s);
+    const opt = await confirmedAddOptions((c) => ctx(BISTRO, c), s, BISTRO.origin, BISTRO.rpID);
     // A client that ignores excludeCredentials and re-registers the same credential id.
     const resp = await auth.register(opt.body.options as never, BISTRO.origin, BISTRO.rpID);
     const result = await addPasskeyVerify(ctx(BISTRO, cookieValue(opt.cookies[0])), s, resp).catch((e: Error) => ({ status: 500, error: e.message }));
@@ -259,7 +259,7 @@ describe("adding a device", () => {
   it("an add-device challenge is bound to the session that asked for it", async () => {
     const { session } = await enrol();
     const s = (await getSession(db, "bistro", session, now))!;
-    const opt = await addPasskeyOptions(ctx(), s);
+    const opt = await confirmedAddOptions((c) => ctx(BISTRO, c), s, BISTRO.origin, BISTRO.rpID);
     const other = { ...s, tokenHash: await sha256Hex("someone else's session") };
     const resp = await new SoftAuthenticator().register(opt.body.options as never, BISTRO.origin, BISTRO.rpID);
     expect((await addPasskeyVerify(ctx(BISTRO, cookieValue(opt.cookies[0])), other, resp)).status).toBe(400);

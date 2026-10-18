@@ -6,11 +6,12 @@
 import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { issueInvite, revokeStatements } from "../../src/auth/invites";
-import { addPasskeyOptions, addPasskeyVerify, type CeremonyContext, checkInvite, enrolOptions, enrolVerify } from "../../src/auth/passkeys";
+import { addPasskeyVerify, type CeremonyContext, checkInvite, enrolOptions, enrolVerify } from "../../src/auth/passkeys";
 import { getSession } from "../../src/auth/sessions";
 import { CHECK_SITE, checkBatchGuard } from "../../src/db/deploy-check";
 import { prepare } from "../../src/db/sql";
 import type { D1Database } from "../../src/db/types";
+import { confirmedAddOptions } from "./add-device";
 import { SoftAuthenticator } from "./soft-authenticator";
 
 const db = env.DB;
@@ -54,13 +55,13 @@ beforeEach(async () => {
 describe("adding a device requires user verification (review L9)", () => {
   it("asks the new device to verify the user", async () => {
     const session = await enrolled();
-    const options = await addPasskeyOptions(ctx(), session);
+    const options = await confirmedAddOptions((c) => ctx(c), session, BISTRO.origin, BISTRO.rpID);
     expect((options.body.options as { authenticatorSelection: { userVerification: string } }).authenticatorSelection.userVerification).toBe("required");
   });
 
   it("refuses a second device that only saw the user present, and stores nothing", async () => {
     const session = await enrolled();
-    const options = await addPasskeyOptions(ctx(), session);
+    const options = await confirmedAddOptions((c) => ctx(c), session, BISTRO.origin, BISTRO.rpID);
     const device = Object.assign(new SoftAuthenticator(), { verified: false });
     const response = await device.register(options.body.options as never, BISTRO.origin, BISTRO.rpID);
     const result = await addPasskeyVerify(ctx(cookieValue(options.cookies[0])), session, response);

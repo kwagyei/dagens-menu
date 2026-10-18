@@ -5,6 +5,11 @@
  * result back. On success the page moves to data-next; on failure the message from
  * data-cancelled or data-failed is shown in the element named by data-status.
  *
+ * "add" is two clicks (security review M2): the first confirms with one of the person's
+ * passkeys, the second (the button named by data-create) makes the new one. The second click
+ * is the user gesture Safari wants before creating a passkey, and the server issues the
+ * registration options only after the confirmation, for 5 minutes.
+ *
  * The invite page ([data-invite]) carries its token in the URL fragment, which never reaches
  * the server (review L8): this script reads it, checks it, and only then shows the button.
  */
@@ -15,7 +20,7 @@ type Kind = "enrol" | "login" | "add";
 const endpoints: Record<Kind, [string, string]> = {
   enrol: ["/admin/api/enrol-options", "/admin/api/enrol-verify"],
   login: ["/admin/api/login-options", "/admin/api/login-verify"],
-  add: ["/admin/api/add-options", "/admin/api/add-verify"],
+  add: ["/admin/api/add-options", "/admin/api/add-confirm"],
 };
 
 async function post(url: string, body: unknown): Promise<Record<string, unknown>> {
@@ -28,26 +33,67 @@ async function post(url: string, body: unknown): Promise<Record<string, unknown>
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 const fragmentToken = () => window.location.hash.slice(1);
 
+const isCancelled = (error: unknown) =>
+  error instanceof WebAuthnError ? error.code === "ERROR_CEREMONY_ABORTED" : error instanceof DOMException && error.name === "NotAllowedError";
+
+/** Disable `button` and show its working label while `work` runs; on failure say why and restore it. */
+async function busy(button: HTMLButtonElement, status: HTMLElement | null, source: HTMLElement, work: () => Promise<void>): Promise<void> {
+  const label = button.textContent;
+  button.disabled = true;
+  button.textContent = source.dataset.working ?? label;
+  if (status) status.textContent = "";
+  try {
+    await work();
+  } catch (error) {
+    if (status) status.textContent = (isCancelled(error) ? source.dataset.cancelled : source.dataset.failed) ?? "";
+    button.disabled = false;
+    button.textContent = label;
+  }
+}
+
 async function run(button: HTMLButtonElement): Promise<void> {
   const kind = button.dataset.passkey as Kind;
   const token = kind === "enrol" ? fragmentToken() : undefined;
   const status = document.getElementById(button.dataset.status ?? "");
-  const label = button.textContent;
-  button.disabled = true;
-  button.textContent = button.dataset.working ?? label;
-  if (status) status.textContent = "";
-  try {
-    const [optionsUrl, verifyUrl] = endpoints[kind];
+  const [optionsUrl, verifyUrl] = endpoints[kind];
+  await busy(button, status, button, async () => {
+    if (kind === "add") return confirmThenOfferCreate(button, status);
     const { options } = (await post(optionsUrl, { token })) as { options: never };
     const response = kind === "login" ? await startAuthentication({ optionsJSON: options }) : await startRegistration({ optionsJSON: options });
     await post(verifyUrl, { token, response });
     window.location.assign(button.dataset.next ?? "/admin/");
-  } catch (error) {
-    const cancelled = error instanceof WebAuthnError ? error.code === "ERROR_CEREMONY_ABORTED" : error instanceof DOMException && error.name === "NotAllowedError";
-    if (status) status.textContent = (cancelled ? button.dataset.cancelled : button.dataset.failed) ?? "";
-    button.disabled = false;
-    button.textContent = label;
-  }
+  });
+}
+
+/** Adding a device, first click: confirm with an existing passkey, then show the create button. */
+async function confirmThenOfferCreate(button: HTMLButtonElement, status: HTMLElement | null): Promise<void> {
+  const [optionsUrl, confirmUrl] = endpoints.add;
+  const { confirm } = (await post(optionsUrl, {})) as { confirm: never };
+  const response = await startAuthentication({ optionsJSON: confirm });
+  const { options } = (await post(confirmUrl, { response })) as { options: never };
+  const create = document.getElementById(button.dataset.create ?? "");
+  if (!(create instanceof HTMLButtonElement)) throw new Error("no create button");
+  button.hidden = true;
+  create.hidden = false;
+  if (status) status.textContent = button.dataset.confirmed ?? "";
+  create.focus();
+  create.onclick = () =>
+    void busy(create, status, button, async () => {
+      try {
+        // No await before this: the click's user activation must reach the passkey prompt.
+        const created = await startRegistration({ optionsJSON: options });
+        await post("/admin/api/add-verify", { response: created });
+      } catch (error) {
+        // The 5-minute window closed, or the confirmation was used: start again from step one.
+        if (error instanceof Error && /challenge/.test(error.message)) {
+          create.hidden = true;
+          button.hidden = false;
+          button.disabled = false;
+        }
+        throw error;
+      }
+      window.location.assign(button.dataset.next ?? "/admin/");
+    });
 }
 
 // Shown by default for browsers without JavaScript; this script running proves otherwise.

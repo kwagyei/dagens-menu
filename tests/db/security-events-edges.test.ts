@@ -9,7 +9,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../../src/auth/crypto";
 import { issueInvite, revokeStatements } from "../../src/auth/invites";
 import {
-  addPasskeyOptions,
   addPasskeyVerify,
   type CeremonyContext,
   enrolOptions,
@@ -24,6 +23,7 @@ import { prepare, stmt } from "../../src/db/sql";
 import en from "../../src/i18n/en";
 import sv from "../../src/i18n/sv";
 import { SECURITY_EVENTS } from "../../src/auth/audit";
+import { confirmedAddOptions } from "./add-device";
 import { SoftAuthenticator } from "./soft-authenticator";
 
 const db = env.DB;
@@ -92,7 +92,7 @@ async function login(auth: SoftAuthenticator, site: SiteId = "bistro") {
 }
 
 async function addDevice(signedIn: Session, auth = new SoftAuthenticator(), site: SiteId = "bistro") {
-  const options = await addPasskeyOptions(ctx(site), signedIn);
+  const options = await confirmedAddOptions((c) => ctx(site, c), signedIn, SITES[site].origin, SITES[site].rpID);
   const response = await auth.register(options.body.options as never, SITES[site].origin, SITES[site].rpID);
   const result = await addPasskeyVerify(ctx(site, cookieValue(options.cookies[0])), signedIn, response);
   expect(result.status).toBe(200);
@@ -181,7 +181,7 @@ describe("criterion 1: one audit row per event, only when it happened", () => {
   it("adding a device with a replayed challenge (new credential, same challenge) is refused and not audited", async () => {
     const { token } = await enrol();
     const signedIn = await session(token);
-    const options = await addPasskeyOptions(ctx(), signedIn);
+    const options = await confirmedAddOptions((c) => ctx("bistro", c), signedIn, SITES.bistro.origin, SITES.bistro.rpID);
     const cookie = cookieValue(options.cookies[0]);
     const first = await new SoftAuthenticator().register(options.body.options as never, SITES.bistro.origin, SITES.bistro.rpID);
     const second = await new SoftAuthenticator().register(options.body.options as never, SITES.bistro.origin, SITES.bistro.rpID);
@@ -194,7 +194,7 @@ describe("criterion 1: one audit row per event, only when it happened", () => {
   it("adding a device with a failed verification is not audited", async () => {
     const { token } = await enrol();
     const signedIn = await session(token);
-    const options = await addPasskeyOptions(ctx(), signedIn);
+    const options = await confirmedAddOptions((c) => ctx("bistro", c), signedIn, SITES.bistro.origin, SITES.bistro.rpID);
     const bad = await new SoftAuthenticator().register(options.body.options as never, SITES.bistro.origin, "evil.example");
     expect((await addPasskeyVerify(ctx("bistro", cookieValue(options.cookies[0])), signedIn, bad)).status).toBe(400);
     expect((await auditRows()).filter((r) => r.entity === "passkey")).toEqual([]);
