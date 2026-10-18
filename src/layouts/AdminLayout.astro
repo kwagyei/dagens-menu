@@ -20,6 +20,22 @@ const siteName = localized(content.settings.name, locale);
 const theme = content.theme;
 const otherLocale = locale === "sv" ? "en" : "sv";
 const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
+
+// The admin menu. The current section is marked for screen readers and drawn in bold: "page"
+// on the section's own page, "true" on a page inside it (a dish belongs to Meny).
+const navLinks: Array<[path: string, label: string]> = [
+  ["/", t(locale, "admin.nav.menu")],
+  ["/hours/", t(locale, "admin.nav.hours")],
+  ["/texts/", t(locale, "admin.nav.texts")],
+  ["/photos/", t(locale, "admin.nav.photos")],
+  ["/page-photos/", t(locale, "admin.nav.pagePhotos")],
+  ["/gallery/", t(locale, "admin.nav.gallery")],
+  ["/history/", t(locale, "admin.nav.history")],
+  ["/security/", t(locale, "admin.security.link")],
+];
+const here = Astro.url.pathname.replace(/^\/en/, "").replace(/^\/admin/, "") || "/";
+const section = here.startsWith("/menu/") ? "/" : (navLinks.find(([p]) => p !== "/" && here.startsWith(p))?.[0] ?? (here === "/" ? "/" : undefined));
+const current = (path: string) => (path !== section ? undefined : here === path ? "page" : "true");
 ---
 
 <!doctype html>
@@ -90,13 +106,9 @@ const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathn
       {session && csrf && (
         <nav class="max-w-2xl mx-auto px-4 pb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm" aria-label={t(locale, "admin.title")}>
           <span class="w-full text-xs opacity-80">{t(locale, "admin.home.signedInAs")} {session.email}</span>
-          <a class="underline" href={adminPath("/")}>{t(locale, "admin.nav.menu")}</a>
-          <a class="underline" href={adminPath("/hours/")}>{t(locale, "admin.nav.hours")}</a>
-          <a class="underline" href={adminPath("/texts/")}>{t(locale, "admin.nav.texts")}</a>
-          <a class="underline" href={adminPath("/photos/")}>{t(locale, "admin.nav.photos")}</a>
-          <a class="underline" href={adminPath("/gallery/")}>{t(locale, "admin.nav.gallery")}</a>
-          <a class="underline" href={adminPath("/history/")}>{t(locale, "admin.nav.history")}</a>
-          <a class="underline" href={adminPath("/security/")}>{t(locale, "admin.security.link")}</a>
+          {navLinks.map(([path, label]) => (
+            <a class:list={["underline", { "font-bold": current(path) }]} href={adminPath(path)} aria-current={current(path)}>{label}</a>
+          ))}
           <form method="post" action="/admin/logout" class="ml-auto">
             <input type="hidden" name="csrf" value={csrf} />
             <input type="hidden" name="next" value={adminPath("/")} />
@@ -108,5 +120,8 @@ const otherPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathn
     <main id="admin-main" tabindex="-1" class="max-w-2xl mx-auto px-4 py-8">
       <slot />
     </main>
+    <script>
+      import "../admin/return-focus";
+    </script>
   </body>
 </html>

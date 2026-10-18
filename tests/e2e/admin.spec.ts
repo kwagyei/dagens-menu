@@ -68,6 +68,19 @@ test("an invited owner creates a passkey and is signed in", async ({ page, conte
   expect(cookie!.expires * 1000 - Date.now()).toBeGreaterThan(29 * 24 * 3600 * 1000);
 });
 
+test("an invite opened on a device that already has the passkey says to sign in instead", async ({ page }) => {
+  // Walkthrough 18 Oct: an iPhone with the passkey synced through iCloud got a bare "Det gick
+  // inte". The virtual authenticator still holds the first passkey, so it refuses a second.
+  const { email } = await enrol(page);
+  await page.goto(invite(email));
+  await page.getByRole("button", { name: "Skapa passkey" }).click();
+  await expect(page.getByRole("status")).toHaveText(
+    "Den här enheten har redan en passkey för dig på den här webbplatsen, till exempel synkad via iCloud-nyckelringen. Logga in med den i stället.",
+  );
+  await page.getByRole("link", { name: "Logga in i stället" }).click();
+  await expect(page.getByRole("heading", { name: "Meny", exact: true })).toBeVisible();
+});
+
 test("an invite works only once", async ({ page, request }) => {
   const { link } = await enrol(page);
   await page.context().clearCookies();

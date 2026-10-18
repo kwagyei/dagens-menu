@@ -10,6 +10,10 @@
  * is the user gesture Safari wants before creating a passkey, and the server issues the
  * registration options only after the confirmation, for 5 minutes.
  *
+ * A device that already holds this person's passkey (synced through iCloud Keychain or a
+ * Google account) can't create a second one. The page then says so with data-already, and
+ * shows the element named by data-signin, instead of a bare "that didn't work".
+ *
  * The invite page ([data-invite]) carries its token in the URL fragment, which never reaches
  * the server (review L8): this script reads it, checks it, and only then shows the button.
  */
@@ -33,8 +37,26 @@ async function post(url: string, body: unknown): Promise<Record<string, unknown>
 const TOKEN = /^[A-Za-z0-9_-]{43}$/;
 const fragmentToken = () => window.location.hash.slice(1);
 
+/**
+ * Only an explicit abort reads as "cancelled". A closed passkey prompt reaches the page as the
+ * same NotAllowedError as an authenticator that can't verify the user (no PIN or biometric):
+ * WebAuthn doesn't say which, by design. "That didn't work, try again" fits both, "cancelled"
+ * would mislead the second (tester L1, 18 Oct: kept as is).
+ */
 const isCancelled = (error: unknown) =>
   error instanceof WebAuthnError ? error.code === "ERROR_CEREMONY_ABORTED" : error instanceof DOMException && error.name === "NotAllowedError";
+const alreadyHere = (error: unknown) =>
+  error instanceof WebAuthnError ? error.code === "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED" : error instanceof DOMException && error.name === "InvalidStateError";
+
+/** What to tell the person after a failed ceremony, from the button's data-* messages. */
+function failureMessage(error: unknown, source: HTMLElement): string {
+  if (alreadyHere(error) && source.dataset.already) {
+    const signIn = document.getElementById(source.dataset.signin ?? "");
+    if (signIn) signIn.hidden = false;
+    return source.dataset.already;
+  }
+  return (isCancelled(error) ? source.dataset.cancelled : source.dataset.failed) ?? "";
+}
 
 /** Disable `button` and show its working label while `work` runs; on failure say why and restore it. */
 async function busy(button: HTMLButtonElement, status: HTMLElement | null, source: HTMLElement, work: () => Promise<void>): Promise<void> {
@@ -45,7 +67,7 @@ async function busy(button: HTMLButtonElement, status: HTMLElement | null, sourc
   try {
     await work();
   } catch (error) {
-    if (status) status.textContent = (isCancelled(error) ? source.dataset.cancelled : source.dataset.failed) ?? "";
+    if (status) status.textContent = failureMessage(error, source);
     button.disabled = false;
     button.textContent = label;
   }
