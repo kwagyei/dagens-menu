@@ -29,7 +29,8 @@ function d1<T>(sql: string): T[] {
 /** Run the seed CLI; returns exit status and both streams. */
 function seed(args: string[]): { status: number; stdout: string; stderr: string } {
   try {
-    const stdout = execFileSync("npm", ["run", "-s", "seed", "--", ...args], { encoding: "utf-8", stdio: "pipe" });
+    // Photo links in a local export point at the test Worker, which a restore fetches only when named.
+    const stdout = execFileSync("npm", ["run", "-s", "seed", "--", "--allow-host", "localhost:8790", ...args], { encoding: "utf-8", stdio: "pipe" });
     return { status: 0, stdout, stderr: "" };
   } catch (error) {
     const e = error as { status: number; stdout: string; stderr: string };
