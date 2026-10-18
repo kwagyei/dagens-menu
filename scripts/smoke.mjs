@@ -38,11 +38,10 @@ export const UNKNOWN_MEDIA = `/media/${"0".repeat(64)}-400.webp`;
 
 /** The gallery's photos: at least one, each with alt text. Returns the first photo's URL too. */
 export function galleryProblems(route, html) {
-  const list = html.match(/<ul class="gallery-magazine">([\s\S]*?)<\/ul>/)?.[1] ?? "";
-  const images = [...list.matchAll(/<img\b[^>]*>/g)].map(([tag]) => ({
-    src: tag.match(/\ssrc="([^"]*)"/)?.[1],
-    alt: tag.match(/\salt="([^"]*)"/)?.[1],
-  }));
+  const list = html.match(/<ul\b[^>]*\bclass=["'][^"']*\bgallery-magazine\b[^"']*["'][^>]*>([\s\S]*?)<\/ul>/)?.[1] ?? "";
+  // A tag runs to the first > outside quotes, so a > in alt text doesn't cut it short.
+  const attr = (tag, name) => tag.match(new RegExp(`\\s${name}=(?:"([^"]*)"|'([^']*)')`))?.slice(1).find((v) => v !== undefined);
+  const images = [...list.matchAll(/<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/g)].map(([tag]) => ({ src: attr(tag, "src"), alt: attr(tag, "alt") }));
   const problems = [];
   if (images.length === 0) problems.push(`${route}: the gallery lists no photos`);
   images.forEach((image, i) => {
