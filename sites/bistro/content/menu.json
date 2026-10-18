@@ -137,8 +137,7 @@
           "price": 9500,
           "tags": ["vegetarian"],
           "allergens": ["milk", "eggs", "gluten"],
-          "available": true,
-          "image": "/images/bistro/rabarberpaj.jpg"
+          "available": true
         }
       ]
     },

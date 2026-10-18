@@ -5,12 +5,12 @@
       "en": "West African kitchen in Gothenburg"
     },
     "highlights": ["a9y7jwm2x2kl", "854qfvcuovs3", "bgni9ft9vvbp"],
-    "heroImage": "/images/westafrican/jollof-hero.jpg",
+    "heroImage": "/images/westafrican/gallery-dish-spread.jpg",
     "pullQuote": {
-      "sv": "Smaken av hemma, lagad med kärlek tusen mil hemifrån.",
-      "en": "The taste of home, cooked with love a thousand miles from home."
+      "sv": "Smaken av hemma, lagad med kärlek långt hemifrån.",
+      "en": "The taste of home, cooked with love far from home."
     },
-    "ctaImage": "/images/westafrican/suya-flatbread.jpg"
+    "ctaImage": "/images/westafrican/jollof-hero.jpg"
   },
   "menu": {
     "heroImage": "/images/westafrican/gallery-grilled-platter.jpg"

@@ -7,32 +7,31 @@
         {
           "id": "a9y7jwm2x2kl",
           "name": { "sv": "Kelewele", "en": "Kelewele" },
-          "description": { "sv": "Kryddig stekt plantain med ingefära och chili", "en": "Spiced fried plantain with ginger and chilli" },
+          "description": { "sv": "Mogen plantain (matbanan) i bitar, kryddad med ingefära, chili och kryddnejlika och friterad tills den är krispig. Serveras med rostade jordnötter. Ett gatukök från Ghana.", "en": "Ripe plantain (a starchy cooking banana) in chunks, spiced with ginger, chilli and cloves and fried until crisp. Served with roasted peanuts. A Ghanaian street-food classic." },
           "price": 8500,
           "tags": ["vegan", "gluten-free", "spicy"],
-          "allergens": [],
+          "allergens": ["peanuts"],
           "available": true,
-          "image": "/images/westafrican/kelewele-bowl.jpg"
+          "image": "/images/westafrican/gallery-kelewele-peanuts.jpg"
         },
         {
           "id": "qhbzr0ta9mxk",
           "name": { "sv": "Suya-spett", "en": "Suya skewers" },
-          "description": { "sv": "Grillat nötkött med jordnötskrydda och lök", "en": "Grilled beef with peanut spice and onion" },
+          "description": { "sv": "Grillade spett av nötkött i yaji, en nigeriansk kryddblandning av rostade jordnötter, chili och ingefära. Serveras med rå lök och tomat.", "en": "Grilled beef skewers coated in yaji, a Nigerian spice rub of roasted peanuts, chilli and ginger. Served with raw onion and tomato." },
           "price": 11500,
           "tags": ["spicy", "gluten-free"],
           "allergens": ["peanuts"],
           "available": true,
-          "image": "/images/westafrican/suya-flatbread.jpg"
+          "image": "/images/westafrican/gallery-suya-skewers.jpg"
         },
         {
           "id": "1og59rqyhq12",
           "name": { "sv": "Akara", "en": "Akara" },
-          "description": { "sv": "Friterade bönbullar med chilisås", "en": "Black-eyed pea fritters with chilli sauce" },
+          "description": { "sv": "Krispiga friterade bullar av mosade svartögda bönor, lök och chili. Serveras med het tomat- och chilisås.", "en": "Crisp fritters of whipped black-eyed peas, onion and chilli, served with a hot tomato and chilli sauce." },
           "price": 9500,
           "tags": ["vegan"],
           "allergens": [],
-          "available": true,
-          "image": "/images/westafrican/akara.jpg"
+          "available": true
         }
       ]
     },
@@ -43,27 +42,27 @@
         {
           "id": "854qfvcuovs3",
           "name": { "sv": "Jollofris", "en": "Jollof rice" },
-          "description": { "sv": "Kryddigt ris kokt i tomatsås, med grillad kyckling och stekt plantain", "en": "Spiced tomato rice with grilled chicken and fried plantain" },
+          "description": { "sv": "Västafrikas mest kända rätt: ris långkokt i en kryddig sås av tomat, paprika och lök. Med grillad kyckling och stekt plantain.", "en": "West Africa's best-known dish: rice slow-cooked in a spiced sauce of tomato, pepper and onion. With grilled chicken and fried plantain." },
           "price": 17500,
           "tags": ["spicy"],
           "allergens": [],
           "available": true,
-          "image": "/images/westafrican/jollof-plate.jpg"
+          "image": "/images/westafrican/gallery-jollof-plantain.jpg"
         },
         {
           "id": "ev01jipfxwwl",
           "name": { "sv": "Egusi-soppa", "en": "Egusi soup" },
-          "description": { "sv": "Pumpafrösoppa med bladgrönsaker, getkött och fufu", "en": "Melon seed soup with leafy greens, goat meat and fufu" },
+          "description": { "sv": "Tjock gryta på malda melonfrön (egusi) med bladgrönsaker och blandat kött. Serveras med fufu, en mjuk deg av kassava och plantain som du doppar i grytan.", "en": "A thick stew of ground melon seeds (egusi) with leafy greens and mixed meats. Served with fufu, a soft dough of cassava and plantain for scooping up the stew." },
           "price": 18500,
           "tags": ["spicy", "gluten-free"],
           "allergens": [],
           "available": true,
-          "image": "/images/westafrican/egusi-red-bowl.jpg"
+          "image": "/images/westafrican/egusi-soup.jpg"
         },
         {
           "id": "12aeh1zxepu7",
           "name": { "sv": "Thieboudienne", "en": "Thieboudienne" },
-          "description": { "sv": "Senegalesisk fiskgryta med ris, grönsaker och tamarind", "en": "Senegalese fish stew with rice, vegetables and tamarind" },
+          "description": { "sv": "Senegals nationalrätt: fisk fylld med persilja och vitlök, kokt med grönsaker i tomatsås. Riset kokas i samma buljong och får all smak.", "en": "Senegal's national dish: fish stuffed with parsley and garlic, simmered with vegetables in tomato sauce. The rice cooks in the same broth and takes all its flavour." },
           "price": 19500,
           "tags": [],
           "allergens": ["fish"],
@@ -72,17 +71,17 @@
         {
           "id": "2ujtipq7v721",
           "name": { "sv": "Waakye", "en": "Waakye" },
-          "description": { "sv": "Ris och bönor med shito, tomatgryta, spaghetti och stekt plantain", "en": "Rice and beans with shito stew, spaghetti and fried plantain" },
+          "description": { "sv": "Ghanansk favorit: ris och bönor kokta med sorghumblad. Med shito (en het chiliolja med torkad fisk och räkor), tomatgryta, spaghetti, ägg och gari (rostat kassavagryn).", "en": "A Ghanaian favourite: rice and beans cooked with sorghum leaves. With shito (a hot chilli oil made with dried fish and shrimp), tomato stew, spaghetti, egg and gari (toasted cassava grains)." },
           "price": 16500,
           "tags": ["spicy"],
-          "allergens": ["gluten"],
+          "allergens": ["gluten", "fish", "crustaceans", "eggs"],
           "available": true,
           "image": "/images/westafrican/waakye.jpg"
         },
         {
           "id": "2pjpza5dq19y",
           "name": { "sv": "Jordnötssoppa", "en": "Groundnut soup" },
-          "description": { "sv": "Krämig jordnötssoppa med kyckling och ris", "en": "Creamy peanut soup with chicken, served with rice" },
+          "description": { "sv": "Ghanansk jordnötssoppa: krämig och lätt het, på rostade jordnötter och tomat, med kyckling. Serveras med ris.", "en": "Ghanaian groundnut soup: creamy and gently hot, made with roasted peanuts and tomato, with chicken. Served with rice." },
           "price": 17500,
           "tags": [],
           "allergens": ["peanuts"],
@@ -97,7 +96,7 @@
         {
           "id": "bgni9ft9vvbp",
           "name": { "sv": "Puff-puff", "en": "Puff-puff" },
-          "description": { "sv": "Friterade degbollar med kanel och honung", "en": "Deep-fried dough balls with cinnamon and honey" },
+          "description": { "sv": "Luftiga friterade bollar av jäst deg, Västafrikas svar på munkar. Med kanel och honung.", "en": "Light, deep-fried balls of yeast dough, West Africa's answer to doughnuts. With cinnamon and honey." },
           "price": 7500,
           "tags": ["vegetarian"],
           "allergens": ["gluten", "eggs"],
@@ -106,8 +105,8 @@
         },
         {
           "id": "2iamxkixhpxn",
-          "name": { "sv": "Mangoglass", "en": "Mango sorbet" },
-          "description": { "sv": "Hemgjord sorbet med färsk mango och lime", "en": "Homemade sorbet with fresh mango and lime" },
+          "name": { "sv": "Mangosorbet", "en": "Mango sorbet" },
+          "description": { "sv": "Hemgjord sorbet på mogen mango och lime.", "en": "Homemade sorbet of ripe mango and lime." },
           "price": 8500,
           "tags": ["vegan", "gluten-free"],
           "allergens": [],
@@ -122,7 +121,7 @@
         {
           "id": "p6celvy7zgp9",
           "name": { "sv": "Sobolo", "en": "Sobolo" },
-          "description": { "sv": "Hibiskusdryck med ingefära och kryddnejlika", "en": "Hibiscus drink with ginger and cloves" },
+          "description": { "sv": "Kall dryck på torkade hibiskusblommor med ingefära och kryddnejlika. Syrlig och svalkande. Heter bissap i Senegal.", "en": "A chilled drink of dried hibiscus flowers with ginger and cloves. Tart and refreshing. Called bissap in Senegal." },
           "price": 6500,
           "tags": ["vegan"],
           "allergens": [],
@@ -131,7 +130,7 @@
         {
           "id": "sgao2b7kmbr9",
           "name": { "sv": "Chapman", "en": "Chapman" },
-          "description": { "sv": "Nigeriansk festdryck med grenadine och citrus", "en": "Nigerian celebration drink with grenadine and citrus" },
+          "description": { "sv": "Nigeriansk festdrink med läsk, grenadine, citrus och gurka.", "en": "Nigeria's favourite party drink: soda, grenadine, citrus and cucumber." },
           "price": 7500,
           "tags": ["vegan"],
           "allergens": [],
@@ -142,7 +141,7 @@
           "name": { "sv": "Ingefärsshot", "en": "Ginger shot" },
           "description": { "sv": "Färskpressad ingefära med citron och honung", "en": "Fresh-pressed ginger with lemon and honey" },
           "price": 4500,
-          "tags": ["vegan"],
+          "tags": ["vegetarian"],
           "allergens": [],
           "available": true
         }
