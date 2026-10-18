@@ -16,7 +16,7 @@ beforeEach(async () => {
   await db.batch([
     db.prepare("DELETE FROM sites"),
     db.prepare("INSERT INTO sites (id) VALUES ('bistro')"),
-    db.prepare("INSERT INTO images (site_id, id, kind, mime) VALUES ('bistro', ?, 'upload', 'image/webp')").bind(IMAGE),
+    db.prepare("INSERT INTO images (site_id, id, kind, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'upload', 'image/webp', 'Foto', 'Photo')").bind(IMAGE),
   ]);
 });
 

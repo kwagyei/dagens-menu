@@ -1,11 +1,13 @@
 // Shipped migrations never change (ADR-011; reviewer M2 L1). Production D1 records each
 // migration by name and never runs it again, so an edited file would leave every existing
 // database different from a fresh one. Compared with <base>, files under migrations/ may only
-// be added. A change belongs in a new migration.
+// be added. A change belongs in a new migration. An added migration that drops or renames
+// something must be marked as a contract migration.
 //
 // Usage: node scripts/check-migrations.mjs <base commit>   (CI passes the PR base or the push's before)
 
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 
 const base = process.argv[2];
 if (!base || /^0+$/.test(base)) {
@@ -23,4 +25,23 @@ if (touched.length > 0) {
   process.exit(1);
 }
 const added = changes.map(([, path]) => path);
+
+// A migration that drops or renames a table, view or column is a contract migration: code from
+// before it breaks against it, so a Worker rollback past it is unsafe. It must say so on its
+// first line, which is what docs/deploy-runbook.md tells the operator to look for (reviewer M1).
+// ALTER TABLE's COLUMN keyword is optional, so any DROP or RENAME after ALTER TABLE counts.
+// Comments are removed first; a "--" inside a string literal could hide the rest of its line,
+// which errs towards a false negative only for SQL nobody writes in a migration.
+const CONTRACT = /\bDROP\s+(TABLE|VIEW)\b|\bALTER\s+TABLE\s+\S+\s+(DROP|RENAME)\b/i;
+const unmarked = added.filter((path) => {
+  const sql = readFileSync(path, "utf-8");
+  const code = sql.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--[^\n]*/g, "");
+  return CONTRACT.test(code) && !/^-- CONTRACT\b/.test(sql);
+});
+if (unmarked.length > 0) {
+  console.error("A migration that drops or renames something must start with a '-- CONTRACT' line:");
+  for (const path of unmarked) console.error(`  ${path}`);
+  process.exit(1);
+}
+
 console.log(added.length > 0 ? `check-migrations: only additions (${added.join(", ")}).` : "check-migrations: migrations unchanged.");

@@ -45,12 +45,7 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ["an unknown key on an image", (c) => (c.images[0].caption = "x"), "images.0", "Unrecognized key"],
   ["the same image listed twice", (c) => (c.images[1].ref = c.images[0].ref), "images.1.ref", "duplicate image"],
   ["a reference that isn't in the library", (c) => (firstItem(c).image = "/images/bistro/not-listed.jpg"), `${item}.image`, "not in the image library"],
-  [
-    "a gallery photo whose library entry has no alt",
-    (c) => delete c.images.find((i: { ref: string }) => i.ref === c.gallery.images[0].image).alt,
-    "gallery.images.0.image",
-    "needs alt text",
-  ],
+  ["an image without alt", (c) => delete c.images[0].alt, "images.0.alt", "expected object"],
   ["a gallery of 31 photos", (c) => (c.gallery.images = Array.from({ length: 31 }, () => c.gallery.images[0])), "gallery.images", "at most 30"],
   ["highlightImages, gone from the model", (c) => (c.pages.home.highlightImages = {}), "pages.home", "Unrecognized key"],
   ["image path traversal", (c) => (c.pages.home.heroImage = "/images/bistro/../secret.jpg"), "pages.home.heroImage", "under /images/bistro/"],

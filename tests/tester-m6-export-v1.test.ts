@@ -81,12 +81,12 @@ describe("format 1 files with odd shapes", () => {
     }
   });
 
-  it("a v1 gallery photo the repository no longer lists is refused at the gallery path if it has no alt", () => {
+  it("a v1 file naming a photo the repository no longer lists is refused, at that library entry's alt", () => {
     const f = v1();
     f.content.pages.home.heroImage = "/images/bistro/removed.jpg";
     const r = read(f);
-    // Not in the repository library and not in the gallery: kept without alt (allowed during expand).
-    expect(r.ok).toBe(true);
+    // Not in the repository library and not in the gallery, so it would have no alt (migration 0006).
+    expect(r).toMatchObject({ ok: false, error: expect.stringMatching(/images\.\d+\.alt/) });
   });
 
   it("formatVersion as a string is refused", () => {

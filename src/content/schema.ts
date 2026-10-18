@@ -125,15 +125,14 @@ export const imageRef = (site: string) => {
 export const isUploadRef = (ref: string) => UPLOAD_ID.test(ref);
 
 /**
- * One image in the library. The alt is optional only while the expand migration (0005) is
- * live: curated rows from before it have none until the operator re-seeds. The contract
- * migration makes it required here and in the database.
+ * One image in the library, with its alt in both languages: required here and, since the
+ * contract migration (0006), by triggers in the database too.
  */
 export const libraryImageSchema = (site: string) =>
   z.strictObject({
     ref: imageRef(site),
     // One line: alt text is read as a phrase, and a line break in it reads as a pause.
-    alt: localizedLine(TEXT_LIMITS.short).optional(),
+    alt: localizedLine(TEXT_LIMITS.short),
     width: z.number().int().min(1).max(10000).optional(),
     height: z.number().int().min(1).max(10000).optional(),
   });
@@ -318,14 +317,6 @@ export const siteContentSchema = (site: string) =>
       for (const { ref, path } of imageReferences(c)) {
         if (!listed.has(ref)) ctx.addIssue({ code: "custom", path, message: `is not in the image library (images)` });
       }
-      // gallery_images keeps its own NOT NULL alt until the contract migration, so a gallery
-      // photo needs its alt already.
-      c.gallery.images.forEach((g, index) => {
-        if (listed.get(g.image) && !listed.get(g.image)!.alt) {
-          ctx.addIssue({ code: "custom", path: ["gallery", "images", index, "image"], message: "a gallery photo needs alt text in the image library" });
-        }
-      });
-
       // Highlights must exist. A highlighted dish that is unavailable (sold out) is valid:
       // the home page skips it, and marking a dish sold out must never break the site.
       const ids = new Set(c.menu.categories.flatMap((cat) => cat.items.map((i) => i.id)));

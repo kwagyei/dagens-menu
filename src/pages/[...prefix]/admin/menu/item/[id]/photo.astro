@@ -28,8 +28,7 @@ if (Astro.request.method === "POST") {
   return Astro.redirect(`${here}?done=${result.ok ? "saved" : "not-found"}`, 303);
 }
 
-const [current, library] = await Promise.all([dishPhoto(repo, id), listLibrary(repo)]);
-const photos = library.filter((i) => i.alt);
+const [current, photos] = await Promise.all([dishPhoto(repo, id), listLibrary(repo)]);
 const done = Astro.url.searchParams.get("done");
 const message: Record<string, { text: string; problem: boolean }> = {
   saved: { text: t(locale, "admin.pick.saved"), problem: false },

@@ -349,7 +349,6 @@ export default {
   "admin.gallery.busy": "Someone else changed the gallery just now. Try again.",
   "admin.gallery.unknown": "Nothing was changed. Reload the page and try again.",
   "admin.gallery.notFound": "That photo isn't in your photos any more.",
-  "admin.gallery.noAlt": "That photo has no description yet. Describe it first, then add it.",
   "admin.gallery.full": "The gallery holds at most {limit} photos. Remove one first.",
   "admin.gallery.already": "That photo is already in the gallery.",
   "admin.gallery.removed": "The photo is removed from the gallery. It's still in your photos.",

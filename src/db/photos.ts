@@ -147,10 +147,10 @@ export async function listUploads(ctx: RepoContext): Promise<UploadListing[]> {
        GROUP BY i.id ORDER BY i.created_at DESC, i.id`,
     )
     .bind(ctx.siteId)
-    .all<{ id: string; alt_sv: string | null; alt_en: string | null; width: number; height: number; created_at: string; widths: string }>();
+    .all<{ id: string; alt_sv: string; alt_en: string; width: number; height: number; created_at: string; widths: string }>();
   return rows.results.map((r) => ({
     id: r.id,
-    alt: { sv: r.alt_sv ?? "", en: r.alt_en ?? "" },
+    alt: { sv: r.alt_sv, en: r.alt_en },
     width: r.width,
     height: r.height,
     widths: r.widths.split(",").map(Number).sort((a, b) => a - b),

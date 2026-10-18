@@ -29,7 +29,7 @@ const image = await getLibraryImage(repo, id);
 // Unknown, malformed or another site's: the same answer, not found (ADR-014 §4, cross-tenant).
 if (!image) return Astro.redirect(`${library}?done=not-found`, 303);
 
-let values = { alt_sv: image.alt?.sv ?? "", alt_en: image.alt?.en ?? "" };
+let values = { alt_sv: image.alt.sv, alt_en: image.alt.en };
 let errors: FieldErrors = {};
 let rowVersion = image.rowVersion;
 let conflict = false;
@@ -59,7 +59,7 @@ const labels: Record<string, string> = { alt_sv: t(locale, "admin.photos.altSv")
 // The 800 px size (or the master), as the public pages use; the original file if the size is unknown.
 const preview = image.width && image.height ? photoSources({ ref: image.ref, width: image.width, height: image.height }) : null;
 const uses = describeUses(image.uses, locale);
-const shownAlt = image.alt ? image.alt[locale] : "";
+const shownAlt = image.alt[locale];
 ---
 
 <AdminLayout title={shownAlt || t(locale, "admin.photos.photoHeading")} csrf={page.csrf}>

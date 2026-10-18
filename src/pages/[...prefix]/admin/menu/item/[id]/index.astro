@@ -74,7 +74,7 @@ if (Astro.request.method === "POST") {
 const photoId = await dishPhoto(repo, id);
 const photo = photoId ? await getLibraryImage(repo, photoId) : null;
 const photoThumb = photo ? thumbnail(photo) : null;
-const photoName = photo?.alt ? photo.alt[locale] : t(locale, "admin.pick.none");
+const photoName = photo ? photo.alt[locale] : t(locale, "admin.pick.none");
 ---
 
 <AdminLayout title={t(locale, "admin.item.editHeading")} csrf={page.csrf}>

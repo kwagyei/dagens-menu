@@ -69,7 +69,7 @@ test("another site's rows and photos, malformed ids, bad CSRF, wrong Origin and 
   d1(
     `INSERT OR IGNORE INTO sites (id) VALUES ('westafrican');
      INSERT INTO images (site_id, id, kind, path, mime, width, height, byte_size, alt_sv, alt_en) VALUES ('westafrican', '${theirImg}', 'upload', NULL, 'image/webp', 400, 300, 1, 'Deras', 'Theirs');
-     INSERT INTO gallery_images (site_id, id, image_id, alt_sv, alt_en, position) VALUES ('westafrican', 'wawawawawa01', '${theirImg}', 'Deras', 'Theirs', 0), ('westafrican', 'wawawawawa02', '${theirImg}', 'Deras', 'Theirs', 1)`,
+     INSERT INTO gallery_images (site_id, id, image_id, position) VALUES ('westafrican', 'wawawawawa01', '${theirImg}', 0), ('westafrican', 'wawawawawa02', '${theirImg}', 1)`,
   );
   try {
     await page.goto(GALLERY);
@@ -184,9 +184,9 @@ test("a full gallery: add buttons are disabled with a stated reason, and a craft
   const photo = await uploadPhoto(page);
   const have = rows().filter((r) => r.site_id === "bistro");
   const filler = have[0].image_id;
-  const extra = Array.from({ length: 30 - have.length }, (_, i) => `('bistro', 'fill${String(i).padStart(8, "0")}', '${filler}', 'x', 'x', ${1000 + i})`);
+  const extra = Array.from({ length: 30 - have.length }, (_, i) => `('bistro', 'fill${String(i).padStart(8, "0")}', '${filler}', ${1000 + i})`);
   try {
-    if (extra.length) d1(`INSERT INTO gallery_images (site_id, id, image_id, alt_sv, alt_en, position) VALUES ${extra.join(",")}`);
+    if (extra.length) d1(`INSERT INTO gallery_images (site_id, id, image_id, position) VALUES ${extra.join(",")}`);
     await page.goto(GALLERY);
     const btn = addable(page, photo.id).getByRole("button", { name: `Lägg till i galleriet: ${photo.sv}` });
     await expect(btn).toBeDisabled();
@@ -218,7 +218,6 @@ test("JS off, English: add, move at the end, remove, and refusal messages", asyn
   expect(plain.url()).toContain("/en/admin/gallery/");
   for (const [done, text] of [
     ["already", "That photo is already in the gallery."],
-    ["no-alt", "That photo has no description yet. Describe it first, then add it."],
     ["not-found", "That photo isn't in your photos any more."],
     ["busy", "Someone else changed the gallery just now. Try again."],
     ["expired", ""],

@@ -89,8 +89,10 @@ npx wrangler d1 time-travel restore dagens-menu --bookmark <bookmark> --config w
 ```
 
 **Migrations and Time Travel:** a restore to a moment before a migration also undoes the
-migration, while the Workers keep running the newer code. Migrations are expand only, so the code
-usually copes, but re-apply them straight away
+migration, while the Workers keep running the newer code. After an expand-only migration the code
+usually copes; after a **contract** migration (first line `-- CONTRACT`, the first is 0006) it
+doesn't: today's code can't add to the gallery on the older schema. Either way, re-apply the
+migrations straight away, before anything else
 (`npx wrangler d1 migrations apply dagens-menu --remote --config wrangler.bistro.jsonc`).
 
 ### Rehearsed
@@ -111,15 +113,18 @@ Each export in `kwagyei/dagens-menu-data` is one data-only SQL file per content 
 Pick a commit (`git log` in that repo) and check it out.
 
 1. **Check it loads**, into a throwaway local database (needs a checkout of this repo at least as
-   new as the manifest's last migration):
+   new as the manifest's last migration). It applies the manifest's migrations only, loads the
+   files, then applies the newer ones over them, the same order a restore needs:
 
    ```sh
    npm run backup -- verify --dir ../dagens-menu-data
    ```
 
-2. **Into a new, empty D1 database** (a lost database): create it, apply the migrations, then run
-   the files in the manifest's table order, which loads parents before the rows that reference
-   them:
+2. **Into a new, empty D1 database** (a lost database): create it and apply **only the migrations
+   the manifest lists**: a backup from before a contract migration (0006) doesn't fit the newer
+   schema. The simplest way is a checkout of this repo at the commit that added the manifest's
+   last migration. Then run the files in the manifest's table order, which loads parents before
+   the rows that reference them, and finally apply the remaining migrations from `main`:
 
    ```sh
    npx wrangler d1 execute <database> --remote --config <config> --file ../dagens-menu-data/sites.sql -y
@@ -134,8 +139,10 @@ Pick a commit (`git log` in that repo) and check it out.
 3. **Into the live database** (one site's content damaged long ago): the files insert rows and
    would clash with what's there. Delete the site's rows first and load the files in a
    transaction, or, for a demo site, turn them into an export file and use
-   `npm run seed -- --site <site> --from <file> --remote --reset`. Rehearse on a scratch database
-   first; this path hasn't been needed yet.
+   `npm run seed -- --site <site> --from <file> --remote --reset`. A backup from before a
+   contract migration doesn't load into today's schema directly: load it into a scratch database
+   as in step 2 first, then take the rows from there. Rehearse on a scratch database first; this
+   path hasn't been needed yet.
 
 ## The weekly export
 

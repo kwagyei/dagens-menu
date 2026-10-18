@@ -10,8 +10,9 @@
  *   "in use". The sizes go with it (ON DELETE CASCADE).
  * - Built-in photos (kind 'static') are never deleted: the site's files would still list them.
  */
-import { commitIf, type RepoContext, type WriteResult } from "./repository";
+import { commitIf, isoSeconds, type RepoContext, type WriteResult } from "./repository";
 import { stmt } from "./sql";
+import type { D1PreparedStatement } from "./types";
 
 type Localized = { sv: string; en: string };
 
@@ -32,7 +33,7 @@ export interface LibraryImage {
   path: string | null;
   /** The reference content uses: the path of a built-in photo, the id of an upload. */
   ref: string;
-  alt: Localized | null;
+  alt: Localized;
   width: number | null;
   height: number | null;
   byteSize: number | null;
@@ -43,9 +44,13 @@ export interface LibraryImage {
 
 type Row = Record<string, unknown>;
 
-/** Every use of every image of the site, by image id. */
-async function usesBySite(ctx: RepoContext): Promise<Map<string, ImageUse[]>> {
-  const [dishes, pages, gallery] = await ctx.db.batch<Row>([
+/**
+ * The rows `images` reads, with every use of every image of the site by image id. One batch, so
+ * the rows and their "in use" marks come from the same moment.
+ */
+async function withUses(ctx: RepoContext, images: D1PreparedStatement): Promise<[Row[], Map<string, ImageUse[]>]> {
+  const [rows, dishes, pages, gallery] = await ctx.db.batch<Row>([
+    images,
     ctx.db.prepare("SELECT id, name_sv, name_en, image_id FROM menu_items WHERE site_id = ? AND image_id IS NOT NULL ORDER BY name_sv, id").bind(ctx.siteId),
     ctx.db.prepare(`SELECT ${PAGE_SLOTS.map((s) => `${s}_image_id`).join(", ")} FROM page_content WHERE site_id = ?`).bind(ctx.siteId),
     ctx.db.prepare("SELECT image_id, position FROM gallery_images WHERE site_id = ? ORDER BY position, id").bind(ctx.siteId),
@@ -60,7 +65,7 @@ async function usesBySite(ctx: RepoContext): Promise<Map<string, ImageUse[]>> {
   if (p) for (const slot of PAGE_SLOTS) add(p[`${slot}_image_id`], { kind: "page", slot });
   // Positions from 1, as the owner counts them.
   gallery.results.forEach((g, index) => add(g.image_id, { kind: "gallery", position: index + 1 }));
-  return uses;
+  return [rows.results, uses];
 }
 
 const IMAGE_COLUMNS = "id, kind, path, alt_sv, alt_en, width, height, byte_size, created_at, row_version";
@@ -73,7 +78,7 @@ function toImage(r: Row, uses: Map<string, ImageUse[]>): LibraryImage {
     kind,
     path: (r.path as string | null) ?? null,
     ref: kind === "static" ? (r.path as string) : id,
-    alt: r.alt_sv === null || r.alt_en === null ? null : { sv: r.alt_sv as string, en: r.alt_en as string },
+    alt: { sv: r.alt_sv as string, en: r.alt_en as string },
     width: (r.width as number | null) ?? null,
     height: (r.height as number | null) ?? null,
     byteSize: (r.byte_size as number | null) ?? null,
@@ -85,14 +90,11 @@ function toImage(r: Row, uses: Map<string, ImageUse[]>): LibraryImage {
 
 /** The whole library: the owner's uploads first, newest first, then the built-in photos. */
 export async function listLibrary(ctx: RepoContext): Promise<LibraryImage[]> {
-  const [rows, uses] = await Promise.all([
-    ctx.db
-      .prepare(`SELECT ${IMAGE_COLUMNS} FROM images WHERE site_id = ? ORDER BY kind = 'static', created_at DESC, coalesce(path, id)`)
-      .bind(ctx.siteId)
-      .all<Row>(),
-    usesBySite(ctx),
-  ]);
-  return rows.results.map((r) => toImage(r, uses));
+  const [rows, uses] = await withUses(
+    ctx,
+    ctx.db.prepare(`SELECT ${IMAGE_COLUMNS} FROM images WHERE site_id = ? ORDER BY kind = 'static', created_at DESC, coalesce(path, id)`).bind(ctx.siteId),
+  );
+  return rows.map((r) => toImage(r, uses));
 }
 
 /** Every image id: the SHA-256 of its bytes, as the images table's CHECK has it. */
@@ -101,14 +103,9 @@ export const isImageId = (id: string) => /^[0-9a-f]{64}$/.test(id);
 /** One image with its uses, or null if this site has no image by that id. */
 export async function getLibraryImage(ctx: RepoContext, id: string): Promise<LibraryImage | null> {
   if (!isImageId(id)) return null;
-  const [row, uses] = await Promise.all([
-    ctx.db.prepare(`SELECT ${IMAGE_COLUMNS} FROM images WHERE site_id = ? AND id = ?`).bind(ctx.siteId, id).first<Row>(),
-    usesBySite(ctx),
-  ]);
-  return row ? toImage(row, uses) : null;
+  const [rows, uses] = await withUses(ctx, ctx.db.prepare(`SELECT ${IMAGE_COLUMNS} FROM images WHERE site_id = ? AND id = ?`).bind(ctx.siteId, id));
+  return rows[0] ? toImage(rows[0], uses) : null;
 }
-
-const short = (alt: Localized | null, id: string) => (alt ? alt.sv.slice(0, 60) : id.slice(0, 12));
 
 /** Change a photo's alt text, if nobody changed the photo since `expectedRowVersion`. */
 export async function updateImageAlt(ctx: RepoContext, id: string, expectedRowVersion: number, alt: Localized): Promise<WriteResult> {
@@ -130,15 +127,13 @@ export async function updateImageAlt(ctx: RepoContext, id: string, expectedRowVe
 }
 
 /**
- * "Nothing references image i": the three places usesBySite shows, plus home_highlights.image_id,
- * which nothing writes since migration 0005 and M6.11 drops, but which an old row could still
- * hold (M6.10a tester F1). Every foreign key into images is here, so a delete can only meet a
+ * "Nothing references image i": the three places withUses reads. These are every foreign key
+ * into images (migration 0006 removed home_highlights.image_id), so a delete can only meet a
  * foreign-key error from a use added in the same instant.
  */
 const UNUSED = `NOT EXISTS (SELECT 1 FROM menu_items m WHERE m.site_id = i.site_id AND m.image_id = i.id)
   AND NOT EXISTS (SELECT 1 FROM page_content p WHERE p.site_id = i.site_id AND i.id IN (${PAGE_SLOTS.map((s) => `p.${s}_image_id`).join(", ")}))
-  AND NOT EXISTS (SELECT 1 FROM gallery_images g WHERE g.site_id = i.site_id AND g.image_id = i.id)
-  AND NOT EXISTS (SELECT 1 FROM home_highlights h WHERE h.site_id = i.site_id AND h.image_id = i.id)`;
+  AND NOT EXISTS (SELECT 1 FROM gallery_images g WHERE g.site_id = i.site_id AND g.image_id = i.id)`;
 
 /** A use added after the check: SQLite's foreign key refuses the delete. */
 const isForeignKeyError = (error: unknown) => /FOREIGN KEY constraint failed/i.test(String((error as Error)?.message ?? error));
@@ -155,7 +150,7 @@ export async function deleteImage(ctx: RepoContext, id: string): Promise<DeleteR
       entity: "image",
       entityId: id,
       action: "delete",
-      summary: `${short(before.alt, id)}: deleted`,
+      summary: `${before.alt.sv.slice(0, 60)}: deleted`,
     });
   } catch (error) {
     if (!isForeignKeyError(error)) throw error;
@@ -181,7 +176,7 @@ export async function deleteUnusedImages(ctx: RepoContext): Promise<{ deleted: n
           `INSERT INTO audit_log (site_id, user_id, at, entity, entity_id, action, summary)
            SELECT ?, ?, ?, 'image', NULL, 'delete', 'Deleted ' || n || ' unused photo(s)' FROM (SELECT count(*) AS n ${unused}) WHERE n > 0`,
         )
-        .bind(ctx.siteId, ctx.userId, `${ctx.now.toISOString().slice(0, 19)}Z`, ctx.siteId),
+        .bind(ctx.siteId, ctx.userId, isoSeconds(ctx.now), ctx.siteId),
       ctx.db.prepare(`DELETE FROM images AS i WHERE i.site_id = ? AND i.kind = 'upload' AND ${UNUSED}`).bind(ctx.siteId),
     ]);
     return { deleted: count.results[0]?.n ?? 0 };
