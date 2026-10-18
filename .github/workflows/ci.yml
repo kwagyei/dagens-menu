@@ -122,7 +122,8 @@ jobs:
           - { name: "bistro shard 2/4", site: bistro, args: "--shard=2/4" }
           - { name: "bistro shard 3/4", site: bistro, args: "--shard=3/4" }
           - { name: "bistro shard 4/4", site: bistro, args: "--shard=4/4" }
-          # The admin takes each site's colours, so its accessibility is checked on both demos.
+          # Each site has its own colours, so accessibility (the admin and every public page) is
+          # checked on both demos.
           - { name: "West African accessibility", site: westafrican, args: "tests/e2e/a11y.spec.ts tests/e2e/keyboard.spec.ts" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
