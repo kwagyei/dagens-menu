@@ -1,6 +1,6 @@
 /** Shared setup for admin e2e tests: real invites from the CLI, a virtual passkey, a fresh IP. */
 import { execFileSync } from "node:child_process";
-import { expect, type Page, test } from "@playwright/test";
+import { type CDPSession, expect, type Page, test } from "@playwright/test";
 import { msToStockholmMidnight } from "./clock";
 
 /** The site the Worker under test serves (playwright.config.ts). */
@@ -58,14 +58,30 @@ export function invite(email: string): string {
   return url.pathname + url.hash;
 }
 
+const authenticators = new WeakMap<Page, { cdp: CDPSession; id: string }>();
+
+/** Give the page a fresh built-in virtual authenticator, replacing the one it had. */
+async function virtualAuthenticator(page: Page): Promise<void> {
+  const old = authenticators.get(page);
+  if (old) await old.cdp.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId: old.id });
+  const cdp = old?.cdp ?? (await page.context().newCDPSession(page));
+  if (!old) await cdp.send("WebAuthn.enable");
+  const { authenticatorId: id } = await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
+  });
+  authenticators.set(page, { cdp, id });
+}
+
+/**
+ * Swap the page's passkeys for an empty authenticator: the same browser now acts as another
+ * device. Chrome holds one built-in authenticator at a time, so the old passkey is gone.
+ */
+export const asNewDevice = (page: Page): Promise<void> => virtualAuthenticator(page);
+
 /** Sign a fresh owner in with a virtual passkey; lands on the admin's menu page. */
 export async function signedInOwner(page: Page): Promise<string> {
   await page.context().setExtraHTTPHeaders({ "CF-Connecting-IP": freshIp() });
-  const cdp = await page.context().newCDPSession(page);
-  await cdp.send("WebAuthn.enable");
-  await cdp.send("WebAuthn.addVirtualAuthenticator", {
-    options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
-  });
+  await virtualAuthenticator(page);
   const email = `menu-${Date.now().toString(36)}-${n++}@example.se`;
   await page.goto(invite(email));
   await page.getByRole("button", { name: "Skapa passkey" }).click();

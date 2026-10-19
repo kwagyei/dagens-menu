@@ -96,6 +96,7 @@ export default {
   "admin.security.addConfirmed": "Confirmed. Now create the passkey on the new device.",
   "admin.security.addCreate": "Create the new passkey",
   "admin.security.addAlreadyHere": "This device already has your passkey. Create the new one on another phone or computer, or choose it in the passkey window.",
+  "admin.security.addStartAgain": "The new passkey couldn't be saved. Start again by confirming with your current passkey. If the new device saved a passkey anyway, you can delete it in that device's password manager.",
   "admin.security.signOutEverywhere": "Sign out everywhere",
   "admin.security.signOutEverywhereLead": "Ends every sign-in, on other devices too.",
   "admin.security.removed": "The passkey was removed, and the sign-ins made with it have ended.",

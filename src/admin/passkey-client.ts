@@ -14,6 +14,11 @@
  * Google account) can't create a second one. The page then says so with data-already, and
  * shows the element named by data-signin, instead of a bare "that didn't work".
  *
+ * Once the device has made the new passkey, any refusal from the server (the 5 minutes ran out,
+ * the confirmation was already used) sends the page back to step one with data-again: the
+ * registration options are spent, so retrying the create button could only fail again and
+ * leave another unusable passkey on the device (review M1, 18 Oct).
+ *
  * The invite page ([data-invite]) carries its token in the URL fragment, which never reaches
  * the server (review L8): this script reads it, checks it, and only then shows the button.
  */
@@ -48,8 +53,12 @@ const isCancelled = (error: unknown) =>
 const alreadyHere = (error: unknown) =>
   error instanceof WebAuthnError ? error.code === "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED" : error instanceof DOMException && error.name === "InvalidStateError";
 
+/** The server refused a passkey the device has already made: start again from step one. */
+class StartAgain extends Error {}
+
 /** What to tell the person after a failed ceremony, from the button's data-* messages. */
 function failureMessage(error: unknown, source: HTMLElement): string {
+  if (error instanceof StartAgain && source.dataset.again) return source.dataset.again;
   if (alreadyHere(error) && source.dataset.already) {
     const signIn = document.getElementById(source.dataset.signin ?? "");
     if (signIn) signIn.hidden = false;
@@ -78,8 +87,9 @@ async function run(button: HTMLButtonElement): Promise<void> {
   const token = kind === "enrol" ? fragmentToken() : undefined;
   const status = document.getElementById(button.dataset.status ?? "");
   const [optionsUrl, verifyUrl] = endpoints[kind];
+  const label = button.textContent ?? "";
   await busy(button, status, button, async () => {
-    if (kind === "add") return confirmThenOfferCreate(button, status);
+    if (kind === "add") return confirmThenOfferCreate(button, label, status);
     const { options } = (await post(optionsUrl, { token })) as { options: never };
     const response = kind === "login" ? await startAuthentication({ optionsJSON: options }) : await startRegistration({ optionsJSON: options });
     await post(verifyUrl, { token, response });
@@ -88,7 +98,7 @@ async function run(button: HTMLButtonElement): Promise<void> {
 }
 
 /** Adding a device, first click: confirm with an existing passkey, then show the create button. */
-async function confirmThenOfferCreate(button: HTMLButtonElement, status: HTMLElement | null): Promise<void> {
+async function confirmThenOfferCreate(button: HTMLButtonElement, label: string, status: HTMLElement | null): Promise<void> {
   const [optionsUrl, confirmUrl] = endpoints.add;
   const { confirm } = (await post(optionsUrl, {})) as { confirm: never };
   const response = await startAuthentication({ optionsJSON: confirm });
@@ -101,18 +111,18 @@ async function confirmThenOfferCreate(button: HTMLButtonElement, status: HTMLEle
   create.focus();
   create.onclick = () =>
     void busy(create, status, button, async () => {
+      // No await before this: the click's user activation must reach the passkey prompt.
+      // A cancelled or failed prompt leaves the options unused, so the create button stays.
+      const created = await startRegistration({ optionsJSON: options });
       try {
-        // No await before this: the click's user activation must reach the passkey prompt.
-        const created = await startRegistration({ optionsJSON: options });
         await post("/admin/api/add-verify", { response: created });
       } catch (error) {
-        // The 5-minute window closed, or the confirmation was used: start again from step one.
-        if (error instanceof Error && /challenge/.test(error.message)) {
-          create.hidden = true;
-          button.hidden = false;
-          button.disabled = false;
-        }
-        throw error;
+        create.hidden = true;
+        button.hidden = false;
+        button.disabled = false;
+        button.textContent = label;
+        button.focus();
+        throw new StartAgain(error instanceof Error ? error.message : String(error));
       }
       window.location.assign(button.dataset.next ?? "/admin/");
     });
