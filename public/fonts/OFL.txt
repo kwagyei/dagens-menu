@@ -9,7 +9,11 @@ Copyright 2020 The Jost Project Authors (https://github.com/indestructible-type/
 Anton-Regular.woff2
 Copyright 2020 The Anton Project Authors (https://github.com/googlefonts/AntonFont)
 
-All three are Latin subsets, licensed under the SIL Open Font License, Version 1.1.
+HedvigLettersSerif-24pt.woff2
+Copyright 2023 The Hedvig Letters Project Authors (https://github.com/KanonFoundry/HedvigLetters)
+A static instance of the variable font at opsz 24, from commit d05ac773fd28.
+
+All four are Latin subsets, licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
 https://openfontlicense.org
 
