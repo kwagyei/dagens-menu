@@ -40,7 +40,11 @@ const here = page.path("/photos/");
   <section class="space-y-6">
     <div class="space-y-2">
       <h1 class="text-3xl font-bold">{t(locale, "admin.photos.yours")}</h1>
-      {done && message[done] && <p class="admin-message" role="status">{message[done]}</p>}
+      {done && message[done] && (
+        <p class="admin-message" role="status">
+          {message[done]}
+        </p>
+      )}
       <p class="admin-muted">{t(locale, "admin.photos.yoursLead")}</p>
       <p class="text-sm admin-muted" id="photo-usage">
         {t(locale, "admin.photos.usage")
@@ -50,8 +54,12 @@ const here = page.path("/photos/");
           .replace("{limitMb}", mb(SITE_PHOTO_BYTES))}
       </p>
       <div class="flex flex-wrap gap-3">
-        <a class="admin-button inline-flex" href={page.path("/photos/new/")}>{t(locale, "admin.photos.heading")}</a>
-        <a class="admin-button admin-button-quiet inline-flex" href={page.path("/page-photos/")}>{t(locale, "admin.pagePhotos.link")}</a>
+        <a class="admin-button inline-flex" href={page.path("/photos/new/")}>
+          {t(locale, "admin.photos.heading")}
+        </a>
+        <a class="admin-button admin-button-quiet inline-flex" href={page.path("/page-photos/")}>
+          {t(locale, "admin.pagePhotos.link")}
+        </a>
         {unusedUploads.length > 0 && (
           <a class="admin-button admin-button-quiet inline-flex" href={page.path("/photos/unused/delete/")}>
             {t(locale, "admin.photos.deleteUnusedLink").replace("{n}", String(unusedUploads.length))}
@@ -97,9 +105,13 @@ const here = page.path("/photos/");
                   {uses.length > 0 ? t(locale, "admin.photos.inUse").replace("{places}", uses.map((u) => u.label).join(", ")) : t(locale, "admin.photos.notUsed")}
                 </p>
                 <div class="flex flex-wrap gap-x-5 gap-y-1">
-                  <a class="admin-target underline" href={page.path(`/photos/${image.id}/`)}>{t(locale, "admin.photos.edit")}</a>
+                  <a class="admin-target underline" href={page.path(`/photos/${image.id}/`)}>
+                    {t(locale, "admin.photos.edit")}
+                  </a>
                   {image.kind === "upload" && image.width && (
-                    <a class="admin-target underline" href={`/media/${image.id}-${image.width}.webp`} download={`${image.id}.webp`}>{t(locale, "admin.photos.download")}</a>
+                    <a class="admin-target underline" href={`/media/${image.id}-${image.width}.webp`} download={`${image.id}.webp`}>
+                      {t(locale, "admin.photos.download")}
+                    </a>
                   )}
                 </div>
               </div>

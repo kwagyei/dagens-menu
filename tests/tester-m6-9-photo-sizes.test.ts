@@ -33,7 +33,11 @@ describe("curatedSizes edges", () => {
     expect(photoSources({ ref: "/images/bistro/t.jpg", width: 800, height: 10000 })).toBeNull();
   });
   it("heights are never 0 and srcset widths are strictly increasing", () => {
-    for (const [w, h] of [[4000, 10], [1600, 1], [321, 5000]] as const) {
+    for (const [w, h] of [
+      [4000, 10],
+      [1600, 1],
+      [321, 5000],
+    ] as const) {
       const s = curatedSizes(w, h);
       for (const x of s) expect(x.height).toBeGreaterThanOrEqual(1);
       for (let i = 1; i < s.length; i++) expect(s[i].width).toBeGreaterThan(s[i - 1].width);

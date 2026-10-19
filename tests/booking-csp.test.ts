@@ -118,7 +118,9 @@ describe("embed code checks", () => {
 
   it("checks a URL as the browser will read it, after its character references", () => {
     expect(embedProvider(`<iframe src="https&#58;//evil.example/x"></iframe>`)).toMatchObject({ problem: expect.stringContaining("one known booking provider") });
-    expect(embedProvider(`<a href="&#x6a;avascript:alert(1)">x</a><iframe src="https://widget.thefork.com/x"></iframe>`)).toMatchObject({ problem: expect.stringContaining("https://") });
+    expect(embedProvider(`<a href="&#x6a;avascript:alert(1)">x</a><iframe src="https://widget.thefork.com/x"></iframe>`)).toMatchObject({
+      problem: expect.stringContaining("https://"),
+    });
   });
 
   it("accepts a provider's frame with wrapper markup and a fallback link elsewhere", () => {

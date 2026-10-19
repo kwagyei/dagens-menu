@@ -35,7 +35,15 @@ async function signIn(page: Page) {
  */
 async function phonePhoto(): Promise<Buffer> {
   const upright = await sharp({ create: { width: 1200, height: 800, channels: 3, background: { r: 20, g: 40, b: 200 } } })
-    .composite([{ input: await sharp({ create: { width: 200, height: 200, channels: 3, background: { r: 230, g: 20, b: 20 } } }).png().toBuffer(), left: 0, top: 0 }])
+    .composite([
+      {
+        input: await sharp({ create: { width: 200, height: 200, channels: 3, background: { r: 230, g: 20, b: 20 } } })
+          .png()
+          .toBuffer(),
+        left: 0,
+        top: 0,
+      },
+    ])
     .png()
     .toBuffer();
   return sharp(upright)

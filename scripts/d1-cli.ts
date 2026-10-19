@@ -28,11 +28,11 @@ export function checkTarget(tool: string, target: D1Target): void {
 export const targetName = (target: D1Target) => (target.remote ? "remote" : "local");
 
 function wrangler(target: D1Target, args: string[]): string {
-  return execFileSync(
-    "npx",
-    ["wrangler", "d1", "execute", target.database, target.remote ? "--remote" : "--local", "--config", target.config, ...args],
-    { cwd: root, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] },
-  );
+  return execFileSync("npx", ["wrangler", "d1", "execute", target.database, target.remote ? "--remote" : "--local", "--config", target.config, ...args], {
+    cwd: root,
+    encoding: "utf-8",
+    stdio: ["ignore", "pipe", "pipe"],
+  });
 }
 
 const stderrOf = (error: unknown) => (error as { stderr?: string }).stderr ?? String(error);

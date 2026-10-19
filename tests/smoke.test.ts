@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { adminProblems, galleryProblems, photoProblems, publicPageProblems, UNKNOWN_MEDIA, unknownMediaProblems } from "../scripts/smoke.mjs";
 
 const html = (title: string, body = "") => `<html><head><title>${title}</title></head><body>${body}</body></html>`;
-const good = (etag = 'W/"abc1234-1-2026-10-16-x"') =>
-  new Headers({ "content-security-policy": "default-src 'self'", "strict-transport-security": "max-age=31536000", etag });
+const good = (etag = 'W/"abc1234-1-2026-10-16-x"') => new Headers({ "content-security-policy": "default-src 'self'", "strict-transport-security": "max-age=31536000", etag });
 const want = { title: "Bistro Norden", build: "abc1234" };
 
 describe("publicPageProblems", () => {

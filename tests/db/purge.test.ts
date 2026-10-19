@@ -19,7 +19,11 @@ const USER = "owner0000001";
 
 const counts = async (site = "bistro", when = now) => (await prepare(db, [purgeCountStatement(site, when)])[0].first<PurgeCounts>())!;
 const purge = (site = "bistro", when = now) => db.batch(prepare(db, purgeStatements(site, when)));
-const n = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<number>("n"))!;
+const n = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<number>("n"))!;
 
 /** A session with this token, expiring and last seen at the given offsets from now. */
 async function session(token: string, expires: number, lastSeen: number, site = "bistro") {

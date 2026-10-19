@@ -27,7 +27,7 @@ function sandboxed(res: APIResponse, label: string) {
 /** RIFF/WebP with a VP8X + ICCP(valid 128-byte header, then `html` inside the payload) + the VP8 chunk of a sharp file. */
 function withHtmlIcc(plain: Buffer, html: string): Buffer {
   const chunks: { id: string; data: Buffer }[] = [];
-  for (let o = 12; o < plain.length; ) {
+  for (let o = 12; o < plain.length;) {
     const size = plain.readUInt32LE(o + 4);
     chunks.push({ id: plain.toString("latin1", o, o + 4), data: plain.subarray(o + 8, o + 8 + size) });
     o += 8 + size + (size & 1);
@@ -60,7 +60,13 @@ function withHtmlIcc(plain: Buffer, html: string): Buffer {
 let tint = 40;
 async function upload(page: import("@playwright/test").Page, transform?: (master: Buffer) => Buffer) {
   const parts = await Promise.all(
-    [400, 800, 1200].map((width) => sharp("public/images/bistro/kottbullar-hero.jpg").resize({ width }).modulate({ hue: ++tint * 3 }).webp({ quality: 70 }).toBuffer()),
+    [400, 800, 1200].map((width) =>
+      sharp("public/images/bistro/kottbullar-hero.jpg")
+        .resize({ width })
+        .modulate({ hue: ++tint * 3 })
+        .webp({ quality: 70 })
+        .toBuffer(),
+    ),
   );
   if (transform) parts[2] = transform(parts[2]) as Buffer<ArrayBuffer>;
   const id = createHash("sha256").update(parts[2]).digest("hex");
@@ -164,14 +170,27 @@ test("path tricks never crash and never serve anything unexpected", async ({ req
     sandboxed(r, label);
   }
   // Encoded and doubled slashes reach the media handler but don't match the raw path: 404, never a second URL (F3).
-  for (const path of [`/media%2F${id}-800.webp`, `/media//${id}-800.webp`, `/media/\\${id}-800.webp`, `/%6dedia/${id}-800.webp`, `/media/%${id.charCodeAt(0).toString(16)}${id.slice(1)}-800.webp`]) {
+  for (const path of [
+    `/media%2F${id}-800.webp`,
+    `/media//${id}-800.webp`,
+    `/media/\\${id}-800.webp`,
+    `/%6dedia/${id}-800.webp`,
+    `/media/%${id.charCodeAt(0).toString(16)}${id.slice(1)}-800.webp`,
+  ]) {
     const r = await request.get(path, { maxRedirects: 0 });
     test.info().annotations.push({ type: "alias", description: `${path.slice(0, 60)} -> ${r.status()}` });
     expect(r.status(), path).toBe(404);
     sandboxed(r, path);
   }
   // Raw request line, so no client rewrites the path before the Worker sees it.
-  for (const raw of [`//media/${id}-800.webp`, `/media/${id}-800.webp%00`, `/media/${id}-800.webp%0a`, `/media/${id}-800.webp%20`, `/media/${id}%2d800.webp`, `/media/${id}-800.webp%2f`]) {
+  for (const raw of [
+    `//media/${id}-800.webp`,
+    `/media/${id}-800.webp%00`,
+    `/media/${id}-800.webp%0a`,
+    `/media/${id}-800.webp%20`,
+    `/media/${id}%2d800.webp`,
+    `/media/${id}-800.webp%2f`,
+  ]) {
     const reply = await new Promise<string>((resolve) => {
       const sock = connect(8790, "localhost", () => sock.write(`GET ${raw} HTTP/1.1\r\nHost: localhost:8790\r\nConnection: close\r\n\r\n`));
       let data = "";
@@ -231,7 +250,10 @@ test("a photo uploaded to bistro is a 404 from a westafrican Worker on the same 
 
 test("no content read: /media works with the content deleted, sets no cookie, and with the settings row gone", async ({ request }) => {
   const { id } = photo;
-  const run = (sql: string) => execFileSync("npx", ["wrangler", "d1", "execute", "dagens-menu", "--local", "--config", "d1.local.jsonc", "--persist-to", ".wrangler/state", "--command", sql], { encoding: "utf-8" });
+  const run = (sql: string) =>
+    execFileSync("npx", ["wrangler", "d1", "execute", "dagens-menu", "--local", "--config", "d1.local.jsonc", "--persist-to", ".wrangler/state", "--command", sql], {
+      encoding: "utf-8",
+    });
   const before = await request.get("/", { maxRedirects: 0 });
   expect(before.status()).toBe(200);
   try {
@@ -268,4 +290,3 @@ test("an ICC profile carrying HTML is stored, and served as a sandboxed image, n
   expect(errors).toEqual([]);
   await doc.close();
 });
-

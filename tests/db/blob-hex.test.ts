@@ -57,14 +57,18 @@ describe("bytes round-trip through unhex(?) and hex()", () => {
     ["300 KB", 300_000],
     ["the upload cap, 1,000,000 bytes", UPLOAD_CAP],
     ["the per-variant CHECK limit, 1 MiB", 1_048_576],
-  ])("%s of random data with NUL bytes", async (_, length) => {
-    const bytes = withNul(randomBytes(length));
-    const back = await roundTrip(bytes, 1 + (length % 2000));
-    expect(back.type).toBe("blob");
-    expect(back.stored).toBe(length); // length() still sees the bytes, so quota sums stay right
-    expect(back.bytes).toEqual(bytes);
-    expect(await sha256(back.bytes)).toBe(await sha256(bytes));
-  }, 30_000); // local D1 takes several seconds per MiB of hex
+  ])(
+    "%s of random data with NUL bytes",
+    async (_, length) => {
+      const bytes = withNul(randomBytes(length));
+      const back = await roundTrip(bytes, 1 + (length % 2000));
+      expect(back.type).toBe("blob");
+      expect(back.stored).toBe(length); // length() still sees the bytes, so quota sums stay right
+      expect(back.bytes).toEqual(bytes);
+      expect(await sha256(back.bytes)).toBe(await sha256(bytes));
+    },
+    30_000,
+  ); // local D1 takes several seconds per MiB of hex
 
   it("all zeros and all 0xff", async () => {
     const zeros = new Uint8Array(4096);
@@ -138,7 +142,10 @@ describe("invalid input", () => {
 
   it("bytesFromHex reads both cases; SQLite's hex() is upper case", async () => {
     expect(bytesFromHex("00aBFf")).toEqual(new Uint8Array([0, 0xab, 0xff]));
-    const row = await db.prepare("SELECT hex(unhex(?)) AS h").bind(bytesParam(new Uint8Array([0xab, 0xcd]))).first<{ h: string }>();
+    const row = await db
+      .prepare("SELECT hex(unhex(?)) AS h")
+      .bind(bytesParam(new Uint8Array([0xab, 0xcd])))
+      .first<{ h: string }>();
     expect(row?.h).toBe("ABCD");
   });
 

@@ -158,12 +158,12 @@ function workerSources(dir: string): string[] {
 describe("the scanner", () => {
   it.each([
     ['db.prepare("INSERT INTO t VALUES (?)").bind(new Uint8Array(4))', "a new array"],
-    ['db.prepare(sql).bind(id, file.buffer, width)', "a .buffer"],
-    ['db.prepare(sql).bind(id, await part.arrayBuffer() as ArrayBuffer)', "a cast to ArrayBuffer"],
+    ["db.prepare(sql).bind(id, file.buffer, width)", "a .buffer"],
+    ["db.prepare(sql).bind(id, await part.arrayBuffer() as ArrayBuffer)", "a cast to ArrayBuffer"],
     ['stmt("INSERT INTO t VALUES (?, ?)", id, Buffer.from(bytes))', "a Buffer through stmt()"],
-    ['db.prepare(sql).bind(\n  id,\n  new Uint8Array(await blob.arrayBuffer()),\n)', "across lines"],
+    ["db.prepare(sql).bind(\n  id,\n  new Uint8Array(await blob.arrayBuffer()),\n)", "across lines"],
     ['const s = "SELECT bytes FROM image_variants WHERE id = ?";', "reading bytes raw"],
-    ['const s = `SELECT width, bytes, mime FROM image_variants`;', "reading bytes in a list"],
+    ["const s = `SELECT width, bytes, mime FROM image_variants`;", "reading bytes in a list"],
     ['const s = "INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES (?, ?, ?, ?, ?)";', "writing bytes raw"],
     ['const s = "UPDATE image_variants SET bytes = ? WHERE width = ?";', "updating bytes raw"],
     ['const s = "UPDATE image_variants SET bytes = CAST(bytes || ? AS BLOB) WHERE width = ?";', "appending raw bytes"],
@@ -173,14 +173,14 @@ describe("the scanner", () => {
 
   it.each([
     ['db.prepare("SELECT 1 WHERE id = ?").bind(id, siteId)', "plain values"],
-    ['db.prepare(sql).bind(id, bytesParam(bytes))', "the helper"],
+    ["db.prepare(sql).bind(id, bytesParam(bytes))", "the helper"],
     ['db.prepare(sql).bind(fn(a, "("), b)', "a parenthesis in a string"],
     ['const s = "SELECT hex(bytes) AS bytes_hex FROM image_variants WHERE id = ?";', "reading through hex()"],
     ['const s = "SELECT SUM(length(bytes)) FROM image_variants";', "a quota sum"],
     ['const s = "INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES (?, ?, ?, ?, unhex(?))";', "writing through unhex(?)"],
     ['const s = "DELETE FROM image_variants WHERE image_id = ?";', "a delete"],
     ['const tables = ["image_variants", "images"];', "a table name alone"],
-    ['const bytes = new Uint8Array(4); restmt(x);', "bytes outside any bind"],
+    ["const bytes = new Uint8Array(4); restmt(x);", "bytes outside any bind"],
   ])("passes %s (%s)", (source) => {
     expect(blobViolations(source)).toEqual([]);
   });

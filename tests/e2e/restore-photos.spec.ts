@@ -14,11 +14,14 @@ import { signedInOwner } from "./helpers";
 
 const BASE = "http://localhost:8790";
 const NEW = "/admin/photos/new/";
-const seed = (...args: string[]) => execFileSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--allow-host", "localhost:8790", ...args], { encoding: "utf-8", stdio: "pipe" });
+const seed = (...args: string[]) =>
+  execFileSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--allow-host", "localhost:8790", ...args], { encoding: "utf-8", stdio: "pipe" });
 
 test("upload → export → reset → restore brings the photo back, byte for byte", async ({ page, request }) => {
   await signedInOwner(page);
-  const parts = await Promise.all([400, 800].map((width) => sharp("public/images/bistro/toast-skagen-roe.jpg").resize({ width }).modulate({ hue: 91 }).webp({ quality: 75 }).toBuffer()));
+  const parts = await Promise.all(
+    [400, 800].map((width) => sharp("public/images/bistro/toast-skagen-roe.jpg").resize({ width }).modulate({ hue: 91 }).webp({ quality: 75 }).toBuffer()),
+  );
   const id = createHash("sha256").update(parts[1]).digest("hex");
   await page.goto(NEW);
   const form = new FormData();
@@ -50,9 +53,15 @@ test("upload → export → reset → restore brings the photo back, byte for by
   expect(out).toContain("bringing back");
   const master = await request.get(`/media/${id}-800.webp`);
   expect(master.status()).toBe(200);
-  expect(createHash("sha256").update(await master.body()).digest("hex")).toBe(id);
+  expect(
+    createHash("sha256")
+      .update(await master.body())
+      .digest("hex"),
+  ).toBe(id);
   expect((await request.get(`/media/${id}-400.webp`)).status(), "the smaller size is made again").toBe(200);
 
   const after = await (await page.request.get("/admin/export")).json();
-  expect(after.content.images.find((i: { ref: string }) => i.ref === id)).toMatchObject({ alt: { sv: "Toast skagen med rom, i grönt ljus", en: "Toast Skagen with roe, in green light" } });
+  expect(after.content.images.find((i: { ref: string }) => i.ref === id)).toMatchObject({
+    alt: { sv: "Toast skagen med rom, i grönt ljus", en: "Toast Skagen with roe, in green light" },
+  });
 });

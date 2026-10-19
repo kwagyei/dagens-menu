@@ -23,8 +23,7 @@ export default {
   "booking.fallback.phone": "Call us",
   "booking.fallback.email": "Email us",
   "consent.title": "Cookies",
-  "consent.message":
-    "This site uses cookies from third-party services for booking and maps.",
+  "consent.message": "This site uses cookies from third-party services for booking and maps.",
   "consent.accept": "Accept",
   "consent.decline": "Decline",
   "consent.change": "Change cookie settings",
@@ -92,11 +91,13 @@ export default {
   "admin.security.remove": "Remove",
   "admin.security.lastOne": "Your only passkey can't be removed: you'd be locked out.",
   "admin.security.addDevice": "Add a device",
-  "admin.security.addDeviceLead": "Create another passkey on a second phone or computer, so you can still get in if you lose this one. You confirm with your current passkey first.",
+  "admin.security.addDeviceLead":
+    "Create another passkey on a second phone or computer, so you can still get in if you lose this one. You confirm with your current passkey first.",
   "admin.security.addConfirmed": "Confirmed. Now create the passkey on the new device.",
   "admin.security.addCreate": "Create the new passkey",
   "admin.security.addAlreadyHere": "This device already has your passkey. Create the new one on another phone or computer, or choose it in the passkey window.",
-  "admin.security.addStartAgain": "The new passkey couldn't be saved. Start again by confirming with your current passkey. If the new device saved a passkey anyway, you can delete it in that device's password manager.",
+  "admin.security.addStartAgain":
+    "The new passkey couldn't be saved. Start again by confirming with your current passkey. If the new device saved a passkey anyway, you can delete it in that device's password manager.",
   "admin.security.signOutEverywhere": "Sign out everywhere",
   "admin.security.signOutEverywhereLead": "Ends every sign-in, on other devices too.",
   "admin.security.removed": "The passkey was removed, and the sign-ins made with it have ended.",
@@ -307,7 +308,8 @@ export default {
   "admin.photos.usage": "{count} of {limit} photos, {mb} MB of {limitMb} MB.",
   "admin.photos.added": "The photo is uploaded.",
   "admin.photos.duplicate": "That photo is already in your photos.",
-  "admin.photos.needsScript": "Uploading a photo needs JavaScript, because your phone shrinks the photo before sending it. Everything else in the admin, including choosing, describing and removing photos, works without it.",
+  "admin.photos.needsScript":
+    "Uploading a photo needs JavaScript, because your phone shrinks the photo before sending it. Everything else in the admin, including choosing, describing and removing photos, works without it.",
   "admin.photos.notPhoto": "The photo couldn't be received. Choose it again, or choose another photo.",
   "admin.photos.cantOpen": "This photo can't be opened in this browser. Save it as JPEG and try again.",
   "admin.photos.tooLarge": "The photo is too large, even after shrinking. Choose another photo.",

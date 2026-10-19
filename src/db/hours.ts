@@ -41,8 +41,7 @@ const sameHours = (a: Hours | null, b: Hours | null) => (a === null || b === nul
  * its own to carry a row_version, so the token is the content itself, which makes the check
  * exact: a save goes through only if the stored week is still the one the form showed.
  */
-export const weeklyToken = (weekly: Record<Weekday, Hours | null>): string =>
-  WEEKDAYS.map((d) => (weekly[d] ? `${weekly[d].open}-${weekly[d].close}` : "closed")).join(",");
+export const weeklyToken = (weekly: Record<Weekday, Hours | null>): string => WEEKDAYS.map((d) => (weekly[d] ? `${weekly[d].open}-${weekly[d].close}` : "closed")).join(",");
 
 /** The week a token stands for, or null if it isn't one (a tampered or truncated form). */
 export function parseWeeklyToken(token: string): Record<Weekday, Hours | null> | null {
@@ -76,9 +75,7 @@ export async function adminHours(ctx: RepoContext): Promise<AdminHours> {
 }
 
 export type WeeklyResult =
-  | { ok: true; unchanged?: true }
-  | { ok: false; error: "conflict"; current: string }
-  | { ok: false; error: "invalid"; issues: Array<{ path: string; message: string }> };
+  { ok: true; unchanged?: true } | { ok: false; error: "conflict"; current: string } | { ok: false; error: "invalid"; issues: Array<{ path: string; message: string }> };
 
 /**
  * Save the weekly hours. `token` is weeklyToken() of the week the form was rendered from:

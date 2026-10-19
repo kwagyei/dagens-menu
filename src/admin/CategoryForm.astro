@@ -25,13 +25,32 @@ const label = { name_sv: "admin.category.nameSv", name_en: "admin.category.nameE
   {rowVersion !== undefined && <input type="hidden" name="row_version" value={rowVersion} />}
   {(["name_sv", "name_en"] as const).map((name) => (
     <div class="space-y-1">
-      <label class="font-medium block" for={name}>{t(locale, label[name])}</label>
-      <input class="admin-input" id={name} name={name} lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined} value={values[name]} maxlength={inputMaxLength(TEXT_LIMITS.name)} aria-invalid={errors[name] ? "true" : undefined} aria-describedby={errors[name] ? `${name}-error` : undefined} />
-      {errors[name] && <p class="admin-error" id={`${name}-error`}>{errors[name]}</p>}
+      <label class="font-medium block" for={name}>
+        {t(locale, label[name])}
+      </label>
+      <input
+        class="admin-input"
+        id={name}
+        name={name}
+        lang={/_(sv|en)$/.test(name) ? name.slice(-2) : undefined}
+        value={values[name]}
+        maxlength={inputMaxLength(TEXT_LIMITS.name)}
+        aria-invalid={errors[name] ? "true" : undefined}
+        aria-describedby={errors[name] ? `${name}-error` : undefined}
+      />
+      {errors[name] && (
+        <p class="admin-error" id={`${name}-error`}>
+          {errors[name]}
+        </p>
+      )}
     </div>
   ))}
   <div class="flex flex-wrap gap-3 pt-2">
-    <button class="admin-button" type="submit">{submitLabel}</button>
-    <a class="admin-button admin-button-quiet" href={cancelHref}>{t(locale, "admin.item.cancel")}</a>
+    <button class="admin-button" type="submit">
+      {submitLabel}
+    </button>
+    <a class="admin-button admin-button-quiet" href={cancelHref}>
+      {t(locale, "admin.item.cancel")}
+    </a>
   </div>
 </form>

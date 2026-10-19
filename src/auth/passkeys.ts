@@ -8,12 +8,7 @@
  *
  * Each function returns status, JSON and cookies; the Astro endpoints only pass them on.
  */
-import {
-  generateAuthenticationOptions,
-  generateRegistrationOptions,
-  verifyAuthenticationResponse,
-  verifyRegistrationResponse,
-} from "@simplewebauthn/server";
+import { generateAuthenticationOptions, generateRegistrationOptions, verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
 import { prepare, stmt } from "../db/sql";
 import type { D1Database } from "../db/types";
 import { isoSeconds } from "../db/repository";
@@ -64,8 +59,7 @@ async function challengeCookie(ctx: CeremonyContext, purpose: string, challenge:
   return `${CHALLENGE_COOKIE}=${value}; Path=/; Max-Age=${CHALLENGE_TTL_MS / 1000}; HttpOnly; Secure; SameSite=Strict`;
 }
 
-const expectedChallenge = (ctx: CeremonyContext, purpose: string) =>
-  ctx.challengeCookie ? unsign(ctx.secret, purpose, ctx.challengeCookie, ctx.now) : Promise.resolve(null);
+const expectedChallenge = (ctx: CeremonyContext, purpose: string) => (ctx.challengeCookie ? unsign(ctx.secret, purpose, ctx.challengeCookie, ctx.now) : Promise.resolve(null));
 
 const userHandle = (userId: string) => new TextEncoder().encode(userId);
 
@@ -75,12 +69,7 @@ const userHandle = (userId: string) => new TextEncoder().encode(userId);
  */
 const redeemChallenge = (ctx: CeremonyContext, challenge: string) => [
   stmt("DELETE FROM used_challenges WHERE expires_at < ?", isoSeconds(ctx.now)),
-  stmt(
-    "INSERT INTO used_challenges (challenge, site_id, expires_at) VALUES (?, ?, ?)",
-    challenge,
-    ctx.site,
-    isoSeconds(new Date(ctx.now.getTime() + CHALLENGE_TTL_MS)),
-  ),
+  stmt("INSERT INTO used_challenges (challenge, site_id, expires_at) VALUES (?, ?, ?)", challenge, ctx.site, isoSeconds(new Date(ctx.now.getTime() + CHALLENGE_TTL_MS))),
 ];
 
 const isConstraintError = (error: unknown) => /UNIQUE|PRIMARY KEY|constraint/i.test(String(error));
@@ -305,10 +294,7 @@ export async function addPasskeyConfirm(ctx: CeremonyContext, session: Session, 
   if (newCounter === null) return refuse(401, "verification-failed");
   try {
     await ctx.db.batch(
-      prepare(ctx.db, [
-        ...redeemChallenge(ctx, challenge),
-        stmt("UPDATE passkeys SET counter = ?, last_used_at = ? WHERE id = ?", newCounter, isoSeconds(ctx.now), row.id),
-      ]),
+      prepare(ctx.db, [...redeemChallenge(ctx, challenge), stmt("UPDATE passkeys SET counter = ?, last_used_at = ? WHERE id = ?", newCounter, isoSeconds(ctx.now), row.id)]),
     );
   } catch (error) {
     if (isConstraintError(error)) return refuse(401, "challenge-used");
@@ -334,9 +320,7 @@ export async function addPasskeyVerify(ctx: CeremonyContext, session: Session, r
     `${session.email}: another device's passkey added`,
   );
   try {
-    await ctx.db.batch(
-      prepare(ctx.db, [...redeemChallenge(ctx, verified.challenge), passkeyInsert(ctx, session.userId, verified.credential, false), audit]),
-    );
+    await ctx.db.batch(prepare(ctx.db, [...redeemChallenge(ctx, verified.challenge), passkeyInsert(ctx, session.userId, verified.credential, false), audit]));
   } catch (error) {
     // The credential was checked above, so this is a replayed challenge (or a race with one).
     if (isConstraintError(error)) return refuse(401, "challenge-used");

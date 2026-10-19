@@ -23,7 +23,12 @@ const list = Object.entries(errors).filter((entry): entry is [string, string] =>
     <p class="font-semibold">{t(locale, "admin.form.errorsTitle")}</p>
     <ul class="list-disc pl-5 mt-1">
       {list.map(([name, message]) => (
-        <li><a class="underline" href={`#${targets[name] ?? name}`}>{labels[name] ? `${labels[name]}: ` : ""}{message}</a></li>
+        <li>
+          <a class="underline" href={`#${targets[name] ?? name}`}>
+            {labels[name] ? `${labels[name]}: ` : ""}
+            {message}
+          </a>
+        </li>
       ))}
     </ul>
   </div>

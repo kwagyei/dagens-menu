@@ -20,10 +20,7 @@ type Localized = { sv: string; en: string };
 export const PAGE_SLOTS = ["hero", "cta", "menu_hero", "story", "kitchen"] as const;
 export type PageSlot = (typeof PAGE_SLOTS)[number];
 
-export type ImageUse =
-  | { kind: "dish"; id: string; name: Localized }
-  | { kind: "page"; slot: PageSlot }
-  | { kind: "gallery"; position: number };
+export type ImageUse = { kind: "dish"; id: string; name: Localized } | { kind: "page"; slot: PageSlot } | { kind: "gallery"; position: number };
 
 export interface LibraryImage {
   id: string;

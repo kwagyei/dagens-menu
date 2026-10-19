@@ -35,7 +35,9 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
       <section class="menu-cat" id={`cat-${category.id}`} aria-labelledby={`cat-${category.id}-title`}>
         <h2 id={`cat-${category.id}-title`}>{localized(category.name, locale)}</h2>
         <ul class="plain">
-          {category.items.map((item) => <MenuRow item={item} />)}
+          {category.items.map((item) => (
+            <MenuRow item={item} />
+          ))}
         </ul>
       </section>
     ))}
@@ -55,16 +57,27 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
           <article class:list={["menu-item menu-item-row", { "is-out": !onSale(item) }]} aria-labelledby={`dish-${item.id}`}>
             <div class="menu-item__top">
               <h3 id={`dish-${item.id}`}>{localized(item.name, locale)}</h3>
-              <span class="price">{!onSale(item) && <span class="vh">{t(locale, "menu.regularPrice")} </span>}{formatPrice(item.price)}</span>
+              <span class="price">
+                {!onSale(item) && <span class="vh">{t(locale, "menu.regularPrice")} </span>}
+                {formatPrice(item.price)}
+              </span>
             </div>
             <div class="menu-item__body">
               <div class="menu-item__text">
                 {!onSale(item) && <p class="out">{t(locale, item.available ? "menu.soldOutToday" : "menu.unavailable")}</p>}
                 <p>{localized(item.description, locale)}</p>
                 {item.tags.length > 0 && (
-                  <ul class="chips">{item.tags.map((tag) => <li class="chip">{tagName(tag)}</li>)}</ul>
+                  <ul class="chips">
+                    {item.tags.map((tag) => (
+                      <li class="chip">{tagName(tag)}</li>
+                    ))}
+                  </ul>
                 )}
-                {item.allergens.length > 0 && <p class="meta">{t(locale, "menu.allergens")}: {allergenList(item)}</p>}
+                {item.allergens.length > 0 && (
+                  <p class="meta">
+                    {t(locale, "menu.allergens")}: {allergenList(item)}
+                  </p>
+                )}
               </div>
               <Photo ref={item.image} slot="thumb" class="menu-item__thumb" />
             </div>

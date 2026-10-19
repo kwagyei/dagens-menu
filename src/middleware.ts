@@ -70,9 +70,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     async ({ content, today }) => {
       context.locals.content = content;
       context.locals.today = today;
-      context.locals.session = admin
-        ? await getSession(env.DB, __BUILD_SITE__, readCookie(context.request.headers.get("Cookie"), SESSION_COOKIE), new Date())
-        : null;
+      context.locals.session = admin ? await getSession(env.DB, __BUILD_SITE__, readCookie(context.request.headers.get("Cookie"), SESSION_COOKIE), new Date()) : null;
       return next();
     },
   );

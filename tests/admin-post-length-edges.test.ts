@@ -25,7 +25,7 @@ describe("Content-Length must be a plain decimal number", () => {
     expect(await send("/admin/api/add-confirm", String(ADMIN_BODY_LIMIT + 1))).toBe(413);
   });
 
-  it("reads the value as Fetch does: surrounding whitespace is trimmed, so \" 12\" is 12", async () => {
+  it('reads the value as Fetch does: surrounding whitespace is trimmed, so " 12" is 12', async () => {
     expect(await send("/admin/texts/", " 12 ")).toBe("through");
     expect(await send("/admin/texts/", ` ${ADMIN_BODY_LIMIT + 1}\t`)).toBe(413);
   });
@@ -55,16 +55,12 @@ describe("every changing method is held to it, on both locales", () => {
 });
 
 describe("only the photo upload page is exempt", () => {
-  it.each([
-    "/admin/photos/new",
-    "/admin/photos/new/",
-    "/en/admin/photos/new/",
-    "/admin//photos//new/",
-    "/%61dmin/photos/new/",
-    "/admin/photos/%6Eew/",
-  ])("%s: exempt (all route to the upload page)", async (path) => {
-    expect(await send(path, String(ADMIN_BODY_LIMIT + 1))).toBe("through");
-  });
+  it.each(["/admin/photos/new", "/admin/photos/new/", "/en/admin/photos/new/", "/admin//photos//new/", "/%61dmin/photos/new/", "/admin/photos/%6Eew/"])(
+    "%s: exempt (all route to the upload page)",
+    async (path) => {
+      expect(await send(path, String(ADMIN_BODY_LIMIT + 1))).toBe("through");
+    },
+  );
 
   it.each([
     "/admin/photos/new/x",

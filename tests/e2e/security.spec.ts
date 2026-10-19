@@ -93,7 +93,10 @@ const isSignedIn = async (request: APIRequestContext, cookie: string, base = BAS
  * same second, and the tie-break on the random id made the choice a coin toss.
  */
 async function removeOtherPasskey(page: Page) {
-  const others = page.locator("main li").filter({ has: page.locator('input[name="action"][value="remove"]') }).filter({ hasNotText: "du är inloggad med den här" });
+  const others = page
+    .locator("main li")
+    .filter({ has: page.locator('input[name="action"][value="remove"]') })
+    .filter({ hasNotText: "du är inloggad med den här" });
   await expect(others).toHaveCount(1);
   await others.getByRole("button").click();
 }

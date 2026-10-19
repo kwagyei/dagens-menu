@@ -28,12 +28,18 @@ if (!category) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
 
 <AdminLayout title={t(locale, "admin.category.deleteHeading")} csrf={page.csrf}>
   <section class="space-y-6">
-    <h1 class="text-3xl font-bold">{t(locale, "admin.category.deleteHeading")}: {locale === "sv" ? category.name_sv : category.name_en}</h1>
+    <h1 class="text-3xl font-bold">
+      {t(locale, "admin.category.deleteHeading")}: {locale === "sv" ? category.name_sv : category.name_en}
+    </h1>
     <p>{t(locale, "admin.category.deleteLead").replace("{n}", String(category.dishes))}</p>
     <form method="post" class="flex flex-wrap gap-3">
       <input type="hidden" name="csrf" value={page.csrf} />
-      <button class="admin-button" type="submit">{t(locale, "admin.category.deleteConfirm")}</button>
-      <a class="admin-button admin-button-quiet" href={page.path(`/menu/category/${id}/`)}>{t(locale, "admin.item.cancel")}</a>
+      <button class="admin-button" type="submit">
+        {t(locale, "admin.category.deleteConfirm")}
+      </button>
+      <a class="admin-button admin-button-quiet" href={page.path(`/menu/category/${id}/`)}>
+        {t(locale, "admin.item.cancel")}
+      </a>
     </form>
   </section>
 </AdminLayout>

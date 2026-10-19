@@ -104,9 +104,17 @@ const RULES: Rule[] = [
   ],
   // Security: who it concerns is an email, which stays
   [["invite"], /^(.*): invited as owner; link valid (\d+) hours$/, (m) => `${m[1]}: inbjuden som ägare; länken gäller i ${m[2]} timmar`],
-  [["invite"], /^(.*): invited again \(recovery\), already has a passkey; link valid (\d+) hours$/, (m) => `${m[1]}: inbjuden igen (återställning), har redan en passkey; länken gäller i ${m[2]} timmar`],
+  [
+    ["invite"],
+    /^(.*): invited again \(recovery\), already has a passkey; link valid (\d+) hours$/,
+    (m) => `${m[1]}: inbjuden igen (återställning), har redan en passkey; länken gäller i ${m[2]} timmar`,
+  ],
   [["invite", "passkey"], /^(.*): first passkey created from the invite$/, (m) => `${m[1]}: första passkeyn skapad med inbjudan`],
-  [["invite", "passkey"], /^(.*): passkey created from a new invite \(recovery\); passkeys now: (\d+)$/, (m) => `${m[1]}: passkey skapad med ny inbjudan (återställning); passkeys nu: ${m[2]}`],
+  [
+    ["invite", "passkey"],
+    /^(.*): passkey created from a new invite \(recovery\); passkeys now: (\d+)$/,
+    (m) => `${m[1]}: passkey skapad med ny inbjudan (återställning); passkeys nu: ${m[2]}`,
+  ],
   [["invite", "passkey"], /^(.*): passkey created from an invite$/, (m) => `${m[1]}: passkey skapad med inbjudan`],
   [["passkey"], /^(.*): another device's passkey added$/, (m) => `${m[1]}: passkey för en annan enhet tillagd`],
   [["passkey"], /^(.*): passkey from (\d{4}-\d\d-\d\d) removed; sign-ins ended: (\d+)$/, (m) => `${m[1]}: passkey från ${m[2]} borttagen; avslutade inloggningar: ${m[3]}`],

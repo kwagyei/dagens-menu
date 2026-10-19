@@ -36,12 +36,17 @@ async function signIn(page: Page, browserName: string) {
 /** A unique small patch so no two fixtures encode to the same bytes (the server dedupes). */
 const uniq = async () => {
   const [r, g, b] = [...randomBytes(3)];
-  return sharp({ create: { width: 12, height: 12, channels: 3, background: { r, g, b } } }).png().toBuffer();
+  return sharp({ create: { width: 12, height: 12, channels: 3, background: { r, g, b } } })
+    .png()
+    .toBuffer();
 };
 
 /** Upright 800 × 600: red top-left, green top-right, blue bottom-left, white elsewhere. */
 async function uprightQuadrants(): Promise<Buffer> {
-  const block = (r: number, g: number, b: number) => sharp({ create: { width: 200, height: 150, channels: 3, background: { r, g, b } } }).png().toBuffer();
+  const block = (r: number, g: number, b: number) =>
+    sharp({ create: { width: 200, height: 150, channels: 3, background: { r, g, b } } })
+      .png()
+      .toBuffer();
   return sharp({ create: { width: 800, height: 600, channels: 3, background: "#ffffff" } })
     .composite([
       { input: await block(230, 20, 20), left: 0, top: 0 },
@@ -67,7 +72,9 @@ async function withOrientation(upright: Buffer, o: number): Promise<Buffer> {
     (s) => s.rotate(270).flop(),
   ];
   for (const op of candidates) {
-    const stored = await sharp(await op(sharp(upright)).png().toBuffer()).png().toBuffer();
+    const stored = await sharp(await op(sharp(upright)).png().toBuffer())
+      .png()
+      .toBuffer();
     const jpeg = await sharp(stored).withMetadata({ orientation: o }).jpeg({ quality: 92 }).toBuffer();
     const check = await sharp(jpeg).rotate().raw().toBuffer({ resolveWithObject: true });
     if (check.info.width !== 800 || check.info.height !== 600) continue;
@@ -122,12 +129,18 @@ async function upload(page: Page, buffer: Buffer, name = "photo.jpg", mimeType =
   await page.locator("form#photo-upload button[type=submit]").click();
   const outcome = await Promise.race([
     page.waitForURL(/done=(added|duplicate)/, { timeout: 60_000 }).then(() => "nav"),
-    expect(page.locator("form#photo-upload button[type=submit]")).toBeEnabled({ timeout: 60_000 }).then(async () => {
-      await page.waitForTimeout(300);
-      return page.url().includes("done=") ? "nav" : "refused";
-    }),
+    expect(page.locator("form#photo-upload button[type=submit]"))
+      .toBeEnabled({ timeout: 60_000 })
+      .then(async () => {
+        await page.waitForTimeout(300);
+        return page.url().includes("done=") ? "nav" : "refused";
+      }),
   ]);
-  const progress = (await page.locator("#photo-progress").textContent().catch(() => "")) ?? "";
+  const progress =
+    (await page
+      .locator("#photo-progress")
+      .textContent()
+      .catch(() => "")) ?? "";
   if (outcome !== "nav") return { id: null, progress };
   expect(page.url(), "a new photo, not a duplicate").toContain("done=added");
   const id = (await libraryRefs(page)).find((r) => !before.has(r)) ?? null;
@@ -145,7 +158,7 @@ async function stored(page: Page, id: string, extra: number[] = []) {
     const info = inspectWebp(new Uint8Array(bytes));
     expect(info.ok, `server check, size ${w}: ${JSON.stringify(info)}`).toBe(true);
     const chunks: string[] = [];
-    for (let at = 12; at + 8 <= bytes.length; ) {
+    for (let at = 12; at + 8 <= bytes.length;) {
       chunks.push(bytes.toString("latin1", at, at + 4));
       const size = bytes.readUInt32LE(at + 4);
       at += 8 + size + (size % 2);
@@ -190,9 +203,14 @@ test("odd sources: alpha PNG, CMYK JPEG, 16-bit PNG, greyscale, ICC profile", as
   const results: Record<string, unknown> = {};
 
   // Alpha: a transparent canvas with an opaque red square in the middle.
-  const red = await sharp({ create: { width: 300, height: 300, channels: 4, background: { r: 220, g: 0, b: 0, alpha: 1 } } }).png().toBuffer();
+  const red = await sharp({ create: { width: 300, height: 300, channels: 4, background: { r: 220, g: 0, b: 0, alpha: 1 } } })
+    .png()
+    .toBuffer();
   const alphaPng = await sharp({ create: { width: 900, height: 700, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-    .composite([{ input: red, left: 300, top: 200 }, { input: await uniq(), left: 0, top: 0 }])
+    .composite([
+      { input: red, left: 300, top: 200 },
+      { input: await uniq(), left: 0, top: 0 },
+    ])
     .png()
     .toBuffer();
   const a = await upload(page, alphaPng, "alpha.png", "image/png");
@@ -201,22 +219,45 @@ test("odd sources: alpha PNG, CMYK JPEG, 16-bit PNG, greyscale, ICC profile", as
   const corner = await sharp(af.at(-1)!.bytes).ensureAlpha().extract({ left: 100, top: 600, width: 1, height: 1 }).raw().toBuffer();
   results.alpha = { chunks: af.at(-1)!.chunks, hasAlpha: af.at(-1)!.alpha, transparentCornerRGBA: [...corner] };
 
-  const cmyk = await sharp(await base()).composite([{ input: await uniq(), left: 0, top: 0 }]).toColourspace("cmyk").jpeg({ quality: 90 }).toBuffer();
+  const cmyk = await sharp(await base())
+    .composite([{ input: await uniq(), left: 0, top: 0 }])
+    .toColourspace("cmyk")
+    .jpeg({ quality: 90 })
+    .toBuffer();
   expect((await sharp(cmyk).metadata()).space).toBe("cmyk");
   const c = await upload(page, cmyk, "cmyk.jpg");
-  results.cmyk = c.id ? (await sharp((await stored(page, c.id)).at(-1)!.bytes).extract({ left: 450, top: 350, width: 1, height: 1 }).raw().toBuffer()).toJSON().data : c.progress;
+  results.cmyk = c.id
+    ? (
+        await sharp((await stored(page, c.id)).at(-1)!.bytes)
+          .extract({ left: 450, top: 350, width: 1, height: 1 })
+          .raw()
+          .toBuffer()
+      ).toJSON().data
+    : c.progress;
 
-  const png16 = await sharp(await base()).composite([{ input: await uniq(), left: 0, top: 0 }]).toColourspace("rgb16").png().toBuffer();
+  const png16 = await sharp(await base())
+    .composite([{ input: await uniq(), left: 0, top: 0 }])
+    .toColourspace("rgb16")
+    .png()
+    .toBuffer();
   expect((await sharp(png16).metadata()).depth).toBe("ushort");
   const p = await upload(page, png16, "deep.png", "image/png");
   results.png16 = p.id ? (await stored(page, p.id)).map((f) => f.width) : p.progress;
 
-  const grey = await sharp(await base()).composite([{ input: await uniq(), left: 0, top: 0 }]).toColourspace("b-w").jpeg().toBuffer();
+  const grey = await sharp(await base())
+    .composite([{ input: await uniq(), left: 0, top: 0 }])
+    .toColourspace("b-w")
+    .jpeg()
+    .toBuffer();
   expect((await sharp(grey).metadata()).channels).toBe(1);
   const g = await upload(page, grey, "grey.jpg");
   results.grey = g.id ? (await stored(page, g.id)).map((f) => f.width) : g.progress;
 
-  const icc = await sharp(await base()).composite([{ input: await uniq(), left: 0, top: 0 }]).withIccProfile("p3").jpeg().toBuffer();
+  const icc = await sharp(await base())
+    .composite([{ input: await uniq(), left: 0, top: 0 }])
+    .withIccProfile("p3")
+    .jpeg()
+    .toBuffer();
   expect((await sharp(icc).metadata()).icc, "fixture carries an ICC profile").toBeTruthy();
   const i = await upload(page, icc, "p3.jpg");
   expect(i.id, `icc: ${i.progress}`).toBeTruthy();
@@ -259,7 +300,11 @@ test("extreme shapes and the edges of the size rules", async ({ page, browserNam
 test("a photo that only fits at q60 is added under 1 MB; one too large even at q60 says so and sends nothing", async ({ page, browserName }) => {
   await signIn(page, browserName);
   const noisy = async (sigma: number) =>
-    sharp(await sharp({ create: { width: 1600, height: 2400, channels: 3, background: "#808080", noise: { type: "gaussian", mean: 128, sigma } } }).png().toBuffer())
+    sharp(
+      await sharp({ create: { width: 1600, height: 2400, channels: 3, background: "#808080", noise: { type: "gaussian", mean: 128, sigma } } })
+        .png()
+        .toBuffer(),
+    )
       .composite([{ input: await uniq(), left: 0, top: 0 }])
       .png()
       .toBuffer();
@@ -320,7 +365,11 @@ test("double click sends one upload", async ({ page, browserName }) => {
 test("changing the file while it is being prepared uploads the file now chosen, or nothing", async ({ page, browserName }) => {
   await signIn(page, browserName);
   // A slow first photo (big noisy PNG) and a plain second one.
-  const slow = await sharp(await sharp({ create: { width: 6000, height: 4000, channels: 3, background: "#808080", noise: { type: "gaussian", mean: 128, sigma: 10 } } }).png().toBuffer())
+  const slow = await sharp(
+    await sharp({ create: { width: 6000, height: 4000, channels: 3, background: "#808080", noise: { type: "gaussian", mean: 128, sigma: 10 } } })
+      .png()
+      .toBuffer(),
+  )
     .composite([{ input: await uniq(), left: 0, top: 0 }])
     .jpeg()
     .toBuffer();
@@ -337,7 +386,18 @@ test("changing the file while it is being prepared uploads the file now chosen, 
   await page.waitForURL(/done=/, { timeout: 60_000 }).catch(() => undefined);
   const added = (await libraryRefs(page)).filter((r) => !before.has(r));
   const widths = added.length ? (await stored(page, added[0])).map((f) => f.width) : [];
-  console.log("mid-encode change:", JSON.stringify({ pickerDisabled, added: added.length, widths, picker: await page.locator("#photo").evaluate((i: HTMLInputElement) => i.files?.[0]?.name).catch(() => "navigated") }));
+  console.log(
+    "mid-encode change:",
+    JSON.stringify({
+      pickerDisabled,
+      added: added.length,
+      widths,
+      picker: await page
+        .locator("#photo")
+        .evaluate((i: HTMLInputElement) => i.files?.[0]?.name)
+        .catch(() => "navigated"),
+    }),
+  );
   // The owner now sees "second.jpg" chosen; a 1600 px first photo stored under the alt they typed is the wrong photo.
   expect(pickerDisabled || added.length === 0 || widths.at(-1) === 800, "the stored photo is the one now chosen").toBe(true);
 });
@@ -401,10 +461,14 @@ test("security: one origin, a clean multipart body, no CSP violation, no inline 
   expect(body, "the POST body was captured").not.toBeNull();
   const text = (body as unknown as Buffer).toString("latin1");
   const boundary = contentType.split("boundary=")[1];
-  const parts = text.split(`--${boundary}`).slice(1, -1).map((p) => /Content-Disposition: form-data; name="([^"]+)"(?:; filename="([^"]*)")?/i.exec(p)?.slice(1));
+  const parts = text
+    .split(`--${boundary}`)
+    .slice(1, -1)
+    .map((p) => /Content-Disposition: form-data; name="([^"]+)"(?:; filename="([^"]*)")?/i.exec(p)?.slice(1));
   console.log("parts:", JSON.stringify(parts));
   expect(parts.map((p) => p?.[0]).sort()).toEqual(["alt_en", "alt_sv", "csrf", "variant", "variant"].sort());
-  for (const needle of ["IMG_SECRET_NAME", "SECRET-MODEL", "TesterPhone", "Exif", "GPS", "\xff\xd8\xff", "ICC_PROFILE"]) expect(text.includes(needle), `body contains ${JSON.stringify(needle)}`).toBe(false);
+  for (const needle of ["IMG_SECRET_NAME", "SECRET-MODEL", "TesterPhone", "Exif", "GPS", "\xff\xd8\xff", "ICC_PROFILE"])
+    expect(text.includes(needle), `body contains ${JSON.stringify(needle)}`).toBe(false);
   expect(body!.length).toBeLessThan(1_000_000 + 64 * 1024);
 
   const foreign = w.requests.filter((u) => !u.startsWith(ORIGIN) && !u.startsWith("blob:") && !u.startsWith("data:"));
@@ -417,7 +481,10 @@ test("security: one origin, a clean multipart body, no CSP violation, no inline 
 
   await page.goto(NEW);
   const inline = await page.locator("script:not([src])").evaluateAll((s) => s.map((e) => (e as HTMLScriptElement).type + ":" + e.textContent!.slice(0, 80)));
-  expect(inline.filter((s) => !s.startsWith("application/ld+json")), "no inline script").toEqual([]);
+  expect(
+    inline.filter((s) => !s.startsWith("application/ld+json")),
+    "no inline script",
+  ).toEqual([]);
   const res = await page.request.get(NEW);
   const csp = res.headers()["content-security-policy"];
   console.log("CSP:", csp);

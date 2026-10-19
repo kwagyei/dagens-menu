@@ -20,9 +20,6 @@ describe("checkAdminScripts", () => {
   });
 
   it("refuses a page with no external admin script: it was inlined, or it went missing", () => {
-    expect(checkAdminScripts(`<script type="module">returnFocus()</script>`)).toEqual([
-      expect.stringMatching(/inline/),
-      "no external AdminLayout script",
-    ]);
+    expect(checkAdminScripts(`<script type="module">returnFocus()</script>`)).toEqual([expect.stringMatching(/inline/), "no external AdminLayout script"]);
   });
 });

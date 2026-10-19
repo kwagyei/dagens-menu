@@ -27,9 +27,7 @@ test("every image has alt text, loads, and no /images or /fonts request fails", 
   });
   for (const path of ["/", "/menu/", "/gallery/", "/en/"]) {
     await page.goto(path, { waitUntil: "networkidle" });
-    const broken = await page.evaluate(() =>
-      [...document.querySelectorAll("img")].filter((i) => !i.hasAttribute("alt") || i.naturalWidth === 0).map((i) => i.getAttribute("src")),
-    );
+    const broken = await page.evaluate(() => [...document.querySelectorAll("img")].filter((i) => !i.hasAttribute("alt") || i.naturalWidth === 0).map((i) => i.getAttribute("src")));
     expect(broken, path).toEqual([]);
   }
   expect(failed).toEqual([]);

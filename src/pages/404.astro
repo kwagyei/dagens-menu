@@ -11,7 +11,11 @@ Astro.response.status = 404;
 <Base title={t(locale, "notFound.heading")}>
   <PageHero title={t(locale, "notFound.heading")} intro={t(locale, "notFound.text")} />
   <p class="page-cta not-found-links">
-    <a class="btn btn-primary" href={localePath(locale, "/")}>{t(locale, "nav.home")}</a>
-    <a class="btn btn-secondary" href={localePath(locale, "/menu/")}>{t(locale, "nav.menu")}</a>
+    <a class="btn btn-primary" href={localePath(locale, "/")}>
+      {t(locale, "nav.home")}
+    </a>
+    <a class="btn btn-secondary" href={localePath(locale, "/menu/")}>
+      {t(locale, "nav.menu")}
+    </a>
   </p>
 </Base>

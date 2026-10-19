@@ -42,8 +42,7 @@ async function readForm(page: Page, id: "settings" | "pages", path = "/admin/tex
   await page.goto(path);
   return page.locator(`form#${id}`).evaluate((form) => Object.fromEntries(new FormData(form as HTMLFormElement) as unknown as Iterable<[string, string]>));
 }
-const post = (page: Page, form: Fields, path = "/admin/texts/") =>
-  page.request.post(path, { form, maxRedirects: 0, headers: { Origin: BASE } });
+const post = (page: Page, form: Fields, path = "/admin/texts/") => page.request.post(path, { form, maxRedirects: 0, headers: { Origin: BASE } });
 const settingsDefaults = (f: Fields): Fields => f;
 
 async function snapshot(page: Page) {
@@ -192,16 +191,20 @@ test("markup and invisible characters in the name are inert on every public surf
       expect(html, path).not.toMatch(/[‮​]/);
       await page.goto(path);
       expect(await page.locator("img[src='x']").count(), path).toBe(0);
-      expect(await page.locator("script").evaluateAll((els) => els.filter((e) => /alert\(2\)/.test(e.textContent ?? "") && e.getAttribute("type") !== "application/ld+json").length), path).toBe(0);
+      expect(
+        await page.locator("script").evaluateAll((els) => els.filter((e) => /alert\(2\)/.test(e.textContent ?? "") && e.getAttribute("type") !== "application/ld+json").length),
+        path,
+      ).toBe(0);
       const ld = await jsonLd(page, path);
       const sv = !path.startsWith("/en");
       expect(ld.name, path).toContain(sv ? "<img src=x" : "EN <img src=x");
       expect(await meta(page, "og:site_name"), path).toContain("<img src=x");
       expect(await page.title(), path).toContain("<img src=x");
       // Home has no header bar since PR B: the name is the hero's H1 (in an SVG's aria-label on the modern look).
-      const nameSurface = (await page.locator("header").count()) > 0
-        ? await page.locator("header").first().textContent()
-        : await page.locator("#page-title").evaluate((el) => `${el.textContent} ${el.querySelector("[aria-label]")?.getAttribute("aria-label") ?? ""}`);
+      const nameSurface =
+        (await page.locator("header").count()) > 0
+          ? await page.locator("header").first().textContent()
+          : await page.locator("#page-title").evaluate((el) => `${el.textContent} ${el.querySelector("[aria-label]")?.getAttribute("aria-label") ?? ""}`);
       expect(nameSurface, path).toContain("<img src=x");
       expect(await page.getByRole("contentinfo").textContent(), path).toContain("<img src=x");
     }
@@ -369,7 +372,11 @@ test("CSRF: both forms refuse a missing or wrong token and a foreign Origin, and
       const f = await readForm(page, id);
       const change: Fields = id === "settings" ? { phone: "08-555 555 55" } : { home_tagline_sv: "CSRF-rubrik" };
       const { csrf: _c, ...noToken } = f;
-      for (const form of <Fields[]>[{ ...noToken, ...change }, { ...f, ...change, csrf: "x".repeat(43) }, { ...f, ...change, csrf: "" }]) {
+      for (const form of <Fields[]>[
+        { ...noToken, ...change },
+        { ...f, ...change, csrf: "x".repeat(43) },
+        { ...f, ...change, csrf: "" },
+      ]) {
         const res = await post(page, form);
         expect(res.status(), id).toBe(303);
         expect(res.headers().location).toContain("done=expired");
@@ -497,7 +504,10 @@ test("375 px: no sideways scroll, controls are at least 44 px tall, error links 
   expect(await overflow()).toBeLessThanOrEqual(0);
   expect(await small("form#settings [role=alert] a")).toEqual([]);
   // A long unbroken value does not push the page sideways.
-  await page.locator("form#settings").getByLabel("Instagram").fill(`https://x.se/${"a".repeat(300)}`);
+  await page
+    .locator("form#settings")
+    .getByLabel("Instagram")
+    .fill(`https://x.se/${"a".repeat(300)}`);
   await page.locator("form#pages #about_story_sv").fill("b".repeat(600));
   expect(await overflow()).toBeLessThanOrEqual(0);
 });

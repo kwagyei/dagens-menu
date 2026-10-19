@@ -38,7 +38,10 @@ const { locale, legend, photos, current } = Astro.props;
         ) : (
           <img src={photo.ref} alt="" width="72" loading="lazy" class="rounded shrink-0" />
         )}
-        <span class="min-w-0 break-words">{alt}{photo.kind === "static" && <span class="text-sm admin-muted"> · {t(locale, "admin.photos.builtIn")}</span>}</span>
+        <span class="min-w-0 break-words">
+          {alt}
+          {photo.kind === "static" && <span class="text-sm admin-muted"> · {t(locale, "admin.photos.builtIn")}</span>}
+        </span>
       </label>
     );
   })}

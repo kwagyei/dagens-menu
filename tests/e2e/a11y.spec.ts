@@ -74,7 +74,18 @@ test("the photo library pages, in both languages, and the description form rejec
   await signedInOwner(page);
   await page.goto("/admin/photos/");
   const photoPath = await page.locator("#uploads a[href*='/admin/photos/']").last().getAttribute("href");
-  const paths = ["/admin/photos/", "/admin/photos/?filter=unused", "/admin/photos/unused/delete/", photoPath!, `${photoPath}delete/`, "/admin/gallery/", "/admin/gallery/?done=already", "/admin/page-photos/", "/admin/page-photos/story/", "/admin/page-photos/story/?done=not-found"];
+  const paths = [
+    "/admin/photos/",
+    "/admin/photos/?filter=unused",
+    "/admin/photos/unused/delete/",
+    photoPath!,
+    `${photoPath}delete/`,
+    "/admin/gallery/",
+    "/admin/gallery/?done=already",
+    "/admin/page-photos/",
+    "/admin/page-photos/story/",
+    "/admin/page-photos/story/?done=not-found",
+  ];
   for (const path of paths) {
     for (const prefix of ["", "/en"]) {
       await page.goto(`${prefix}${path}`);
@@ -109,7 +120,10 @@ test("every public page, and the 404 page, in both languages, at phone width, wi
 
 test("the menu button says what it will do: open, then close (reviewer M5 follow-up)", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const [path, open, close] of [["/menu/", "Öppna menyn", "Stäng menyn"], ["/en/menu/", "Open the menu", "Close the menu"]]) {
+  for (const [path, open, close] of [
+    ["/menu/", "Öppna menyn", "Stäng menyn"],
+    ["/en/menu/", "Open the menu", "Close the menu"],
+  ]) {
     await page.goto(path);
     const toggle = page.locator("#menu-toggle");
     // Anchored: exactly one name, never both labels run together.
@@ -121,4 +135,3 @@ test("the menu button says what it will do: open, then close (reviewer M5 follow
     await expect(toggle).toHaveAccessibleName(exactly(open));
   }
 });
-

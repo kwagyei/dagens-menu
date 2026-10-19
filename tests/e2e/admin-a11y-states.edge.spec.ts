@@ -35,7 +35,12 @@ const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 async function axe(page: Page, what: string, extra: string[] = []) {
   const { violations } = await new AxeBuilder({ page }).withTags([...TAGS, ...extra]).analyze();
-  expect.soft(violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`), `axe: ${what}`).toEqual([]);
+  expect
+    .soft(
+      violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
+      `axe: ${what}`,
+    )
+    .toEqual([]);
 }
 
 /** Every signed-in admin page the owner can reach, as Swedish paths. */
@@ -125,7 +130,13 @@ async function rejectedStates(page: Page, prefix: string) {
   ];
   // Each state ends on a 422 page with its error alert. Wait for it, so the sweeps never read the
   // page while that response is still loading (seen on CI as a null documentElement).
-  return states.map((s) => ({ ...s, open: async () => { await s.open(); await page.getByRole("alert").first().waitFor(); } }));
+  return states.map((s) => ({
+    ...s,
+    open: async () => {
+      await s.open();
+      await page.getByRole("alert").first().waitFor();
+    },
+  }));
 }
 
 /** Make a 409 on a dish, a category and each of the texts forms: returns the open functions. */
@@ -201,8 +212,18 @@ const inventory = (page: Page) =>
       const aria = el.getAttribute("aria-label");
       if (aria) return aria.trim();
       const by = el.getAttribute("aria-labelledby");
-      if (by) return by.split(/\s+/).map((id) => document.getElementById(id)?.textContent ?? "").join(" ").trim();
-      const labels = i.labels ? [...i.labels].map((l) => l.textContent ?? "").join(" ").trim() : "";
+      if (by)
+        return by
+          .split(/\s+/)
+          .map((id) => document.getElementById(id)?.textContent ?? "")
+          .join(" ")
+          .trim();
+      const labels = i.labels
+        ? [...i.labels]
+            .map((l) => l.textContent ?? "")
+            .join(" ")
+            .trim()
+        : "";
       if (labels) return labels;
       return el.getAttribute("title")?.trim() ?? "";
     };
@@ -272,7 +293,9 @@ test("axe: security page with several passkeys and every status message", async 
   // Two more passkeys for this owner (the virtual authenticator holds one per site).
   const email = (await page.locator("header nav span").first().innerText()).split(" ").pop()!;
   for (let i = 0; i < 2; i++) {
-    d1(`INSERT INTO passkeys (id, user_id, site_id, public_key) SELECT 'tester-fake-${Date.now()}-${i}-' || hex(randomblob(4)), user_id, site_id, x'00' FROM passkeys WHERE user_id = (SELECT id FROM users WHERE email = '${email}')`);
+    d1(
+      `INSERT INTO passkeys (id, user_id, site_id, public_key) SELECT 'tester-fake-${Date.now()}-${i}-' || hex(randomblob(4)), user_id, site_id, x'00' FROM passkeys WHERE user_id = (SELECT id FROM users WHERE email = '${email}')`,
+    );
   }
   await page.goto("/admin/security/");
   const count = await page.locator("main li.admin-card").count();
@@ -294,7 +317,16 @@ test("axe: empty category, every menu status message, special days list, many hi
   // A special day.
   const hoursCsrf = await csrfFrom(page, "/admin/hours/");
   const date = daysAhead(140); // its own day: hours.spec.ts uses 40
-  await post(page, "/admin/hours/", { csrf: hoursCsrf, action: "add-exception", date, closed: "on", exception_open: "", exception_close: "", note_sv: "Privat fest", note_en: "Private party" });
+  await post(page, "/admin/hours/", {
+    csrf: hoursCsrf,
+    action: "add-exception",
+    date,
+    closed: "on",
+    exception_open: "",
+    exception_close: "",
+    note_sv: "Privat fest",
+    note_en: "Private party",
+  });
   // Many history entries: toggle one dish 55 times.
   await page.goto("/admin/");
   const li = page.locator("li[id^='item-']").first();
@@ -327,10 +359,12 @@ test("axe with best practices on every admin page: landmarks, region, heading or
     for (const prefix of ["", "/en"]) {
       await page.goto(`${prefix}${path}`);
       const { violations } = await new AxeBuilder({ page }).withTags(["best-practice"]).analyze();
-      expect.soft(
-        violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
-        `best-practice axe: ${prefix}${path}`,
-      ).toEqual([]);
+      expect
+        .soft(
+          violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
+          `best-practice axe: ${prefix}${path}`,
+        )
+        .toEqual([]);
     }
   }
 });
@@ -360,7 +394,10 @@ test("headings, landmarks, titles and lang on every page, both languages", async
       expect.soft(inv.title.length, `${where} title`).toBeGreaterThan(3);
       if (!path.includes("/menu/") || prefix === "") titles.set(`${prefix}${path}`, inv.title);
       // The language switch link names the other language with lang set on it.
-      const sw = await page.locator("header a[hreflang]").first().evaluate((a) => ({ text: a.textContent?.trim(), lang: a.getAttribute("lang"), label: a.getAttribute("aria-label") }));
+      const sw = await page
+        .locator("header a[hreflang]")
+        .first()
+        .evaluate((a) => ({ text: a.textContent?.trim(), lang: a.getAttribute("lang"), label: a.getAttribute("aria-label") }));
       expect.soft(sw.lang, `${where} switch lang`).toBe(prefix === "/en" ? "sv" : "en");
       expect.soft((sw.label ?? "").length, `${where}: language switch is just "${sw.text}" with no accessible name`).toBeGreaterThan(2);
     }
@@ -417,7 +454,10 @@ test("every link in every error summary lands on a visible field, in both langua
         expect.soft(exists, `${where}: ${href} exists`).toBe(1);
         if (exists !== 1) continue;
         await links.nth(i).click();
-        await expect.poll(() => page.evaluate(() => document.activeElement?.id), { timeout: 3000 }).toBe(href.slice(1)).catch(() => {});
+        await expect
+          .poll(() => page.evaluate(() => document.activeElement?.id), { timeout: 3000 })
+          .toBe(href.slice(1))
+          .catch(() => {});
         const focused = await page.evaluate(() => ({ id: document.activeElement?.id, tag: document.activeElement?.tagName }));
         expect.soft(focused.id, `${where}: clicking ${href} focuses it (got ${focused.tag})`).toBe(href.slice(1));
         await expect.soft(target, `${where}: ${href} visible`).toBeVisible();
@@ -439,7 +479,10 @@ test("focus after a rejected save (422) and a conflict (409): the keyboard user 
     for (const s of [...(await rejectedStates(page, prefix)), ...(await conflictStates(page, prefix))]) {
       await s.open();
       // Chromium applies autofocus after load, a beat later on a slow runner: poll, don't read once.
-      await expect.poll(landing, { timeout: 3000 }).toMatch(sensible).catch(() => {});
+      await expect
+        .poll(landing, { timeout: 3000 })
+        .toMatch(sensible)
+        .catch(() => {});
       const at = await landing();
       expect.soft(at, `${prefix} ${s.name}: focus after the response is ${at}; it should be the error summary, the conflict notice or the first invalid field`).toMatch(sensible);
     }
@@ -462,7 +505,7 @@ const readable = (page: Page) =>
     }
     for (const el of document.querySelectorAll("[aria-label],[title],[placeholder],[alt]"))
       if (el.closest("[lang]")?.getAttribute("lang") === document.documentElement.lang)
-      for (const a of ["aria-label", "title", "placeholder", "alt"]) if (el.getAttribute(a)) out.push(el.getAttribute(a)!);
+        for (const a of ["aria-label", "title", "placeholder", "alt"]) if (el.getAttribute(a)) out.push(el.getAttribute(a)!);
     return out;
   });
 
@@ -533,7 +576,9 @@ test.fixme("the Swedish admin has no English words in its history summaries", as
   await li.getByRole("button", { name: sv["admin.menu.soldOut"] }).click();
   await page.goto("/admin/history/");
   const first = await page.locator("main ol > li").first().innerText();
-  expect.soft(first, "newest history entry in the Swedish admin").not.toMatch(/sold out|back on sale|moved|added at|deleted|exception removed|renamed to|category added|home page|weekly hours/);
+  expect
+    .soft(first, "newest history entry in the Swedish admin")
+    .not.toMatch(/sold out|back on sale|moved|added at|deleted|exception removed|renamed to|category added|home page|weekly hours/);
   // Undo, so the dish is not left sold out.
   await page.goto("/admin/");
   await page.locator("li[id^='item-']").first().getByRole("button", { name: sv["admin.menu.backOnSale"] }).click();
@@ -578,7 +623,9 @@ test.fixme("sold-out and reorder buttons: each name says the action and the dish
       })),
     );
     const toggles = rows.map((r) => r.buttons[0].name);
-    expect.soft(new Set(toggles).size, `${prefix}: the ${toggles.length} sold-out toggles all read "${toggles[0]}": a screen reader user in forms mode cannot tell which dish`).toBe(toggles.length);
+    expect
+      .soft(new Set(toggles).size, `${prefix}: the ${toggles.length} sold-out toggles all read "${toggles[0]}": a screen reader user in forms mode cannot tell which dish`)
+      .toBe(toggles.length);
     for (const r of rows) {
       const t = r.buttons[0];
       // Two plain actions, not a toggle: no aria-pressed, and the name starts with the visible label.
@@ -590,7 +637,12 @@ test.fixme("sold-out and reorder buttons: each name says the action and the dish
     }
     // aria-pressed + a label that changes with the state announces a contradiction.
     await page.locator("li[id^='item-']").first().getByRole("button", { name: L["admin.menu.soldOut"] }).click();
-    const after = await page.locator("li[id^='item-']").first().locator("button").first().evaluate((b) => ({ label: b.textContent?.trim(), pressed: b.getAttribute("aria-pressed") }));
+    const after = await page
+      .locator("li[id^='item-']")
+      .first()
+      .locator("button")
+      .first()
+      .evaluate((b) => ({ label: b.textContent?.trim(), pressed: b.getAttribute("aria-pressed") }));
     expect.soft(after.pressed, `${prefix}: still no aria-pressed after the change`).toBeNull();
     expect.soft(after.label, `${prefix}: the action now offered is "back on sale"`).toBe(L["admin.menu.backOnSale"]);
     await page.locator("li[id^='item-']").first().locator("button").first().click();
@@ -615,7 +667,12 @@ test("after a sold-out toggle or a move by keyboard, focus is still on the dish 
   await second.getByRole("button", { name: /^(Flytta upp|Move up)/ }).focus();
   await page.keyboard.press("Enter");
   await page.waitForURL(new RegExp(`changed=move-item%3A${movedId!.slice(5)}`));
-  await expect(page.locator(`#${movedId}`).getByRole("button", { name: /^(Flytta upp|Move up)|^(Flytta ned|Move down)/ }).and(page.locator(":focus"))).toHaveCount(1);
+  await expect(
+    page
+      .locator(`#${movedId}`)
+      .getByRole("button", { name: /^(Flytta upp|Move up)|^(Flytta ned|Move down)/ })
+      .and(page.locator(":focus")),
+  ).toHaveCount(1);
   await page.goto("/admin/");
   await page.locator(`#${id} button`).first().click(); // undo
 });
@@ -671,7 +728,10 @@ test("no horizontal scrolling at 320 px, nor with text at 200 %, on any page or 
   const overflow = () =>
     page.evaluate(() => {
       const w = document.documentElement.clientWidth;
-      const wide = [...document.querySelectorAll<HTMLElement>("body *")].filter((e) => e.getBoundingClientRect().right > w + 1 && getComputedStyle(e).position !== "absolute").slice(0, 3).map((e) => `${e.tagName.toLowerCase()}.${e.className.toString().slice(0, 30)}`);
+      const wide = [...document.querySelectorAll<HTMLElement>("body *")]
+        .filter((e) => e.getBoundingClientRect().right > w + 1 && getComputedStyle(e).position !== "absolute")
+        .slice(0, 3)
+        .map((e) => `${e.tagName.toLowerCase()}.${e.className.toString().slice(0, 30)}`);
       return { scroll: document.documentElement.scrollWidth, client: w, wide };
     });
   for (const scale of [100, 200]) {
@@ -723,7 +783,12 @@ test("a long unbroken dish name and a long note do not break the layout at 320 p
 /** WCAG contrast of two rgb() strings. */
 function ratio(a: string, b: string) {
   const lum = (c: string) => {
-    const v = c.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((x) => x / 255).map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
+    const v = c
+      .match(/[\d.]+/g)!
+      .slice(0, 3)
+      .map(Number)
+      .map((x) => x / 255)
+      .map((x) => (x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4));
     return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
   };
   const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
@@ -817,7 +882,12 @@ test("prefers-reduced-motion: no animation or transition on any admin page", asy
     page.evaluate(() =>
       [...document.querySelectorAll<HTMLElement>("*")]
         .map((e) => ({ e, cs: getComputedStyle(e) }))
-        .filter(({ cs }) => (cs.animationName !== "none" && parseFloat(cs.animationDuration) > 0.001) || cs.transitionDuration.split(",").some((d) => parseFloat(d) > 0.001) || cs.scrollBehavior === "smooth")
+        .filter(
+          ({ cs }) =>
+            (cs.animationName !== "none" && parseFloat(cs.animationDuration) > 0.001) ||
+            cs.transitionDuration.split(",").some((d) => parseFloat(d) > 0.001) ||
+            cs.scrollBehavior === "smooth",
+        )
         .map(({ e }) => e.tagName.toLowerCase() + "." + e.className.toString().slice(0, 30))
         .slice(0, 5),
     );
@@ -835,7 +905,12 @@ test("prefers-reduced-motion: no animation or transition on any admin page", asy
 test("without JavaScript: everything but passkey sign-in works, and the dead controls are not shown", async ({ browser, page }) => {
   await signedInOwner(page);
   const state = await page.context().storageState();
-  const ctx = await browser.newContext({ javaScriptEnabled: false, storageState: state, baseURL: "http://localhost:8790", extraHTTPHeaders: { "CF-Connecting-IP": "192.0.2.201" } });
+  const ctx = await browser.newContext({
+    javaScriptEnabled: false,
+    storageState: state,
+    baseURL: "http://localhost:8790",
+    extraHTTPHeaders: { "CF-Connecting-IP": "192.0.2.201" },
+  });
   const nojs = await ctx.newPage();
   // Skip link works as a plain anchor.
   await nojs.goto("/admin/hours/");
@@ -851,7 +926,9 @@ test("without JavaScript: everything but passkey sign-in works, and the dead con
   // Security page: the add-device control is dead without JavaScript.
   await nojs.goto("/admin/security/");
   const dead = nojs.locator("button[data-passkey]");
-  expect.soft(await dead.isVisible(), "the 'Add a device' button is shown without JavaScript, and does nothing (author CSS display:inline-flex beats the hidden attribute)").toBe(false);
+  expect
+    .soft(await dead.isVisible(), "the 'Add a device' button is shown without JavaScript, and does nothing (author CSS display:inline-flex beats the hidden attribute)")
+    .toBe(false);
   await expect.soft(nojs.locator("[data-needs-js]")).toBeVisible();
   // Sign-in page.
   const out = await browser.newContext({ javaScriptEnabled: false, baseURL: "http://localhost:8790" });

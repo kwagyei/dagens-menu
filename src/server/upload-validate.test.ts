@@ -34,7 +34,7 @@ interface Chunk {
 function chunksOf(file: Uint8Array): Chunk[] {
   const out: Chunk[] = [];
   const view = new DataView(file.buffer, file.byteOffset, file.byteLength);
-  for (let at = 12; at < file.length; ) {
+  for (let at = 12; at < file.length;) {
     const size = view.getUint32(at + 4, true);
     out.push({ id: new TextDecoder().decode(file.subarray(at, at + 4)), payload: file.slice(at + 8, at + 8 + size) });
     at += 8 + size + (size % 2);
@@ -99,10 +99,34 @@ describe("inspectWebp: accepted files", () => {
 
 describe("inspectWebp: other formats are refused by their magic", () => {
   it.each([
-    ["jpeg", () => sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } }).jpeg().toBuffer()],
-    ["png", () => sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } }).png().toBuffer()],
-    ["gif", () => sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } }).gif().toBuffer()],
-    ["avif", () => sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } }).avif().toBuffer()],
+    [
+      "jpeg",
+      () =>
+        sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } })
+          .jpeg()
+          .toBuffer(),
+    ],
+    [
+      "png",
+      () =>
+        sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } })
+          .png()
+          .toBuffer(),
+    ],
+    [
+      "gif",
+      () =>
+        sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } })
+          .gif()
+          .toBuffer(),
+    ],
+    [
+      "avif",
+      () =>
+        sharp({ create: { width: 8, height: 8, channels: 3, background: "red" } })
+          .avif()
+          .toBuffer(),
+    ],
   ])("%s", async (format, make) => {
     expect(inspectWebp(new Uint8Array(await make()))).toEqual({ ok: false, reason: "not-webp", format });
   });
@@ -324,7 +348,7 @@ describe("inspectWebp: fuzzing", () => {
 
   it("1,000 random truncations and bit flips never throw and always give a reason or a size", () => {
     let state = 0x9e3779b9;
-    const rand = (n: number) => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) % n);
+    const rand = (n: number) => (state = (Math.imul(state, 1664525) + 1013904223) >>> 0) % n;
     for (let i = 0; i < 1000; i++) {
       const base = seeds[rand(seeds.length)];
       let bytes = base.slice();

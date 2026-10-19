@@ -44,14 +44,22 @@ const expired = Astro.url.searchParams.get("done") === "expired";
 <AdminLayout title={t(locale, "admin.photos.deleteHeading")} csrf={page.csrf}>
   <section class="space-y-6">
     <h1 class="text-3xl font-bold">{t(locale, "admin.photos.deleteHeading")}</h1>
-    {expired && <p class="admin-message" role="status">{t(locale, "admin.error.form")}</p>}
+    {expired && (
+      <p class="admin-message" role="status">
+        {t(locale, "admin.error.form")}
+      </p>
+    )}
     {state === "confirm" && (
       <>
         <p>{t(locale, "admin.photos.deleteLead")}</p>
         <form method="post" class="flex flex-wrap gap-3">
           <input type="hidden" name="csrf" value={page.csrf} />
-          <button class="admin-button" type="submit">{t(locale, "admin.photos.deleteConfirm")}</button>
-          <a class="admin-button admin-button-quiet" href={page.path(`/photos/${id}/`)}>{t(locale, "admin.item.cancel")}</a>
+          <button class="admin-button" type="submit">
+            {t(locale, "admin.photos.deleteConfirm")}
+          </button>
+          <a class="admin-button admin-button-quiet" href={page.path(`/photos/${id}/`)}>
+            {t(locale, "admin.item.cancel")}
+          </a>
         </form>
       </>
     )}
@@ -61,7 +69,13 @@ const expired = Astro.url.searchParams.get("done") === "expired";
           <>
             <p>{t(locale, "admin.photos.inUseRefused")}</p>
             <ul class="list-disc pl-5">
-              {places.map((p) => <li><a class="admin-target underline" href={p.href}>{p.label}</a></li>)}
+              {places.map((p) => (
+                <li>
+                  <a class="admin-target underline" href={p.href}>
+                    {p.label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </>
         ) : (
@@ -69,8 +83,20 @@ const expired = Astro.url.searchParams.get("done") === "expired";
         )}
       </div>
     )}
-    {state === "built-in" && <p class="admin-message" role="alert" tabindex="-1" autofocus id="delete-refused">{t(locale, "admin.photos.builtInRefused")}</p>}
-    {state === "not-found" && <p class="admin-message" role="alert" tabindex="-1" autofocus id="delete-refused">{t(locale, "admin.photos.notFound")}</p>}
-    {state !== "confirm" && <a class="admin-target underline" href={library}>{t(locale, "admin.photos.back")}</a>}
+    {state === "built-in" && (
+      <p class="admin-message" role="alert" tabindex="-1" autofocus id="delete-refused">
+        {t(locale, "admin.photos.builtInRefused")}
+      </p>
+    )}
+    {state === "not-found" && (
+      <p class="admin-message" role="alert" tabindex="-1" autofocus id="delete-refused">
+        {t(locale, "admin.photos.notFound")}
+      </p>
+    )}
+    {state !== "confirm" && (
+      <a class="admin-target underline" href={library}>
+        {t(locale, "admin.photos.back")}
+      </a>
+    )}
   </section>
 </AdminLayout>

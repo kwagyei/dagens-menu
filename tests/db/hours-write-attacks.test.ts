@@ -33,13 +33,17 @@ const week = (h: Hours | null): Record<Weekday, Hours | null> =>
 const note = { sv: "Anledning", en: "Reason" };
 const closedOn = (date: string, n = note) => ({ date, hours: null, note: n });
 const version = (site = "bistro") => db.prepare("SELECT content_version FROM sites WHERE id = ?").bind(site).first<number>("content_version");
-const audits = async (entity: string) =>
-  (await db.prepare("SELECT * FROM audit_log WHERE entity = ? ORDER BY id").bind(entity).all<Record<string, string>>()).results;
-const invalid = (r: unknown) => (r as { ok: false; error: string; issues?: Array<{ path: string }> });
+const audits = async (entity: string) => (await db.prepare("SELECT * FROM audit_log WHERE entity = ? ORDER BY id").bind(entity).all<Record<string, string>>()).results;
+const invalid = (r: unknown) => r as { ok: false; error: string; issues?: Array<{ path: string }> };
 
 beforeEach(async () => {
   await db.batch([db.prepare("DELETE FROM sites"), db.prepare("DELETE FROM users")]);
-  await db.batch(prepare(db, seedStatements("bistro", content, () => ({ id: "0".repeat(64), mime: "image/jpeg" }))));
+  await db.batch(
+    prepare(
+      db,
+      seedStatements("bistro", content, () => ({ id: "0".repeat(64), mime: "image/jpeg" })),
+    ),
+  );
   await db.prepare("INSERT INTO sites (id) VALUES ('westafrican')").run();
 });
 
@@ -57,7 +61,9 @@ describe("weekly hours: odd but legal times", () => {
 
   it.each(["24:00", "7:00", "07:00:00", "07.00", "", " 07:00", "07:60", "-1:00"])("rejects the time %j and writes nothing", async (bad) => {
     const v0 = await version();
-    const result = invalid(await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, { ...week({ open: "10:00", close: "20:00" }), tuesday: { open: bad, close: "20:00" } }));
+    const result = invalid(
+      await saveWeeklyHours(bistro, (await adminHours(bistro)).weeklyToken, { ...week({ open: "10:00", close: "20:00" }), tuesday: { open: bad, close: "20:00" } }),
+    );
     expect(result.error).toBe("invalid");
     expect((await adminHours(bistro)).weekly).toEqual(hours.weekly);
     expect(await version()).toBe(v0);
@@ -250,8 +256,12 @@ describe("exception notes and hours", () => {
   });
 
   it("rejects open == close, a half-filled day and null-ish junk for an exception", async () => {
-    for (const h of [{ open: "10:00", close: "10:00" }, { open: "10:00", close: "" }, { open: "", close: "" }]) {
-      expect(invalid(await addException(bistro, { date: "2026-12-24", hours: h, note }) ).error).toBe("invalid");
+    for (const h of [
+      { open: "10:00", close: "10:00" },
+      { open: "10:00", close: "" },
+      { open: "", close: "" },
+    ]) {
+      expect(invalid(await addException(bistro, { date: "2026-12-24", hours: h, note })).error).toBe("invalid");
     }
     expect((await adminHours(bistro)).exceptions).toEqual([]);
   });

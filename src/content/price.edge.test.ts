@@ -27,12 +27,9 @@ describe("parseKronor: digits that are not ASCII", () => {
 });
 
 describe("parseKronor: forms outside the spec are rejected", () => {
-  it.each(["145.-", "SEK 145", "kr 145", "145 kronor", "145 kr:-", "1.250,50", "NaN", "Infinity", "0x91", "1_000", "145 kr 50"])(
-    "%j",
-    (input) => {
-      expect(parseKronor(input).ok).toBe(false);
-    },
-  );
+  it.each(["145.-", "SEK 145", "kr 145", "145 kronor", "145 kr:-", "1.250,50", "NaN", "Infinity", "0x91", "1_000", "145 kr 50"])("%j", (input) => {
+    expect(parseKronor(input).ok).toBe(false);
+  });
 });
 
 describe("parseKronor: leading zeros and boundaries", () => {

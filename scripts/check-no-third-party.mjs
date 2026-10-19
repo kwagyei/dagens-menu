@@ -13,10 +13,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 /** The 14 public routes: seven pages in Swedish at /, the same in English under /en/. */
-export const ROUTES = ["/", "/menu/", "/book/", "/about/", "/gallery/", "/contact/", "/privacy/"].flatMap((p) => [
-  p,
-  p === "/" ? "/en/" : `/en${p}`,
-]);
+export const ROUTES = ["/", "/menu/", "/book/", "/about/", "/gallery/", "/contact/", "/privacy/"].flatMap((p) => [p, p === "/" ? "/en/" : `/en${p}`]);
 
 // Elements whose src/href/srcset/poster the browser fetches immediately. Plain <a href> is a
 // navigation, not a request, so outbound links to Instagram etc. are fine.

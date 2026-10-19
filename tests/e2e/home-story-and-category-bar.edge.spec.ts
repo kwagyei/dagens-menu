@@ -7,15 +7,24 @@ import { expect, type Page, test } from "@playwright/test";
 
 const axe = async (page: Page, what: string) => {
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
-  expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`), what).toEqual([]);
+  expect(
+    violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
+    what,
+  ).toEqual([]);
 };
 
 test("the home page has one h1 and h2s in order, with the story section among them, in both languages", async ({ page }) => {
   for (const path of ["/", "/en/"]) {
     await page.goto(path);
     const levels = await page.evaluate(() => [...document.querySelectorAll("main h1, main h2, main h3")].map((h) => `${h.tagName}:${h.textContent?.trim()}`));
-    expect(levels.filter((l) => l.startsWith("H1")), path).toHaveLength(1);
-    expect(levels.some((l) => /^H2:(Vår historia|Our story)/.test(l)), `${path} ${levels.join(" | ")}`).toBe(true);
+    expect(
+      levels.filter((l) => l.startsWith("H1")),
+      path,
+    ).toHaveLength(1);
+    expect(
+      levels.some((l) => /^H2:(Vår historia|Our story)/.test(l)),
+      `${path} ${levels.join(" | ")}`,
+    ).toBe(true);
     const jumps = await page.evaluate(() => {
       const hs = [...document.querySelectorAll("h1,h2,h3,h4")].map((h) => Number(h.tagName[1]));
       return hs.filter((n, i) => i > 0 && n - hs[i - 1] > 1);
@@ -97,7 +106,10 @@ test("tapping a category settles on that category's mark with no flicker between
     expect(changes.length, `${href}: ${changes.join(" > ")}`).toBeLessThanOrEqual(4);
     expect(settled, `after tapping ${href}, sequence ${changes.join(" > ")}`).toBe(href);
     // The heading clears the sticky bar.
-    const [headTop, barBottom] = await page.evaluate((h) => [document.querySelector(h!)!.getBoundingClientRect().top, document.querySelector(".catbar-wrap")!.getBoundingClientRect().bottom], href);
+    const [headTop, barBottom] = await page.evaluate(
+      (h) => [document.querySelector(h!)!.getBoundingClientRect().top, document.querySelector(".catbar-wrap")!.getBoundingClientRect().bottom],
+      href,
+    );
     expect(headTop, `${href} hidden under the bar`).toBeGreaterThanOrEqual(barBottom - 1);
   }
 });
@@ -130,7 +142,15 @@ test("tabbing through the bar shows a visible focus ring and never leaves the fo
       const underLeft = (more === "left" || more === "both") && box.left < bar.left + fade;
       const underRight = (more === "right" || more === "both") && box.right > bar.right - fade;
       const cs = getComputedStyle(a);
-      return { href: a.getAttribute("href"), underLeft, underRight, outline: cs.outlineStyle, outlineWidth: cs.outlineWidth, ring: cs.boxShadow, within: box.left >= bar.left - 1 && box.right <= bar.right + 1 };
+      return {
+        href: a.getAttribute("href"),
+        underLeft,
+        underRight,
+        outline: cs.outlineStyle,
+        outlineWidth: cs.outlineWidth,
+        ring: cs.boxShadow,
+        within: box.left >= bar.left - 1 && box.right <= bar.right + 1,
+      };
     });
     expect(r.outline !== "none" || r.ring !== "none", `no focus indicator on ${r.href}`).toBe(true);
     expect(r.within, `${r.href} is outside the bar`).toBe(true);

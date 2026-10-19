@@ -60,59 +60,190 @@ const current = (path: string) => (path !== section ? undefined : here === path 
       }}
     >
       /* After a quick action the page returns to the dish just changed: jump, don't glide. */
-      html { scroll-behavior: auto; }
-      body { background: var(--color-bg); color: var(--color-text); font-family: system-ui, -apple-system, sans-serif; }
-      .admin-bar { background: var(--color-hero-bg); color: var(--color-hero-text); }
-      .admin-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); }
-      .admin-button { display: inline-flex; align-items: center; justify-content: center; min-height: 3rem; padding: 0 1.25rem; border-radius: var(--radius); background: var(--color-primary); color: #fff; font-weight: 600; font-size: 1.0625rem; border: 0; cursor: pointer; }
-      .admin-button[disabled] { opacity: 0.6; cursor: progress; }
-      .admin-button-quiet { background: transparent; color: var(--color-text); border: 1px solid var(--color-border); }
-      .admin-muted { color: var(--color-text-muted); }
-      .admin-message { border-left: 4px solid var(--color-primary); padding: 0.75rem 1rem; background: var(--color-surface); }
-      .admin-error { color: #a1260d; font-weight: 600; }
-      .admin-input { width: 100%; min-width: 0; min-height: 3rem; padding: 0.5rem 0.75rem; border: 1px solid #6b6b6b; border-radius: var(--radius); background: #fff; color: #1a1a1a; font-size: 1rem; }
-      .admin-input[aria-invalid="true"] { border-color: #a1260d; border-width: 2px; }
-      .admin-small-button { min-height: 2.75rem; min-width: 2.75rem; padding: 0 0.75rem; border-radius: var(--radius); border: 1px solid #6b6b6b; background: #fff; color: var(--color-text); font-size: 0.9375rem; cursor: pointer; }
-      .admin-badge { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 600; background: var(--color-surface); border: 1px solid var(--color-border); }
-      :focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+      html {
+        scroll-behavior: auto;
+      }
+      body {
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      .admin-bar {
+        background: var(--color-hero-bg);
+        color: var(--color-hero-text);
+      }
+      .admin-card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius);
+      }
+      .admin-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 3rem;
+        padding: 0 1.25rem;
+        border-radius: var(--radius);
+        background: var(--color-primary);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1.0625rem;
+        border: 0;
+        cursor: pointer;
+      }
+      .admin-button[disabled] {
+        opacity: 0.6;
+        cursor: progress;
+      }
+      .admin-button-quiet {
+        background: transparent;
+        color: var(--color-text);
+        border: 1px solid var(--color-border);
+      }
+      .admin-muted {
+        color: var(--color-text-muted);
+      }
+      .admin-message {
+        border-left: 4px solid var(--color-primary);
+        padding: 0.75rem 1rem;
+        background: var(--color-surface);
+      }
+      .admin-error {
+        color: #a1260d;
+        font-weight: 600;
+      }
+      .admin-input {
+        width: 100%;
+        min-width: 0;
+        min-height: 3rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #6b6b6b;
+        border-radius: var(--radius);
+        background: #fff;
+        color: #1a1a1a;
+        font-size: 1rem;
+      }
+      .admin-input[aria-invalid="true"] {
+        border-color: #a1260d;
+        border-width: 2px;
+      }
+      .admin-small-button {
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+        padding: 0 0.75rem;
+        border-radius: var(--radius);
+        border: 1px solid #6b6b6b;
+        background: #fff;
+        color: var(--color-text);
+        font-size: 0.9375rem;
+        cursor: pointer;
+      }
+      .admin-badge {
+        display: inline-block;
+        padding: 0.125rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+      }
+      :focus-visible {
+        outline: 3px solid var(--color-primary);
+        outline-offset: 2px;
+      }
       /* On the dark bar the primary colour can vanish: a light ring there. */
-      .admin-bar :focus-visible { outline-color: var(--color-hero-text); }
+      .admin-bar :focus-visible {
+        outline-color: var(--color-hero-text);
+      }
       /* Time and date fields put focus on an inner segment, so the field never matches
          :focus-visible itself: ring the whole field while anything inside it has focus. */
-      .admin-input:focus-within { outline: 3px solid var(--color-primary); outline-offset: 2px; }
-      #admin-main:focus { outline: none; }
+      .admin-input:focus-within {
+        outline: 3px solid var(--color-primary);
+        outline-offset: 2px;
+      }
+      #admin-main:focus {
+        outline: none;
+      }
       /* First stop for the keyboard: past the navigation, straight to the page. */
-      .admin-skip { position: absolute; left: 0.5rem; top: -4rem; z-index: 10; padding: 0.75rem 1rem; background: var(--color-surface); color: var(--color-text); border-radius: var(--radius); font-weight: 600; }
-      .admin-skip:focus { top: 0.5rem; }
+      .admin-skip {
+        position: absolute;
+        left: 0.5rem;
+        top: -4rem;
+        z-index: 10;
+        padding: 0.75rem 1rem;
+        background: var(--color-surface);
+        color: var(--color-text);
+        border-radius: var(--radius);
+        font-weight: 600;
+      }
+      .admin-skip:focus {
+        top: 0.5rem;
+      }
       /* The skip link sits on the dark bar: a ring in the bar's text colour shows there. */
-      .admin-skip:focus-visible { outline-color: var(--color-hero-text); }
+      .admin-skip:focus-visible {
+        outline-color: var(--color-hero-text);
+      }
       /* Every link and button the owner taps is at least 44px tall (M5.7), including the
          navigation, language switch, sign-out, the error summary and plain text links. */
-      .admin-bar a, .admin-bar button, .admin-target { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; min-width: 2.75rem; }
+      .admin-bar a,
+      .admin-bar button,
+      .admin-target {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.75rem;
+        min-width: 2.75rem;
+      }
       /* Long labels wrap instead of pushing the page wider than a phone at large text sizes. */
-      .admin-button { max-width: 100%; white-space: normal; text-align: center; }
-      .admin-message li a { display: inline-block; padding: 0.625rem 0; }
-      label:has(> input[type="checkbox"]) { min-height: 2.75rem; }
-      a { color: inherit; }
+      .admin-button {
+        max-width: 100%;
+        white-space: normal;
+        text-align: center;
+      }
+      .admin-message li a {
+        display: inline-block;
+        padding: 0.625rem 0;
+      }
+      label:has(> input[type="checkbox"]) {
+        min-height: 2.75rem;
+      }
+      a {
+        color: inherit;
+      }
     </style>
   </head>
   <body class="min-h-screen">
-    <a href="#admin-main" class="admin-skip">{t(locale, "admin.skip")}</a>
+    <a href="#admin-main" class="admin-skip">
+      {t(locale, "admin.skip")}
+    </a>
     <header class="admin-bar">
       <div class="max-w-2xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <span class="font-semibold min-w-0">{siteName} · {t(locale, "admin.title")}</span>
-        <a href={otherPath} hreflang={otherLocale} lang={otherLocale} class="text-sm underline" aria-label={otherLocale === "en" ? "EN – In English" : "SV – På svenska"}>{otherLocale.toUpperCase()}</a>
+        <span class="font-semibold min-w-0">
+          {siteName} · {t(locale, "admin.title")}
+        </span>
+        <a href={otherPath} hreflang={otherLocale} lang={otherLocale} class="text-sm underline" aria-label={otherLocale === "en" ? "EN – In English" : "SV – På svenska"}>
+          {otherLocale.toUpperCase()}
+        </a>
       </div>
       {session && csrf && (
         <nav class="max-w-2xl mx-auto px-4 pb-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm" aria-label={t(locale, "admin.title")}>
-          <span class="w-full text-xs opacity-80">{t(locale, "admin.home.signedInAs")} {session.email}</span>
+          <span class="w-full text-xs opacity-80">
+            {t(locale, "admin.home.signedInAs")} {session.email}
+          </span>
           {navLinks.map(([path, label]) => (
-            <a class:list={["underline", { "font-bold": current(path) }]} href={adminPath(path)} aria-current={current(path)}>{label}</a>
+            <a class:list={["underline", { "font-bold": current(path) }]} href={adminPath(path)} aria-current={current(path)}>
+              {label}
+            </a>
           ))}
           <form method="post" action="/admin/logout" class="ml-auto">
             <input type="hidden" name="csrf" value={csrf} />
             <input type="hidden" name="next" value={adminPath("/")} />
-            <button type="submit" class="underline">{t(locale, "admin.signOut")}</button>
+            <button type="submit" class="underline">
+              {t(locale, "admin.signOut")}
+            </button>
           </form>
         </nav>
       )}

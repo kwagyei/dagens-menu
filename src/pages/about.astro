@@ -19,21 +19,27 @@ const showVoice = voice !== null && voice !== localized(settings.tagline, locale
   <section class="story" aria-labelledby="story-title">
     <Photo ref={pages.about.storyImage} slot="story" class="story__img" />
     <div class="prose">
-      <h2 class="section-title" id="story-title">{t(locale, "about.story.heading")}</h2>
+      <h2 class="section-title" id="story-title">
+        {t(locale, "about.story.heading")}
+      </h2>
       <p>{localized(pages.about.story, locale)}</p>
     </div>
   </section>
 
   {showVoice && (
     <figure class="voice">
-      <blockquote><p>{voice}</p></blockquote>
+      <blockquote>
+        <p>{voice}</p>
+      </blockquote>
     </figure>
   )}
 
   <section class="story story--flip" aria-labelledby="chef-title">
     <Photo ref={pages.about.kitchenImage} slot="story" class="story__img" />
     <div class="prose">
-      <h2 class="section-title" id="chef-title">{t(locale, "about.chef.heading")}</h2>
+      <h2 class="section-title" id="chef-title">
+        {t(locale, "about.chef.heading")}
+      </h2>
       <p>{localized(pages.about.chef, locale)}</p>
     </div>
   </section>

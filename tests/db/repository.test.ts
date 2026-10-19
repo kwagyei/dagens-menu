@@ -16,16 +16,7 @@ import waHours from "../../sites/westafrican/content/hours.json";
 import waMenu from "../../sites/westafrican/content/menu.json";
 import waPages from "../../sites/westafrican/content/pages.json";
 import waSettings from "../../sites/westafrican/content/settings.json";
-import {
-  commit,
-  deleteMenuItem,
-  getMenuItem,
-  type MenuItemEdit,
-  type MenuItemRecord,
-  type RepoContext,
-  setSoldOut,
-  updateMenuItem,
-} from "../../src/db/repository";
+import { commit, deleteMenuItem, getMenuItem, type MenuItemEdit, type MenuItemRecord, type RepoContext, setSoldOut, updateMenuItem } from "../../src/db/repository";
 import { seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare, stmt } from "../../src/db/sql";
 
@@ -112,9 +103,7 @@ describe("updateMenuItem", () => {
       allergens: ["shellfish"],
     });
     expect(result.ok).toBe(false);
-    expect(result.ok === false && result.error === "invalid" && result.issues.map((i) => i.path)).toEqual(
-      expect.arrayContaining(["name.en", "price", "allergens.0"]),
-    );
+    expect(result.ok === false && result.error === "invalid" && result.issues.map((i) => i.path)).toEqual(expect.arrayContaining(["name.en", "price", "allergens.0"]));
     expect((await getMenuItem(bistro, BISTRO_ITEM))!.priceOre).toBe(item.priceOre);
     expect(await version("bistro")).toBe(v0);
   });

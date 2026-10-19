@@ -119,7 +119,9 @@ describe("parseExceptionForm", () => {
   });
 
   it("reads special hours and names what's missing", () => {
-    expect(parseExceptionForm(form({ date: "2026-12-31", exception_open: "18:00", exception_close: "02:00", note_sv: "Nyår", note_en: "New Year" }), "en").exception?.hours).toEqual({ open: "18:00", close: "02:00" });
+    expect(
+      parseExceptionForm(form({ date: "2026-12-31", exception_open: "18:00", exception_close: "02:00", note_sv: "Nyår", note_en: "New Year" }), "en").exception?.hours,
+    ).toEqual({ open: "18:00", close: "02:00" });
     const bad = parseExceptionForm(form({ date: "", note_sv: "Nyår" }), "en");
     expect(Object.keys(bad.errors)).toEqual(["date", "hours", "note_en"]);
   });
@@ -203,7 +205,10 @@ describe("parsePageTextsForm", () => {
     const one = parsePageTextsForm(form({ ...texts, pull_quote_sv: "Bäst i stan", pull_quote_en: " ​" }), "sv");
     expect(one.errors).toEqual({ pull_quote_en: "Fyll i citatet på båda språken, eller töm båda." });
     expect(one.values.pull_quote_sv).toBe("Bäst i stan");
-    expect(parsePageTextsForm(form({ ...texts, pull_quote_sv: "Bäst i stan", pull_quote_en: "Best in town" }), "sv").texts?.pullQuote).toEqual({ sv: "Bäst i stan", en: "Best in town" });
+    expect(parsePageTextsForm(form({ ...texts, pull_quote_sv: "Bäst i stan", pull_quote_en: "Best in town" }), "sv").texts?.pullQuote).toEqual({
+      sv: "Bäst i stan",
+      en: "Best in town",
+    });
   });
 
   it("allows long about texts up to 3000 characters, not more", () => {

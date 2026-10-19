@@ -38,7 +38,10 @@ describe("loadUploads", () => {
   });
 
   it("fetches the link when the folder doesn't have it", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array(master), { status: 200 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(new Uint8Array(master), { status: 200 })),
+    );
     const loaded = await loadUploads([upload()], undefined, quiet, TRUSTED);
     expect(loaded.get(id)!.length).toBe(4);
   });
@@ -52,25 +55,33 @@ describe("loadUploads", () => {
   });
 
   it("says what to do when the link can't be fetched", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("gone", { status: 404 })));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("gone", { status: 404 })),
+    );
     await expect(loadUploads([upload()], undefined, quiet, TRUSTED)).rejects.toThrow(/answered 404; pass --photos/);
   });
 
   it("refuses bytes that are no WebP, even if they hash to the id", async () => {
     const jpeg = await sharp("public/images/bistro/kottbullar-hero.jpg").resize({ width: 400 }).jpeg().toBuffer();
     const jpegId = createHash("sha256").update(jpeg).digest("hex");
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(new Uint8Array(jpeg))));
-    await expect(loadUploads([{ id: jpegId, variants: [400], master: `https://example.test/media/${jpegId}-400.webp` }], undefined, quiet, TRUSTED)).rejects.toThrow(/not a photo the upload page accepts/);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(new Uint8Array(jpeg))),
+    );
+    await expect(loadUploads([{ id: jpegId, variants: [400], master: `https://example.test/media/${jpegId}-400.webp` }], undefined, quiet, TRUSTED)).rejects.toThrow(
+      /not a photo the upload page accepts/,
+    );
   });
 });
 
 describe("which links a restore fetches (L2)", () => {
-  it.each([
-    "https://dagens-menu-bistro.kwabenasasuboakye.workers.dev/media/x.webp",
-    "https://dagens-menu-westafrican.kwabenasasuboakye.workers.dev/media/x.webp",
-  ])("fetches from this project's Workers unasked: %s", (link) => {
-    expect(linkProblem(new URL(link))).toBeNull();
-  });
+  it.each(["https://dagens-menu-bistro.kwabenasasuboakye.workers.dev/media/x.webp", "https://dagens-menu-westafrican.kwabenasasuboakye.workers.dev/media/x.webp"])(
+    "fetches from this project's Workers unasked: %s",
+    (link) => {
+      expect(linkProblem(new URL(link))).toBeNull();
+    },
+  );
 
   it.each([
     ["plain http to a Worker", "http://dagens-menu-bistro.kwabenasasuboakye.workers.dev/media/x.webp", "isn't https"],
@@ -99,7 +110,9 @@ describe("which links a restore fetches (L2)", () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
     const link = { ...upload(), master: `http://192.168.1.1/media/${id}-1600.webp` };
-    await expect(loadUploads([link], undefined, quiet)).rejects.toThrow(new RegExp(`^photo ${id}: the link isn't https; pass --allow-host 192.168.1.1 if you trust it, or pass --photos`));
+    await expect(loadUploads([link], undefined, quiet)).rejects.toThrow(
+      new RegExp(`^photo ${id}: the link isn't https; pass --allow-host 192.168.1.1 if you trust it, or pass --photos`),
+    );
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

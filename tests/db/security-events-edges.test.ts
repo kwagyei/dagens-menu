@@ -8,15 +8,7 @@ import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../../src/auth/crypto";
 import { issueInvite, revokeStatements } from "../../src/auth/invites";
-import {
-  addPasskeyVerify,
-  type CeremonyContext,
-  enrolOptions,
-  enrolVerify,
-  loginOptions,
-  loginVerify,
-  removePasskey,
-} from "../../src/auth/passkeys";
+import { addPasskeyVerify, type CeremonyContext, enrolOptions, enrolVerify, loginOptions, loginVerify, removePasskey } from "../../src/auth/passkeys";
 import { getSession, type Session, signOutEverywhere } from "../../src/auth/sessions";
 import { recentChanges } from "../../src/db/audit";
 import { prepare, stmt } from "../../src/db/sql";
@@ -62,8 +54,7 @@ interface AuditRow {
   action: string;
   summary: string;
 }
-const auditRows = async () =>
-  (await db.prepare("SELECT site_id, user_id, at, entity, entity_id, action, summary FROM audit_log ORDER BY id").all<AuditRow>()).results;
+const auditRows = async () => (await db.prepare("SELECT site_id, user_id, at, entity, entity_id, action, summary FROM audit_log ORDER BY id").all<AuditRow>()).results;
 const userId = async (email = OWNER) => (await db.prepare("SELECT id FROM users WHERE email = ?").bind(email).first<string>("id"))!;
 const version = (site: SiteId = "bistro") => db.prepare("SELECT content_version FROM sites WHERE id = ?").bind(site).first<number>("content_version");
 const allSessions = async () => (await db.prepare("SELECT token_hash FROM sessions ORDER BY token_hash").all<{ token_hash: string }>()).results;
@@ -122,11 +113,7 @@ async function expectNoSecrets(secrets: string[]) {
 }
 
 beforeEach(async () => {
-  await db.batch([
-    db.prepare("DELETE FROM sites"),
-    db.prepare("DELETE FROM users"),
-    db.prepare("INSERT INTO sites (id) VALUES ('bistro'), ('westafrican')"),
-  ]);
+  await db.batch([db.prepare("DELETE FROM sites"), db.prepare("DELETE FROM users"), db.prepare("INSERT INTO sites (id) VALUES ('bistro'), ('westafrican')")]);
 });
 
 describe("criterion 1: one audit row per event, only when it happened", () => {

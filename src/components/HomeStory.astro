@@ -14,8 +14,12 @@ const story = teaser(localized(Astro.locals.content.pages.about.story, locale));
 
 {story && (
   <section class="home-story" aria-labelledby="story-title">
-    <h2 class="section-title" id="story-title">{t(locale, "about.story.heading")}</h2>
+    <h2 class="section-title" id="story-title">
+      {t(locale, "about.story.heading")}
+    </h2>
     <p>{story}</p>
-    <a class="link-strong" href={localePath(locale, "/about/")}>{t(locale, "home.story.more")}</a>
+    <a class="link-strong" href={localePath(locale, "/about/")}>
+      {t(locale, "home.story.more")}
+    </a>
   </section>
 )}

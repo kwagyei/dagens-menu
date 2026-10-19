@@ -16,12 +16,16 @@ beforeEach(async () => {
   await db.batch([
     db.prepare("DELETE FROM sites"),
     db.prepare("INSERT INTO sites (id) VALUES ('bistro')"),
-    db.prepare("INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg', 'Foto', 'Photo')").bind(IMG),
+    db
+      .prepare("INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg', 'Foto', 'Photo')")
+      .bind(IMG),
     db.prepare("INSERT INTO menu_categories (site_id, id, slug, name_sv, name_en, position) VALUES ('bistro', ?, 'mains', 'Varmrätter', 'Mains', 0)").bind(CAT),
-    db.prepare(
-      `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position)
+    db
+      .prepare(
+        `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position)
        VALUES ('bistro', ?, ?, 'Soppa', 'Soup', 'Varm', 'Hot', 14500, 0)`,
-    ).bind(ITEM, CAT),
+      )
+      .bind(ITEM, CAT),
   ]);
 });
 
@@ -30,9 +34,7 @@ const alt = () => db.prepare("SELECT alt_sv, alt_en FROM images WHERE site_id = 
 
 describe("an image without alt is refused on every write path", () => {
   it("INSERT OR IGNORE does not swallow the refusal", async () => {
-    await expect(
-      db.prepare("INSERT OR IGNORE INTO images (site_id, id, kind, mime) VALUES ('bistro', ?, 'upload', 'image/webp')").bind(OTHER).run(),
-    ).rejects.toThrow(REFUSED);
+    await expect(db.prepare("INSERT OR IGNORE INTO images (site_id, id, kind, mime) VALUES ('bistro', ?, 'upload', 'image/webp')").bind(OTHER).run()).rejects.toThrow(REFUSED);
   });
 
   it("INSERT OR REPLACE over an existing image cannot clear its alt", async () => {
@@ -45,7 +47,9 @@ describe("an image without alt is refused on every write path", () => {
   it("an upsert that sets alt to NULL is refused", async () => {
     await expect(
       db
-        .prepare("INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg', 'X', 'X') ON CONFLICT DO UPDATE SET alt_en = NULL")
+        .prepare(
+          "INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg', 'X', 'X') ON CONFLICT DO UPDATE SET alt_en = NULL",
+        )
         .bind(IMG)
         .run(),
     ).rejects.toThrow(REFUSED);
@@ -88,9 +92,9 @@ describe("gallery_images after 0006", () => {
 
   it("still refuses a gallery row for an image that isn't there", async () => {
     await db.exec("PRAGMA foreign_keys = ON");
-    await expect(
-      db.prepare("INSERT INTO gallery_images (site_id, id, image_id, position) VALUES ('bistro', 'g00000000001', ?, 0)").bind(OTHER).run(),
-    ).rejects.toThrow(/FOREIGN KEY/);
+    await expect(db.prepare("INSERT INTO gallery_images (site_id, id, image_id, position) VALUES ('bistro', 'g00000000001', ?, 0)").bind(OTHER).run()).rejects.toThrow(
+      /FOREIGN KEY/,
+    );
   });
 });
 

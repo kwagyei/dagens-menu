@@ -40,7 +40,11 @@ export const UNKNOWN_MEDIA = `/media/${"0".repeat(64)}-400.webp`;
 export function galleryProblems(route, html) {
   const list = html.match(/<ul\b[^>]*\bclass=["'][^"']*\bgallery-magazine\b[^"']*["'][^>]*>([\s\S]*?)<\/ul>/)?.[1] ?? "";
   // A tag runs to the first > outside quotes, so a > in alt text doesn't cut it short.
-  const attr = (tag, name) => tag.match(new RegExp(`\\s${name}=(?:"([^"]*)"|'([^']*)')`))?.slice(1).find((v) => v !== undefined);
+  const attr = (tag, name) =>
+    tag
+      .match(new RegExp(`\\s${name}=(?:"([^"]*)"|'([^']*)')`))
+      ?.slice(1)
+      .find((v) => v !== undefined);
   const images = [...list.matchAll(/<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/g)].map(([tag]) => ({ src: attr(tag, "src"), alt: attr(tag, "alt") }));
   const problems = [];
   if (images.length === 0) problems.push(`${route}: the gallery lists no photos`);
@@ -101,7 +105,9 @@ async function main() {
     console.error(`Smoke test failed on ${values.url}:\n  ${problems.join("\n  ")}`);
     process.exit(1);
   }
-  console.log(`${values.url}: build ${values.build} serves all ${ROUTES.length} routes as "${values.title}", with security headers, nothing third-party, the admin up, and its photos served.`);
+  console.log(
+    `${values.url}: build ${values.build} serves all ${ROUTES.length} routes as "${values.title}", with security headers, nothing third-party, the admin up, and its photos served.`,
+  );
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) await main();

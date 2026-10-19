@@ -115,7 +115,10 @@ describe("check-migrations on this branch", () => {
   it("accepts 0006 as a marked contract migration", () => {
     const root = resolve(import.meta.dirname, "..");
     // The commit before 0006 was added; read-only git diff in the checkout.
-    const base = execFileSync("git", ["log", "--format=%H", "-n", "1", "--diff-filter=A", "--", "migrations/0006_image_library_contract.sql"], { cwd: root, encoding: "utf-8" }).trim();
+    const base = execFileSync("git", ["log", "--format=%H", "-n", "1", "--diff-filter=A", "--", "migrations/0006_image_library_contract.sql"], {
+      cwd: root,
+      encoding: "utf-8",
+    }).trim();
     expect(base).not.toBe("");
     const out = execFileSync("node", [script, `${base}^`], { cwd: root, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
     expect(out).toMatch(/0006_image_library_contract\.sql/);

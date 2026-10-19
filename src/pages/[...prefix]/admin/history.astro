@@ -37,21 +37,25 @@ const heading = (entity: string, action: string) =>
     </div>
 
     <section class="admin-card p-4 space-y-3" aria-labelledby="export-title">
-      <h2 class="text-xl font-semibold" id="export-title">{t(locale, "admin.history.export")}</h2>
+      <h2 class="text-xl font-semibold" id="export-title">
+        {t(locale, "admin.history.export")}
+      </h2>
       <p class="admin-muted">{t(locale, "admin.history.exportLead")}</p>
-      <a class="admin-button" href="/admin/export" download>{t(locale, "admin.history.export")}</a>
+      <a class="admin-button" href="/admin/export" download>
+        {t(locale, "admin.history.export")}
+      </a>
     </section>
 
-    <h2 class="text-xl font-semibold" id="changes-title">{t(locale, "admin.history.changes")}</h2>
+    <h2 class="text-xl font-semibold" id="changes-title">
+      {t(locale, "admin.history.changes")}
+    </h2>
     {changes.length === 0 ? (
       <p class="admin-muted">{t(locale, "admin.history.empty")}</p>
     ) : (
       <ol class="admin-card divide-y" style="border-color: var(--color-border);" aria-labelledby="changes-title">
         {changes.map((c) => (
           <li class="p-4 space-y-1">
-            <p class="font-semibold">
-              {heading(c.entity, c.action)}
-            </p>
+            <p class="font-semibold">{heading(c.entity, c.action)}</p>
             <p class="text-sm break-words">{localizedSummary(c.summary, c.entity, locale)}</p>
             <p class="text-sm admin-muted">
               <time datetime={c.at}>{when.format(new Date(c.at))}</time> · {c.by ?? t(locale, "admin.history.system")}

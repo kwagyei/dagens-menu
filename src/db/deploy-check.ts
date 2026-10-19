@@ -34,9 +34,7 @@ export async function checkBatchGuard(db: D1Database, now: Date): Promise<string
     await db.batch([
       db.prepare("DELETE FROM sites WHERE id = ?").bind(CHECK_SITE), // a leftover from a run that died
       db.prepare("INSERT INTO sites (id, created_at) VALUES (?, ?)").bind(CHECK_SITE, isoSeconds(now)),
-      db
-        .prepare("INSERT INTO menu_categories (site_id, id, slug, name_sv, name_en, position) VALUES (?, ?, 'check', 'Kontroll', 'Check', 0)")
-        .bind(CHECK_SITE, CATEGORY),
+      db.prepare("INSERT INTO menu_categories (site_id, id, slug, name_sv, name_en, position) VALUES (?, ?, 'check', 'Kontroll', 'Check', 0)").bind(CHECK_SITE, CATEGORY),
     ]);
     const before = { version: await version(db), audits: await audits(db) };
 
@@ -53,7 +51,10 @@ export async function checkBatchGuard(db: D1Database, now: Date): Promise<string
 
     // 3. The raw shape the passkey enrolment uses: the second statement sees the first's changes().
     const [, carried] = await db.batch(
-      prepare(db, [touch(CATEGORY), stmt("INSERT INTO audit_log (site_id, at, entity, action, summary) SELECT ?, ?, 'check', 'update', 'raw' WHERE changes() = 1", CHECK_SITE, isoSeconds(now))]),
+      prepare(db, [
+        touch(CATEGORY),
+        stmt("INSERT INTO audit_log (site_id, at, entity, action, summary) SELECT ?, ?, 'check', 'update', 'raw' WHERE changes() = 1", CHECK_SITE, isoSeconds(now)),
+      ]),
     );
     if (carried.meta.changes !== 1) problems.push(`the guarded insert saw changes() ≠ 1 (inserted ${carried.meta.changes} rows)`);
   } finally {

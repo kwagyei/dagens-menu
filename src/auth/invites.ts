@@ -36,11 +36,7 @@ export async function issueInvite(site: string, email: string, now: Date): Promi
     token,
     statements: [
       stmt("INSERT INTO users (id, email) VALUES (?, ?) ON CONFLICT (email) DO NOTHING", newId(), normalised),
-      stmt(
-        "INSERT INTO memberships (user_id, site_id, role) SELECT id, ?, 'owner' FROM users WHERE email = ? ON CONFLICT (user_id, site_id) DO NOTHING",
-        site,
-        normalised,
-      ),
+      stmt("INSERT INTO memberships (user_id, site_id, role) SELECT id, ?, 'owner' FROM users WHERE email = ? ON CONFLICT (user_id, site_id) DO NOTHING", site, normalised),
       stmt(
         "INSERT INTO invites (token_hash, user_id, site_id, created_at, expires_at) SELECT ?, id, ?, ?, ? FROM users WHERE email = ?",
         tokenHash,
@@ -112,11 +108,5 @@ export async function findInvite(db: D1Database, site: string, token: string, no
  * expired invite stores nothing.
  */
 export function consumeInviteStatement(site: string, tokenHash: string, now: Date): Statement {
-  return stmt(
-    "UPDATE invites SET used_at = ? WHERE token_hash = ? AND site_id = ? AND used_at IS NULL AND expires_at > ?",
-    isoSeconds(now),
-    tokenHash,
-    site,
-    isoSeconds(now),
-  );
+  return stmt("UPDATE invites SET used_at = ? WHERE token_hash = ? AND site_id = ? AND used_at IS NULL AND expires_at > ?", isoSeconds(now), tokenHash, site, isoSeconds(now));
 }

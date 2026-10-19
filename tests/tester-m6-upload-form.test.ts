@@ -89,8 +89,22 @@ describe("content attacks are refused with the right message, alt kept (sv and e
     await refused([enc.encode('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>')], "admin.photos.notPhoto");
   });
   it("EXIF and XMP written by sharp", async () => {
-    await refused([new Uint8Array(await sharp(PHOTO).resize({ width: 400 }).withExif({ IFD0: { Copyright: "GPS here" } }).webp().toBuffer())], "admin.photos.notPhoto");
-    await refused([new Uint8Array(await sharp(PHOTO).resize({ width: 400 }).withXmp('<x:xmpmeta xmlns:x="adobe:ns:meta/"></x:xmpmeta>').webp().toBuffer())], "admin.photos.notPhoto");
+    await refused(
+      [
+        new Uint8Array(
+          await sharp(PHOTO)
+            .resize({ width: 400 })
+            .withExif({ IFD0: { Copyright: "GPS here" } })
+            .webp()
+            .toBuffer(),
+        ),
+      ],
+      "admin.photos.notPhoto",
+    );
+    await refused(
+      [new Uint8Array(await sharp(PHOTO).resize({ width: 400 }).withXmp('<x:xmpmeta xmlns:x="adobe:ns:meta/"></x:xmpmeta>').webp().toBuffer())],
+      "admin.photos.notPhoto",
+    );
   });
   it("an animated WebP (VP8X animation flag + ANIM chunk)", async () => {
     const v = vp8Of(plain[400]);
@@ -103,12 +117,26 @@ describe("content attacks are refused with the right message, alt kept (sv and e
   it("a master wider than 1600 or taller than 2400", async () => {
     const wide = new Uint8Array(await sharp(PHOTO).resize({ width: 1601 }).webp({ quality: 30 }).toBuffer());
     await refused([plain[400], plain[800], plain[1200], wide], "admin.photos.notPhoto");
-    const tall = new Uint8Array(await sharp({ create: { width: 1000, height: 2401, channels: 3, background: "#a33" } }).webp().toBuffer());
-    const tallSmall = [400, 800].map(async (w) => new Uint8Array(await sharp({ create: { width: w, height: Math.round((w * 2401) / 1000), channels: 3, background: "#a33" } }).webp().toBuffer()));
+    const tall = new Uint8Array(
+      await sharp({ create: { width: 1000, height: 2401, channels: 3, background: "#a33" } })
+        .webp()
+        .toBuffer(),
+    );
+    const tallSmall = [400, 800].map(
+      async (w) =>
+        new Uint8Array(
+          await sharp({ create: { width: w, height: Math.round((w * 2401) / 1000), channels: 3, background: "#a33" } })
+            .webp()
+            .toBuffer(),
+        ),
+    );
     await refused([...(await Promise.all(tallSmall)), tall], "admin.photos.notPhoto");
   });
   it("a master of exactly 1600 × 2400 is accepted", async () => {
-    const make = (w: number) => sharp({ create: { width: w, height: w * 1.5, channels: 3, background: "#3a3" } }).webp().toBuffer();
+    const make = (w: number) =>
+      sharp({ create: { width: w, height: w * 1.5, channels: 3, background: "#3a3" } })
+        .webp()
+        .toBuffer();
     const parts = await Promise.all([400, 800, 1200, 1600].map(async (w) => new Uint8Array(await make(w))));
     const read = await readUploadForm(form(parts), "sv");
     expect(read.errors).toEqual({});

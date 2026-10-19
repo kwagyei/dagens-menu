@@ -13,9 +13,7 @@ const hasThirdParty = hasBooking || hasMap;
 <Base title={t(locale, "privacy.heading")}>
   <PageHero title={t(locale, "privacy.heading")} intro={t(locale, "privacy.intro")} />
   <div class="legal">
-    {!hasThirdParty && (
-      <p class="card-lifted">{t(locale, "privacy.no-third-party")}</p>
-    )}
+    {!hasThirdParty && <p class="card-lifted">{t(locale, "privacy.no-third-party")}</p>}
     {hasBooking && (
       <section>
         <h2>{t(locale, "privacy.booking.heading")}</h2>

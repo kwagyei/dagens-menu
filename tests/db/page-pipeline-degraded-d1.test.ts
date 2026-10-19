@@ -87,8 +87,7 @@ function pipeline(binding: D1Database, now = new Date("2026-10-16T10:00:00Z")) {
     const body = items.map((i) => `${i.name.en} ${i.price} ${s.today.soldOut.includes(i.id) ? "SOLD-OUT" : ""}`).join("\n");
     return new Response(body, { headers: { "Content-Type": "text/html" } });
   });
-  const get = (path = "/", headers: Record<string, string> = {}) =>
-    handlePage(new Request(`https://bistro.workers.dev${path}`, { headers }), deps, render);
+  const get = (path = "/", headers: Record<string, string> = {}) => handlePage(new Request(`https://bistro.workers.dev${path}`, { headers }), deps, render);
   return { get, render, clock };
 }
 

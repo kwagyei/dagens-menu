@@ -96,7 +96,21 @@ test("malformed and foreign-format ids never 500 and never write", async ({ page
   const token = await csrf(page);
   const galleryId = d1<{ id: string }>("SELECT id FROM gallery_images WHERE site_id = 'bistro' LIMIT 1")[0].id; // 12 chars
   const before = version();
-  const ids = ["..", "%2e", "%2e%2e", "%2E%2E%2F", photo.id.toUpperCase(), photo.id.slice(0, 12), galleryId, `${photo.id}0`, "a".repeat(5000), "%00", "%0d%0aX-Injected:%201", "unused%2F..", "%27%20OR%201%3D1"];
+  const ids = [
+    "..",
+    "%2e",
+    "%2e%2e",
+    "%2E%2E%2F",
+    photo.id.toUpperCase(),
+    photo.id.slice(0, 12),
+    galleryId,
+    `${photo.id}0`,
+    "a".repeat(5000),
+    "%00",
+    "%0d%0aX-Injected:%201",
+    "unused%2F..",
+    "%27%20OR%201%3D1",
+  ];
   for (const id of ids) {
     for (const path of [`/admin/photos/${id}/`, `/en/admin/photos/${id}/`, `/admin/photos/${id}/delete/`]) {
       const get = await page.request.get(path, { maxRedirects: 0 });
@@ -248,7 +262,14 @@ test("every target on the four pages is at least 44 px tall (sv and en)", async 
   const photo = await upload(page);
   const small: string[] = [];
   for (const prefix of ["", "/en"]) {
-    for (const path of [LIBRARY, `${LIBRARY}?filter=unused`, `${LIBRARY}?done=deleted`, `/admin/photos/${photo.id}/`, `/admin/photos/${photo.id}/delete/`, "/admin/photos/unused/delete/"]) {
+    for (const path of [
+      LIBRARY,
+      `${LIBRARY}?filter=unused`,
+      `${LIBRARY}?done=deleted`,
+      `/admin/photos/${photo.id}/`,
+      `/admin/photos/${photo.id}/delete/`,
+      "/admin/photos/unused/delete/",
+    ]) {
       await page.goto(`${prefix}${path}`);
       const boxes = await page.locator("main a, main button, main input:not([type=hidden])").evaluateAll((els) =>
         els
@@ -273,7 +294,9 @@ test("editing a gallery photo's alt changes the public gallery (sv and en), then
   await page.goto(`/admin/photos/${g.id}/`);
   const token = await csrf(page);
   const v = version();
-  expect((await post(page, `/admin/photos/${g.id}/`, { csrf: token, row_version: String(g.row_version), alt_sv: `Galleri ${marker}`, alt_en: `Gallery ${marker}` })).status()).toBe(303);
+  expect((await post(page, `/admin/photos/${g.id}/`, { csrf: token, row_version: String(g.row_version), alt_sv: `Galleri ${marker}`, alt_en: `Gallery ${marker}` })).status()).toBe(
+    303,
+  );
   expect(version()).toBeGreaterThan(v);
   try {
     await page.goto("/gallery/");

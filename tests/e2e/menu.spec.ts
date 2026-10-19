@@ -118,12 +118,16 @@ test("adding a dish puts it on the public menu; deleting it takes it off", async
 test("moving a dish up changes the order on the public menu", async ({ page }) => {
   await signedInOwner(page);
   const [first, second] = [dish(0, 0).name.sv, dish(0, 1).name.sv];
-  await dishRow(page, second).getByRole("button", { name: `Flytta upp: ${second}` }).click();
+  await dishRow(page, second)
+    .getByRole("button", { name: `Flytta upp: ${second}` })
+    .click();
   await page.goto("/menu/");
   const names = await page.locator(".menu-item-row h3").allTextContents();
   expect(names.findIndex((n) => n.includes(second))).toBeLessThan(names.findIndex((n) => n.includes(first)));
   await page.goto("/admin/");
-  await dishRow(page, second).getByRole("button", { name: `Flytta ned: ${second}` }).click();
+  await dishRow(page, second)
+    .getByRole("button", { name: `Flytta ned: ${second}` })
+    .click();
 });
 
 test("a fourth home-page dish is refused with an explanation", async ({ page }) => {

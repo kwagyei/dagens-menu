@@ -31,15 +31,21 @@ const unused = (await listLibrary(repo)).filter((i) => i.kind === "upload" && i.
     {unused === 0 ? (
       <>
         <p>{t(locale, "admin.photos.noneUnused")}</p>
-        <a class="admin-target underline" href={library}>{t(locale, "admin.photos.back")}</a>
+        <a class="admin-target underline" href={library}>
+          {t(locale, "admin.photos.back")}
+        </a>
       </>
     ) : (
       <>
         <p>{t(locale, "admin.photos.deleteUnusedLead").replace("{n}", String(unused))}</p>
         <form method="post" class="flex flex-wrap gap-3">
           <input type="hidden" name="csrf" value={page.csrf} />
-          <button class="admin-button" type="submit">{t(locale, "admin.photos.deleteUnusedConfirm").replace("{n}", String(unused))}</button>
-          <a class="admin-button admin-button-quiet" href={`${library}?filter=unused`}>{t(locale, "admin.item.cancel")}</a>
+          <button class="admin-button" type="submit">
+            {t(locale, "admin.photos.deleteUnusedConfirm").replace("{n}", String(unused))}
+          </button>
+          <a class="admin-button admin-button-quiet" href={`${library}?filter=unused`}>
+            {t(locale, "admin.item.cancel")}
+          </a>
         </form>
       </>
     )}

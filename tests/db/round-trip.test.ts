@@ -39,7 +39,7 @@ const fakeImages: ImageResolver = (path) => {
 
 beforeAll(async () => {
   for (const site of ["bistro", "westafrican"] as const) {
-    for (const path of (stored(site)).images.map((i) => i.ref)) {
+    for (const path of stored(site).images.map((i) => i.ref)) {
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(path));
       hashes.set(path, Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join(""));
     }

@@ -8,17 +8,7 @@ import settings from "../../sites/bistro/content/settings.json";
 import { siteContentSchema } from "../../src/content/schema";
 import { todayFor } from "../../src/content/today";
 import { exportSite } from "../../src/db/export";
-import {
-  adminMenu,
-  createCategory,
-  createMenuItem,
-  deleteCategory,
-  moveCategory,
-  moveMenuItem,
-  renameCategory,
-  setFeatured,
-  slugify,
-} from "../../src/db/menu";
+import { adminMenu, createCategory, createMenuItem, deleteCategory, moveCategory, moveMenuItem, renameCategory, setFeatured, slugify } from "../../src/db/menu";
 import { deleteMenuItem, type MenuItemEdit, type RepoContext, setSoldOut, updateMenuItem } from "../../src/db/repository";
 import { seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare } from "../../src/db/sql";
@@ -202,16 +192,17 @@ describe("categories", () => {
   });
   it("two concurrent renames: exactly one wins, other is conflict", async () => {
     const [c] = await adminMenu(bistro);
-    const r = await Promise.all([
-      renameCategory(bistro, c.id, c.rowVersion, { sv: "A", en: "A" }),
-      renameCategory(bistro, c.id, c.rowVersion, { sv: "B", en: "B" }),
-    ]);
+    const r = await Promise.all([renameCategory(bistro, c.id, c.rowVersion, { sv: "A", en: "A" }), renameCategory(bistro, c.id, c.rowVersion, { sv: "B", en: "B" })]);
     expect(r.filter((x) => x.ok)).toHaveLength(1);
     expect(r.find((x) => !x.ok)).toMatchObject({ error: "conflict" });
   });
   it("rename with blank/over-long names is invalid and writes nothing", async () => {
     const [c] = await adminMenu(bistro);
-    for (const name of [{ sv: " ", en: "x" }, { sv: "x", en: "​" }, { sv: "y".repeat(500), en: "x" }]) {
+    for (const name of [
+      { sv: " ", en: "x" },
+      { sv: "x", en: "​" },
+      { sv: "y".repeat(500), en: "x" },
+    ]) {
       expect(await renameCategory(bistro, c.id, c.rowVersion, name)).toMatchObject({ ok: false, error: "invalid" });
     }
     expect((await adminMenu(bistro))[0].rowVersion).toBe(c.rowVersion);

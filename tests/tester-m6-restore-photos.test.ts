@@ -76,10 +76,14 @@ describe("area 1 (node half): sizes made again", () => {
     // Noise compresses badly, so this master is close to the cap.
     const noise = Buffer.alloc(1600 * 2400 * 3);
     for (let i = 0; i < noise.length; i++) noise[i] = (i * 2654435761) >>> 24;
-    let big = await sharp(noise, { raw: { width: 1600, height: 2400, channels: 3 } }).webp({ quality: 40 }).toBuffer();
+    let big = await sharp(noise, { raw: { width: 1600, height: 2400, channels: 3 } })
+      .webp({ quality: 40 })
+      .toBuffer();
     for (const q of [30, 20, 10, 5]) {
       if (big.length <= 1_000_000) break;
-      big = await sharp(noise, { raw: { width: 1600, height: 2400, channels: 3 } }).webp({ quality: q }).toBuffer();
+      big = await sharp(noise, { raw: { width: 1600, height: 2400, channels: 3 } })
+        .webp({ quality: q })
+        .toBuffer();
     }
     expect(big.length).toBeLessThanOrEqual(1_048_576);
     const id = sha(big);
@@ -257,7 +261,11 @@ describe("area 2: the reader refuses links that aren't to a photo", () => {
   it("refuses variants or a master on a curated image", () => {
     const { theme: _t, ...content } = structuredClone(repo);
     content.images[0].variants = [400];
-    const r = readExportFile(JSON.stringify({ format: "dagens-menu-export", formatVersion: 2, site: SITE, exportedAt: "2026-10-17T10:00:00Z", contentVersion: 1, content }), SITE, op);
+    const r = readExportFile(
+      JSON.stringify({ format: "dagens-menu-export", formatVersion: 2, site: SITE, exportedAt: "2026-10-17T10:00:00Z", contentVersion: 1, content }),
+      SITE,
+      op,
+    );
     expect(r).toMatchObject({ ok: false, error: expect.stringContaining("only an uploaded photo") });
   });
 

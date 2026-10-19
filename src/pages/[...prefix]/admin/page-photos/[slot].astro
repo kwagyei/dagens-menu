@@ -46,20 +46,31 @@ const heading = slotName.charAt(0).toUpperCase() + slotName.slice(1);
 
 <AdminLayout title={heading} csrf={page.csrf}>
   <section class="space-y-6">
-    <a class="admin-target underline" href={page.path("/page-photos/")}>{t(locale, "admin.pagePhotos.back")}</a>
+    <a class="admin-target underline" href={page.path("/page-photos/")}>
+      {t(locale, "admin.pagePhotos.back")}
+    </a>
     <h1 class="text-3xl font-bold">{heading}</h1>
-    {shown && (shown.problem ? (
-      <p class="admin-message" role="alert" tabindex="-1" autofocus>{shown.text}</p>
-    ) : (
-      <p class="admin-message" role="status">{shown.text}</p>
-    ))}
+    {shown &&
+      (shown.problem ? (
+        <p class="admin-message" role="alert" tabindex="-1" autofocus>
+          {shown.text}
+        </p>
+      ) : (
+        <p class="admin-message" role="status">
+          {shown.text}
+        </p>
+      ))}
     {!isShown && <p class="admin-muted">{t(locale, "admin.pagePhotos.hiddenNote")}</p>}
     {isShown && photos.length === 0 && <p class="admin-muted">{t(locale, "admin.pick.noneYet")}</p>}
     <form method="post" class="space-y-4">
       <input type="hidden" name="csrf" value={page.csrf} />
       <PhotoPicker locale={locale} legend={t(locale, "admin.pagePhotos.legend").replace("{slot}", slotName)} photos={photos} current={chosen?.[slot] ?? null} />
-      <button class="admin-button" type="submit">{t(locale, "admin.pick.save")}</button>
+      <button class="admin-button" type="submit">
+        {t(locale, "admin.pick.save")}
+      </button>
     </form>
-    <a class="admin-target underline" href={page.path("/photos/new/")}>{t(locale, "admin.pick.upload")}</a>
+    <a class="admin-target underline" href={page.path("/photos/new/")}>
+      {t(locale, "admin.pick.upload")}
+    </a>
   </section>
 </AdminLayout>

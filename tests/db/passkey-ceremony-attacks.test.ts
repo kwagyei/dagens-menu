@@ -7,14 +7,7 @@ import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
 import { base64url, sha256Hex, sign } from "../../src/auth/crypto";
 import { findInvite, issueInvite, revokeStatements } from "../../src/auth/invites";
-import {
-  addPasskeyVerify,
-  type CeremonyContext,
-  enrolOptions,
-  enrolVerify,
-  loginOptions,
-  loginVerify,
-} from "../../src/auth/passkeys";
+import { addPasskeyVerify, type CeremonyContext, enrolOptions, enrolVerify, loginOptions, loginVerify } from "../../src/auth/passkeys";
 import { getSession } from "../../src/auth/sessions";
 import { prepare } from "../../src/db/sql";
 import { confirmedAddOptions } from "./add-device";
@@ -96,10 +89,7 @@ describe("enrolment: atomicity and replay", () => {
     const optB = await enrolOptions(ctx(), token);
     const respA = await a.register(optA.body.options as never, BISTRO.origin, BISTRO.rpID);
     const respB = await b.register(optB.body.options as never, BISTRO.origin, BISTRO.rpID);
-    const results = await Promise.all([
-      enrolVerify(ctx(BISTRO, cookieValue(optA.cookies[0])), token, respA),
-      enrolVerify(ctx(BISTRO, cookieValue(optB.cookies[0])), token, respB),
-    ]);
+    const results = await Promise.all([enrolVerify(ctx(BISTRO, cookieValue(optA.cookies[0])), token, respA), enrolVerify(ctx(BISTRO, cookieValue(optB.cookies[0])), token, respB)]);
     expect(results.map((r) => r.status).sort()).toEqual([200, 410]);
     expect(await count("passkeys")).toBe(1);
     expect(await count("sessions")).toBe(1);

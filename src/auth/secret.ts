@@ -5,5 +5,4 @@
  */
 export const PLACEHOLDER_SECRET = "replace-with-at-least-32-random-characters";
 
-export const usableSecret = (secret: string | undefined): secret is string =>
-  typeof secret === "string" && secret.length >= 32 && secret.trim() !== PLACEHOLDER_SECRET;
+export const usableSecret = (secret: string | undefined): secret is string => typeof secret === "string" && secret.length >= 32 && secret.trim() !== PLACEHOLDER_SECRET;

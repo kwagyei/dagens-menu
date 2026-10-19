@@ -5,17 +5,7 @@ import hours from "../../sites/bistro/content/hours.json";
 import menu from "../../sites/bistro/content/menu.json";
 import pages from "../../sites/bistro/content/pages.json";
 import settings from "../../sites/bistro/content/settings.json";
-import {
-  adminMenu,
-  createCategory,
-  createMenuItem,
-  deleteCategory,
-  MAX_FEATURED,
-  moveCategory,
-  moveMenuItem,
-  renameCategory,
-  setFeatured,
-} from "../../src/db/menu";
+import { adminMenu, createCategory, createMenuItem, deleteCategory, MAX_FEATURED, moveCategory, moveMenuItem, renameCategory, setFeatured } from "../../src/db/menu";
 import type { MenuItemEdit, RepoContext } from "../../src/db/repository";
 import { seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare } from "../../src/db/sql";
@@ -61,7 +51,10 @@ describe("adminMenu", () => {
     const list = await adminMenu(bistro);
     expect(list.map((c) => c.slug)).toEqual(menu.categories.map((c) => c.id));
     expect(list[0].items.map((i) => i.id)).toEqual(menu.categories[0].items.map((i) => i.id));
-    const featured = list.flatMap((c) => c.items).filter((i) => i.featured).map((i) => i.id);
+    const featured = list
+      .flatMap((c) => c.items)
+      .filter((i) => i.featured)
+      .map((i) => i.id);
     expect(featured.sort()).toEqual([...pages.home.highlights].sort());
   });
 
@@ -127,7 +120,10 @@ describe("moving", () => {
     const [a, b] = first.items;
     expect(await moveMenuItem(bistro, b.id, "up")).toEqual({ ok: true });
     expect((await adminMenu(bistro))[0].items.slice(0, 2).map((i) => i.id)).toEqual([b.id, a.id]);
-    const { results } = await db.prepare("SELECT position FROM menu_items WHERE site_id = 'bistro' AND category_id = ? ORDER BY position").bind(first.id).all<{ position: number }>();
+    const { results } = await db
+      .prepare("SELECT position FROM menu_items WHERE site_id = 'bistro' AND category_id = ? ORDER BY position")
+      .bind(first.id)
+      .all<{ position: number }>();
     expect(results.map((r) => r.position)).toEqual(results.map((_, i) => i));
   });
 
@@ -150,7 +146,10 @@ describe("moving", () => {
     const drifted = (await adminMenu(bistro))[0].items.map((i) => i.id);
     expect(await moveMenuItem(bistro, drifted[1], "up")).toEqual({ ok: true });
     expect((await adminMenu(bistro))[0].items.map((i) => i.id)).toEqual([drifted[1], drifted[0], ...drifted.slice(2)]);
-    const { results } = await db.prepare("SELECT position FROM menu_items WHERE site_id = 'bistro' AND category_id = ? ORDER BY position").bind(first.id).all<{ position: number }>();
+    const { results } = await db
+      .prepare("SELECT position FROM menu_items WHERE site_id = 'bistro' AND category_id = ? ORDER BY position")
+      .bind(first.id)
+      .all<{ position: number }>();
     expect(results.map((r) => r.position)).toEqual(results.map((_, i) => i));
   });
 

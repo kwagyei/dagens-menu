@@ -1,5 +1,4 @@
 ---
-
 import { checkedEmbed } from "../booking/embed";
 import HoursTable from "./HoursTable.astro";
 import { getLocale, t } from "../i18n";
@@ -17,13 +16,19 @@ const provider = settings.booking.provider;
     </h2>
     <div class="space-y-4 mb-8">
       <p>
-        <span class="font-display text-sm tracking-widest" style="color: var(--color-text-muted);">{t(locale, "booking.fallback.phone")}:</span><br />
+        <span class="font-display text-sm tracking-widest" style="color: var(--color-text-muted);">
+          {t(locale, "booking.fallback.phone")}:
+        </span>
+        <br />
         <a href={`tel:${settings.phone}`} class="text-lg font-heading font-medium underline" style="color: var(--color-primary);">
           {settings.phone}
         </a>
       </p>
       <p>
-        <span class="font-display text-sm tracking-widest" style="color: var(--color-text-muted);">{t(locale, "booking.fallback.email")}:</span><br />
+        <span class="font-display text-sm tracking-widest" style="color: var(--color-text-muted);">
+          {t(locale, "booking.fallback.email")}:
+        </span>
+        <br />
         <a href={`mailto:${settings.email}`} class="text-lg font-heading font-medium underline" style="color: var(--color-primary);">
           {settings.email}
         </a>
@@ -39,29 +44,18 @@ const provider = settings.booking.provider;
 )}
 
 {provider === "link" && settings.booking.bookingUrl && (
-  <a
-    href={settings.booking.bookingUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-    class="btn btn-primary"
-  >
+  <a href={settings.booking.bookingUrl} target="_blank" rel="noopener noreferrer" class="btn btn-primary">
     {t(locale, "booking.load")} &rarr;
   </a>
 )}
 
 {provider === "embed" && settings.booking.embedCode && (
-  <div
-    id="booking-widget"
-    class="card-lifted p-6 md:p-8"
-  >
+  <div id="booking-widget" class="card-lifted p-6 md:p-8">
     <div id="booking-placeholder">
       <p class="mb-4 text-sm" style="color: var(--color-text-muted);">
         {t(locale, "consent.message")}
       </p>
-      <button
-        id="booking-load"
-        class="btn btn-primary"
-      >
+      <button id="booking-load" class="btn btn-primary">
         {t(locale, "booking.load")}
       </button>
     </div>

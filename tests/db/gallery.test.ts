@@ -30,11 +30,19 @@ const images: ImageResolver = (path) => ({ id: hashes.get(path)!, mime: "image/j
 let counter = 0;
 async function uploaded(site = "bistro"): Promise<string> {
   const id = (++counter).toString(16).padStart(64, "b");
-  const result = await addUpload(ctx(site), { id, variants: [{ width: 400, height: 300, bytes: crypto.getRandomValues(new Uint8Array(300)) }], alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` } });
+  const result = await addUpload(ctx(site), {
+    id,
+    variants: [{ width: 400, height: 300, bytes: crypto.getRandomValues(new Uint8Array(300)) }],
+    alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` },
+  });
   expect(result).toMatchObject({ ok: true });
   return id;
 }
-const count = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<{ n: number }>())!.n;
+const count = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<{ n: number }>())!.n;
 const version = () => db.prepare("SELECT content_version AS v FROM sites WHERE id = 'bistro'").first<number>("v");
 
 beforeAll(async () => {

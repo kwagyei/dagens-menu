@@ -31,14 +31,23 @@ const images: ImageResolver = (path) => ({ id: hashes.get(path)!, mime: "image/j
 let counter = 0;
 async function uploaded(site = "bistro"): Promise<string> {
   const id = (++counter).toString(16).padStart(64, "d");
-  const r = await addUpload(ctx(site), { id, variants: [{ width: 400, height: 300, bytes: crypto.getRandomValues(new Uint8Array(300)) }], alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` } });
+  const r = await addUpload(ctx(site), {
+    id,
+    variants: [{ width: 400, height: 300, bytes: crypto.getRandomValues(new Uint8Array(300)) }],
+    alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` },
+  });
   expect(r).toMatchObject({ ok: true });
   return id;
 }
-const n = async (sql: string, ...p: unknown[]) => (await db.prepare(sql).bind(...p).first<{ n: number }>())!.n;
+const n = async (sql: string, ...p: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...p)
+    .first<{ n: number }>())!.n;
 const version = () => db.prepare("SELECT content_version AS v FROM sites WHERE id = 'bistro'").first<number>("v");
 const order = async () => (await listGallery(bistro)).map((g) => g.id);
-const positions = async () => (await db.prepare("SELECT position FROM gallery_images WHERE site_id = 'bistro' ORDER BY position, id").all<{ position: number }>()).results.map((r) => r.position);
+const positions = async () =>
+  (await db.prepare("SELECT position FROM gallery_images WHERE site_id = 'bistro' ORDER BY position, id").all<{ position: number }>()).results.map((r) => r.position);
 
 beforeAll(async () => {
   for (const path of (content as StoredContent).images.map((i) => i.ref)) {
@@ -69,7 +78,12 @@ describe("races", () => {
     for (const id of ids.slice(0, room - 1)) await addToGallery(bistro, id);
     const results = await Promise.all(ids.slice(room - 1).map((id) => addToGallery(bistro, id)));
     expect(results.filter((r) => r.ok)).toHaveLength(1);
-    expect(results.filter((r) => !r.ok).map((r) => (r as { error: string }).error).every((e) => e === "full")).toBe(true);
+    expect(
+      results
+        .filter((r) => !r.ok)
+        .map((r) => (r as { error: string }).error)
+        .every((e) => e === "full"),
+    ).toBe(true);
     expect(await n("SELECT count(*) AS n FROM gallery_images WHERE site_id = 'bistro'")).toBe(GALLERY_LIMIT);
     const pos = await positions();
     expect(new Set(pos).size).toBe(pos.length);

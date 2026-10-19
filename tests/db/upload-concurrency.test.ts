@@ -23,7 +23,11 @@ function upload(widths = [400, 800], sizes = widths.map(() => 500)): Upload {
   const id = (++counter).toString(16).padStart(64, "a");
   return { id, variants, alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` } };
 }
-const n = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<{ n: number }>())!.n;
+const n = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<{ n: number }>())!.n;
 const version = async (site: string) => (await db.prepare("SELECT content_version AS v FROM sites WHERE id = ?").bind(site).first<{ v: number }>())!.v;
 const filler = (site: string, bytes: number) =>
   db
@@ -124,7 +128,9 @@ describe("concurrency", () => {
     );
     expect(broken).toBe(0);
     expect(await n("SELECT count(*) AS n FROM images WHERE id = ?", shared.id)).toBe(1); // only westafrican got it (i % 4 === 0 is even)
-    const bytes = await n("SELECT count(*) AS n FROM images i WHERE byte_size <> (SELECT sum(length(bytes)) FROM image_variants v WHERE v.site_id = i.site_id AND v.image_id = i.id)");
+    const bytes = await n(
+      "SELECT count(*) AS n FROM images i WHERE byte_size <> (SELECT sum(length(bytes)) FROM image_variants v WHERE v.site_id = i.site_id AND v.image_id = i.id)",
+    );
     expect(bytes).toBe(0);
   });
 });
@@ -133,7 +139,10 @@ describe("the size cap reaches the database", () => {
   it("one variant of exactly UPLOAD_BYTES (1,000,000) is stored byte for byte as hex", async () => {
     const u = upload([1600], [1_000_000]);
     expect(await addUpload(ctx("bistro"), u)).toEqual({ ok: true, id: u.id });
-    const row = await db.prepare("SELECT length(bytes) AS n, substr(hex(bytes), 1, 64) AS head FROM image_variants WHERE image_id = ?").bind(u.id).first<{ n: number; head: string }>();
+    const row = await db
+      .prepare("SELECT length(bytes) AS n, substr(hex(bytes), 1, 64) AS head FROM image_variants WHERE image_id = ?")
+      .bind(u.id)
+      .first<{ n: number; head: string }>();
     expect(row!.n).toBe(1_000_000);
     expect(row!.head).toBe(Uint8Array.prototype.toHex.call(u.variants[0].bytes.subarray(0, 32)).toUpperCase());
   });

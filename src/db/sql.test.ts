@@ -22,9 +22,7 @@ describe("sqlLiteral", () => {
 
 describe("renderSql", () => {
   it("binds parameters in order and terminates statements", () => {
-    expect(renderSql([stmt("INSERT INTO t (a, b) VALUES (?, ?)", "x", 1), stmt("DELETE FROM t")])).toBe(
-      "INSERT INTO t (a, b) VALUES ('x', 1);\nDELETE FROM t;",
-    );
+    expect(renderSql([stmt("INSERT INTO t (a, b) VALUES (?, ?)", "x", 1), stmt("DELETE FROM t")])).toBe("INSERT INTO t (a, b) VALUES ('x', 1);\nDELETE FROM t;");
   });
 
   it("does not treat a ? inside a parameter as a placeholder", () => {

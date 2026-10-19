@@ -14,8 +14,12 @@ const NEW = "/admin/photos/new/";
 test("an uploaded photo is served at every size, exactly, cached for a year and sandboxed", async ({ page, request }) => {
   await signedInOwner(page);
   const widths = [400, 800, 1200];
-  const parts = await Promise.all(widths.map((width) => sharp("public/images/bistro/kottbullar-hero.jpg").resize({ width }).modulate({ hue: 37 }).webp({ quality: 75 }).toBuffer()));
-  const id = createHash("sha256").update(parts[parts.length - 1]).digest("hex");
+  const parts = await Promise.all(
+    widths.map((width) => sharp("public/images/bistro/kottbullar-hero.jpg").resize({ width }).modulate({ hue: 37 }).webp({ quality: 75 }).toBuffer()),
+  );
+  const id = createHash("sha256")
+    .update(parts[parts.length - 1])
+    .digest("hex");
 
   await page.goto(NEW);
   const form = new FormData();

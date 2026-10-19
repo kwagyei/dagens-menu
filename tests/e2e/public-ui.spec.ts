@@ -183,4 +183,3 @@ test("without JavaScript the category bar still jumps to each category, with no 
   await expect(bar.locator(`a[href="#cat-${first}"]`)).toBeVisible();
   await context.close();
 });
-

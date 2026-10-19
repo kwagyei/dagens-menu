@@ -112,9 +112,7 @@ export class SoftAuthenticator {
     else if (this.counter > 0) this.counter++;
     const authData = concat(await sha256(enc.encode(rpID)), Uint8Array.of(this.verified ? 0x05 : 0x01), u32(this.counter)); // UP, UV (if verified)
     const clientData = enc.encode(JSON.stringify({ type: "webauthn.get", challenge, origin, crossOrigin: false }));
-    const raw = new Uint8Array(
-      await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, this.keys.privateKey, concat(authData, await sha256(clientData))),
-    );
+    const raw = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, this.keys.privateKey, concat(authData, await sha256(clientData))));
     return {
       id: this.id,
       rawId: this.id,

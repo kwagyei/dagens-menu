@@ -47,10 +47,5 @@ export function securityAudit(a: SecurityAudit, summary: string): Statement {
  * fragments with their own parameters, built with stmt().
  */
 export function securityAuditWhere(a: SecurityAudit, summary: Statement, condition: Statement): Statement {
-  return stmt(
-    `INSERT INTO audit_log (${COLUMNS}) SELECT ?, ?, ?, ?, ?, ?, ${summary.sql} WHERE ${condition.sql}`,
-    ...values(a),
-    ...summary.params,
-    ...condition.params,
-  );
+  return stmt(`INSERT INTO audit_log (${COLUMNS}) SELECT ?, ?, ?, ?, ?, ?, ${summary.sql} WHERE ${condition.sql}`, ...values(a), ...summary.params, ...condition.params);
 }

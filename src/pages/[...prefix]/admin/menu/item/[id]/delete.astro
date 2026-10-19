@@ -29,8 +29,12 @@ if (!item) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
     <p>{t(locale, "admin.item.deleteLead").replace("{name}", item.name[locale])}</p>
     <form method="post" class="flex flex-wrap gap-3">
       <input type="hidden" name="csrf" value={page.csrf} />
-      <button class="admin-button" type="submit">{t(locale, "admin.item.deleteConfirm")}</button>
-      <a class="admin-button admin-button-quiet" href={page.path(`/menu/item/${id}/`)}>{t(locale, "admin.item.cancel")}</a>
+      <button class="admin-button" type="submit">
+        {t(locale, "admin.item.deleteConfirm")}
+      </button>
+      <a class="admin-button admin-button-quiet" href={page.path(`/menu/item/${id}/`)}>
+        {t(locale, "admin.item.cancel")}
+      </a>
     </form>
   </section>
 </AdminLayout>

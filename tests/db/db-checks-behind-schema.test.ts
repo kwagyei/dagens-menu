@@ -19,16 +19,20 @@ beforeEach(async () => {
     db.prepare("DELETE FROM users"),
     db.prepare("INSERT INTO sites (id) VALUES ('bistro')"),
     db.prepare("INSERT INTO sites (id) VALUES ('westafrican')"),
-    db.prepare("INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg', 'Foto', 'Photo')").bind(IMG),
+    db
+      .prepare("INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg', 'Foto', 'Photo')")
+      .bind(IMG),
     db.prepare(
       `INSERT INTO settings (site_id, name_sv, name_en, tagline_sv, tagline_en, cuisine_sv, cuisine_en, address, phone, email)
        VALUES ('bistro', 'Bistro', 'Bistro', 'Mat', 'Food', 'Svensk', 'Swedish', 'Gatan 1', '+46 8 123 45 67', 'hej@x.se')`,
     ),
     db.prepare("INSERT INTO menu_categories (site_id, id, slug, name_sv, name_en, position) VALUES ('bistro', ?, 'mains', 'Varmrätter', 'Mains', 0)").bind(CAT),
-    db.prepare(
-      `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position)
+    db
+      .prepare(
+        `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position)
        VALUES ('bistro', ?, ?, 'Soppa', 'Soup', 'Varm', 'Hot', 14500, 0)`,
-    ).bind(ITEM, CAT),
+      )
+      .bind(ITEM, CAT),
     db.prepare("INSERT INTO users (id, email) VALUES (?, 'owner@x.se')").bind(USER),
     db.prepare("INSERT INTO memberships (user_id, site_id, role) VALUES (?, 'bistro', 'owner')").bind(USER),
   ]);
@@ -37,15 +41,17 @@ beforeEach(async () => {
 /** Runs the statement; returns the error message, or null if the database accepted it. */
 async function attempt(sql: string, ...params: unknown[]): Promise<string | null> {
   try {
-    await db.prepare(sql).bind(...params).run();
+    await db
+      .prepare(sql)
+      .bind(...params)
+      .run();
     return null;
   } catch (error) {
     return String((error as Error).message);
   }
 }
 const updateItem = (set: string, ...params: unknown[]) => attempt(`UPDATE menu_items SET ${set} WHERE id = '${ITEM}'`, ...params);
-const exception = (date: string) =>
-  attempt("INSERT INTO hours_exceptions (site_id, date, note_sv, note_en) VALUES ('bistro', ?, 'Stängt', 'Closed')", date);
+const exception = (date: string) => attempt("INSERT INTO hours_exceptions (site_id, date, note_sv, note_en) VALUES ('bistro', ?, 'Stängt', 'Closed')", date);
 
 describe("hours_exceptions.date: date(date) = date is NULL for impossible dates, and a NULL CHECK passes", () => {
   it.each(["0000-00-00", "2026-13-01", "2026-02-32", "2026-00-10", "2026-12-00"])("rejects %s", async (date) => {
@@ -146,12 +152,18 @@ describe("auth timestamps are compared as text but their format is never checked
 
 describe("cross-site references are impossible (composite foreign keys)", () => {
   it.each<[string, string]>([
-    ["an item in another site's category", `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position)
-       VALUES ('westafrican', 'item00000002', '${CAT}', 'A', 'A', 'B', 'B', 1, 0)`],
+    [
+      "an item in another site's category",
+      `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position)
+       VALUES ('westafrican', 'item00000002', '${CAT}', 'A', 'A', 'B', 'B', 1, 0)`,
+    ],
     ["a highlight of another site's item", `INSERT INTO home_highlights (site_id, item_id, position) VALUES ('westafrican', '${ITEM}', 0)`],
     ["a gallery entry using another site's image", `INSERT INTO gallery_images (site_id, id, image_id, position) VALUES ('westafrican', 'gal000000001', '${IMG}', 0)`],
-    ["a membership-less session on another site", `INSERT INTO sessions (token_hash, user_id, site_id, created_at, last_seen_at, expires_at)
-       VALUES ('${"f".repeat(64)}', '${USER}', 'westafrican', '2026-10-16T10:00:00Z', '2026-10-16T10:00:00Z', '2026-11-16T10:00:00Z')`],
+    [
+      "a membership-less session on another site",
+      `INSERT INTO sessions (token_hash, user_id, site_id, created_at, last_seen_at, expires_at)
+       VALUES ('${"f".repeat(64)}', '${USER}', 'westafrican', '2026-10-16T10:00:00Z', '2026-10-16T10:00:00Z', '2026-11-16T10:00:00Z')`,
+    ],
   ])("rejects %s", async (_name, sql) => {
     expect(await attempt(sql)).toMatch(/FOREIGN KEY/);
   });

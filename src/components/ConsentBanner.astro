@@ -4,16 +4,8 @@ import { getLocale, t } from "../i18n";
 const locale = getLocale(Astro.url);
 ---
 
-<div
-  id="consent-banner"
-  class="fixed bottom-0 left-0 right-0 z-50 hidden"
-  role="dialog"
-  aria-label={t(locale, "consent.title")}
->
-  <div
-    class="mx-auto max-w-2xl m-4 p-6 shadow-xl"
-    style={`background-color: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius);`}
-  >
+<div id="consent-banner" class="fixed bottom-0 left-0 right-0 z-50 hidden" role="dialog" aria-label={t(locale, "consent.title")}>
+  <div class="mx-auto max-w-2xl m-4 p-6 shadow-xl" style={`background-color: var(--color-bg); border: 1px solid var(--color-border); border-radius: var(--radius);`}>
     <h2 class="font-heading font-bold text-lg mb-2" style="color: var(--color-primary);">
       {t(locale, "consent.title")}
     </h2>
@@ -21,16 +13,10 @@ const locale = getLocale(Astro.url);
       {t(locale, "consent.message")}
     </p>
     <div class="flex gap-3">
-      <button
-        id="consent-accept"
-        class="btn btn-primary flex-1"
-      >
+      <button id="consent-accept" class="btn btn-primary flex-1">
         {t(locale, "consent.accept")}
       </button>
-      <button
-        id="consent-decline"
-        class="btn btn-secondary flex-1"
-      >
+      <button id="consent-decline" class="btn btn-secondary flex-1">
         {t(locale, "consent.decline")}
       </button>
     </div>

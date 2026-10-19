@@ -62,7 +62,7 @@ const fakeImages: ImageResolver = (path) => {
 };
 beforeAll(async () => {
   for (const site of ["bistro", "westafrican"] as const) {
-    for (const path of (stored(site)).images.map((i) => i.ref)) {
+    for (const path of stored(site).images.map((i) => i.ref)) {
       const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(path));
       hashes.set(path, Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join(""));
     }
@@ -151,7 +151,18 @@ describe("round trip: export → restore → export is identical", () => {
     // A new category with a dish, then a category deleted along with a highlighted dish.
     const added = await createCategory(bistro, { sv: "Säsong 🍂", en: "Seasonal" });
     expect(added.ok).toBe(true);
-    expect((await createMenuItem(bistro, added.id!, { name: { sv: "Kantarell", en: "Chanterelle" }, description: { sv: "Toast", en: "Toast" }, priceOre: 9_999_999, tags: [], allergens: [], available: true })).ok).toBe(true);
+    expect(
+      (
+        await createMenuItem(bistro, added.id!, {
+          name: { sv: "Kantarell", en: "Chanterelle" },
+          description: { sv: "Toast", en: "Toast" },
+          priceOre: 9_999_999,
+          tags: [],
+          allergens: [],
+          available: true,
+        })
+      ).ok,
+    ).toBe(true);
     const third = menu[2];
     expect(await deleteCategory(bistro, third.id)).toEqual({ ok: true });
     expect(await deleteMenuItem(bistro, first.items.at(-1)!.id)).toEqual({ ok: true });
@@ -166,7 +177,9 @@ describe("round trip: export → restore → export is identical", () => {
     // Texts: several social links, a changed phone; the pull quote removed.
     const texts = (await adminTexts(bistro))!;
     const { rowVersion: sv, ...s } = texts.settings;
-    expect(await updateSettings(bistro, sv, { ...s, phone: "+46 8 555 12 34", socialLinks: { facebook: "https://facebook.com/bistro", instagram: "https://instagram.com/bistro_å" } })).toEqual({ ok: true });
+    expect(
+      await updateSettings(bistro, sv, { ...s, phone: "+46 8 555 12 34", socialLinks: { facebook: "https://facebook.com/bistro", instagram: "https://instagram.com/bistro_å" } }),
+    ).toEqual({ ok: true });
     const { rowVersion: pv, ...p } = texts.pages;
     expect(await updatePageTexts(bistro, pv, { ...p, pullQuote: null })).toEqual({ ok: true });
 
@@ -185,7 +198,7 @@ describe("round trip: export → restore → export is identical", () => {
     await setSoldOut(bistro, id, true);
     expect((await exportSite(db, "bistro"))!.soldOutOn).toEqual({ [id]: "2026-10-16" });
     const file = await exportText("bistro");
-    expect(file).not.toContain("2026-10-16\"");
+    expect(file).not.toContain('2026-10-16"');
     await restore("bistro", file);
     expect((await exportSite(db, "bistro"))!.soldOutOn).toEqual({});
   });
