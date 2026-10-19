@@ -1,4 +1,5 @@
 ---
+import Horizon from "./Horizon.astro";
 import Photo from "./Photo.astro";
 /**
  * The menu: a category bar on one row that stays at the top while scrolling, then every
@@ -34,7 +35,10 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
     <div class="menu-card linen">
       {categories.map((category) => (
         <section class="menu-cat" id={`cat-${category.id}`} aria-labelledby={`cat-${category.id}-title`}>
-          <h2 id={`cat-${category.id}-title`}>{localized(category.name, locale)}</h2>
+          <h2 id={`cat-${category.id}-title`}>
+            <Horizon />
+            {localized(category.name, locale)}
+          </h2>
           <ul class="plain">
             {category.items.map((item) => (
               <MenuRow item={item} />

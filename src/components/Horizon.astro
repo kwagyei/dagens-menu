@@ -1,0 +1,15 @@
+---
+/**
+ * The classic look's divider: a hairline with a half sun rising from it, the low northern
+ * sun of the hero's arc (identity pass, 19 Oct). Decoration only.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<svg class:list={["horizon", className]} viewBox="0 0 360 22" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false">
+  <path d="M0 21 H360" stroke="currentColor" stroke-width="1" />
+  <path d="M166 21 a14 14 0 0 1 28 0" fill="currentColor" />
+</svg>

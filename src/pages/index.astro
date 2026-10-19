@@ -12,6 +12,7 @@ import { photoSources } from "../content/images";
  */
 import Base from "../layouts/Base.astro";
 import HomeStory from "../components/HomeStory.astro";
+import Horizon from "../components/Horizon.astro";
 import MenuRow from "../components/MenuRow.astro";
 import SiteNav from "../components/SiteNav.astro";
 import { formatPrice, localized, resolveHighlights } from "../content/load";
@@ -120,10 +121,7 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
       {lunch && lunchItems.length > 0 && (
         <section class="home-lunch wood" aria-labelledby="lunch-title">
           <div class="home-lunch__card linen">
-            <svg class="arc" viewBox="0 0 360 70" aria-hidden="true" focusable="false">
-              <path d="M8 66 Q180 -14 352 66" fill="none" stroke="currentColor" stroke-width="1.5" />
-              <circle cx="290" cy="40" r="7" fill="currentColor" />
-            </svg>
+            <Horizon />
             <h2 class="section-title" id="lunch-title">
               {localized(lunch.name, locale)}
             </h2>
