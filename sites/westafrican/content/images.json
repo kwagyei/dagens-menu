@@ -14,10 +14,24 @@
     }
   },
   {
+    "ref": "/images/westafrican/akara-plated.jpg",
+    "alt": {
+      "sv": "Akara, gyllene friterade bönbollar staplade i en vit skål",
+      "en": "Akara, golden fried bean fritters piled in a white bowl"
+    }
+  },
+  {
     "ref": "/images/westafrican/akara.jpg",
     "alt": {
       "sv": "Friterade degbollar i en vit hämtlåda, en skål kräm med honung och en liten bytta socker",
       "en": "Fried dough balls in a white takeaway box, a tub of cream drizzled with honey and a pot of sugar"
+    }
+  },
+  {
+    "ref": "/images/westafrican/chapman.jpg",
+    "alt": {
+      "sv": "Två glas röd Chapman med gurkskivor och sugrör på en bardisk",
+      "en": "Two glasses of red Chapman with cucumber slices and straws on a bar counter"
     }
   },
   {
@@ -175,6 +189,13 @@
     }
   },
   {
+    "ref": "/images/westafrican/ingefarsshot.jpg",
+    "alt": {
+      "sv": "En liten flaska ingefärs- och citrusjuice bland ingefära och citrusskivor",
+      "en": "A small bottle of ginger and citrus juice among ginger and citrus slices"
+    }
+  },
+  {
     "ref": "/images/westafrican/jollof-grilled-chicken.jpg",
     "alt": {
       "sv": "Gulorange kryddat ris med grillat kycklinglår och stekt paprika, svamp och korv",
@@ -196,6 +217,13 @@
     }
   },
   {
+    "ref": "/images/westafrican/jordnotssoppa.jpg",
+    "alt": {
+      "sv": "Jordnötssoppa med grönkål och rostade jordnötter, med ris vid sidan",
+      "en": "Peanut soup with kale and roasted peanuts, with rice on the side"
+    }
+  },
+  {
     "ref": "/images/westafrican/kelewele-bowl.jpg",
     "alt": {
       "sv": "Skål med stekta plantainskivor som hålls fram, med majskolvar och kyckling på bordet",
@@ -203,10 +231,24 @@
     }
   },
   {
+    "ref": "/images/westafrican/mangosorbet.jpg",
+    "alt": {
+      "sv": "Två bägare mangosorbet ovanifrån, bredvid en tärnad mango",
+      "en": "Two cups of mango sorbet from above, beside a diced mango"
+    }
+  },
+  {
     "ref": "/images/westafrican/puff-puff-basket.jpg",
     "alt": {
       "sv": "Friterade degbollar i en korg klädd med mönstrat vaxtyg, med bananer bredvid",
       "en": "Fried dough balls in a basket lined with patterned wax-print cloth, bananas beside it"
+    }
+  },
+  {
+    "ref": "/images/westafrican/sobolo.jpg",
+    "alt": {
+      "sv": "Sobolo, mörkröd hibiskusdryck i en glasburk med torkade hibiskusblommor och lime",
+      "en": "Sobolo, a deep red hibiscus drink in a glass jar with dried hibiscus flowers and lime"
     }
   },
   {
@@ -221,6 +263,20 @@
     "alt": {
       "sv": "Kryddat, långkokt lammlägg med chili och örter bredvid grillade tunnbröd på röd botten",
       "en": "Spiced slow-cooked lamb shank with chilli and herbs next to griddled flatbreads on a red background"
+    }
+  },
+  {
+    "ref": "/images/westafrican/suya-pepper-sauce.jpg",
+    "alt": {
+      "sv": "Suya, kryddgrillat kött med pepparsås och rå rödlök",
+      "en": "Suya, spice-grilled meat with pepper sauce and raw red onion"
+    }
+  },
+  {
+    "ref": "/images/westafrican/thieboudienne.jpg",
+    "alt": {
+      "sv": "Thieboudienne, tomatkokt ris med fisk och grönsaker på ett emaljfat",
+      "en": "Thieboudienne, tomato-cooked rice with fish and vegetables on an enamel platter"
     }
   },
   {
