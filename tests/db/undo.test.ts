@@ -182,7 +182,7 @@ describe("restoreMenuItem", () => {
     expect(await restoreMenuItem(ctx(), entry)).toMatchObject({ ok: true });
     const n = await count("SELECT count(*) AS n FROM audit_log WHERE site_id = ?", SITE);
     const { order } = await orderAround(MIDDLE);
-    expect(await restoreMenuItem(ctx(), entry)).toEqual({ ok: false, error: "not-found" });
+    expect(await restoreMenuItem(ctx(), entry)).toEqual({ ok: false, error: "already-back" });
     expect(await count("SELECT count(*) AS n FROM audit_log WHERE site_id = ?", SITE)).toBe(n);
     expect((await orderAround(MIDDLE)).order).toEqual(order);
     expect(await count("SELECT count(*) AS n FROM menu_items WHERE site_id = ? AND id = ?", SITE, MIDDLE)).toBe(1);

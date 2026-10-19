@@ -11,7 +11,7 @@ import { formatPrice } from "../content/load";
 import { restaurantDay } from "../content/hours";
 import { MAX_HIGHLIGHTS, menuItemSchema } from "../content/schema";
 import { type Statement, prepare, stmt } from "./sql";
-import { parseSnapshot, undoableEntry } from "./undo";
+import { ENTRY_ID, parseSnapshot, undoableEntry } from "./undo";
 import type { D1Database } from "./types";
 
 export interface RepoContext {
@@ -267,6 +267,19 @@ export type RestoreResult =
 
 const CATEGORY_ID = /^[a-z0-9]{12}$/;
 
+/** This site's dish delete, whose dish is on the menu now: a replay, a double click or a re-seed. */
+async function alreadyBack(ctx: RepoContext, entryId: string): Promise<boolean> {
+  if (!ENTRY_ID.test(entryId)) return false;
+  const row = await ctx.db
+    .prepare(
+      `SELECT 1 AS x FROM audit_log a WHERE a.id = ? AND a.site_id = ? AND a.entity = 'menu_item' AND a.action = 'delete'
+         AND EXISTS (SELECT 1 FROM menu_items m WHERE m.site_id = a.site_id AND m.id = a.entity_id)`,
+    )
+    .bind(Number(entryId), ctx.siteId)
+    .first("x");
+  return row !== null;
+}
+
 /**
  * Put a deleted dish back from its history entry (ADR-018): the same id, in its original
  * place (later dishes shift down one), with its photo if that still exists and its home-page
@@ -281,7 +294,7 @@ const CATEGORY_ID = /^[a-z0-9]{12}$/;
  */
 export async function restoreMenuItem(ctx: RepoContext, entryId: string, categoryId?: string): Promise<RestoreResult> {
   const entry = await undoableEntry(ctx, entryId);
-  if (!entry) return { ok: false, error: "not-found" };
+  if (!entry) return { ok: false, error: (await alreadyBack(ctx, entryId)) ? "already-back" : "not-found" };
   const snapshot = parseSnapshot(entry.payload, ctx.siteId, entry.entityId);
   if (!snapshot) return { ok: false, error: "invalid" };
   const category = (await ctx.db

@@ -114,11 +114,11 @@ describe("what a restore refuses, writing nothing", () => {
     expect(await state()).toEqual(before);
   });
 
-  it("an entry that exists but whose dish is already back", async () => {
+  it("an entry whose dish is already back: says so, writes nothing", async () => {
     const entry = await deleted(bistro, BISTRO_DISH);
     expect(await restoreMenuItem(bistro, entry)).toMatchObject({ ok: true });
     const before = await state();
-    expect(await restoreMenuItem(bistro, entry)).toEqual({ ok: false, error: "not-found" });
+    expect(await restoreMenuItem(bistro, entry)).toEqual({ ok: false, error: "already-back" });
     expect(await state()).toEqual(before);
   });
 });
