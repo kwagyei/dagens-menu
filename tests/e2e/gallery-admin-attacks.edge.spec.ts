@@ -89,9 +89,15 @@ test("another site's rows and photos, malformed ids, bad CSRF, wrong Origin and 
   try {
     await page.goto(GALLERY);
     const token = await csrf(page);
-    const snapshot = JSON.stringify(d1("SELECT site_id, id, image_id, position FROM gallery_images ORDER BY site_id, id"));
-    const v = version();
-    const ownId = rows().find((r) => r.site_id === "bistro")!.id;
+    // The test's own gallery row, so the attacks never aim at a row another test may be moving
+    // or removing in parallel (PR #74: the old snapshot of every bistro row failed that way).
+    expect((await post(page, { csrf: token, action: "add", id: mine.id })).status()).toBe(303);
+    const ownId = rows().find((r) => r.image_id === mine.id)!.id;
+    // Only the rows the attacks aim at: the other site's two and this test's own. Other tests
+    // edit bistro's gallery and content in parallel, so neither all of its rows nor its
+    // content_version can be compared here.
+    const watched = () => JSON.stringify(d1(`SELECT site_id, id, image_id, position FROM gallery_images WHERE site_id = 'westafrican' OR id = '${ownId}' ORDER BY site_id, id`));
+    const snapshot = watched();
     const bad: Record<string, string>[] = [
       { action: "add", id: theirImg },
       { action: "remove", id: "wawawawawa01" },
@@ -134,12 +140,10 @@ test("another site's rows and photos, malformed ids, bad CSRF, wrong Origin and 
       if (res.status() === 303) expect(res.headers().location).toMatch(/done=expired|done=not-found|\/admin\/?/);
     }
     // A bistro photo id that exists only on the other site's library: not found.
-    expect(JSON.stringify(d1("SELECT site_id, id, image_id, position FROM gallery_images ORDER BY site_id, id"))).toBe(snapshot);
-    expect(version()).toBe(v);
+    expect(watched()).toBe(snapshot);
     // GET with action-looking query strings does nothing.
     await page.goto(`${GALLERY}?action=remove&id=${ownId}`);
-    expect(JSON.stringify(d1("SELECT site_id, id, image_id, position FROM gallery_images ORDER BY site_id, id"))).toBe(snapshot);
-    expect(version()).toBe(v);
+    expect(watched()).toBe(snapshot);
     // The other site's photo is not offered here.
     await expect(page.locator(`#addable-${theirImg.slice(0, 12)}`)).toHaveCount(0);
     // A signed-out client can't post.
@@ -150,7 +154,7 @@ test("another site's rows and photos, malformed ids, bad CSRF, wrong Origin and 
     const res = await anon.request.post(`${BASE}${GALLERY}`, { form: { csrf: token, action: "remove", id: ownId }, maxRedirects: 0, headers: { Origin: BASE } });
     expect([303, 401, 403]).toContain(res.status());
     await anon.close();
-    expect(JSON.stringify(d1("SELECT site_id, id, image_id, position FROM gallery_images ORDER BY site_id, id"))).toBe(snapshot);
+    expect(watched()).toBe(snapshot);
   } finally {
     d1(`DELETE FROM gallery_images WHERE site_id = 'westafrican'`);
     d1(`DELETE FROM images WHERE site_id = 'westafrican' AND id = '${theirImg}'`);
@@ -200,10 +204,12 @@ test("targets are 44 px, focus follows at the top and bottom ends, and the libra
   await expect(entry(page, a.id).getByRole("button", { name: `Flytta senare: ${a.sv}` })).toBeFocused();
   // A crafted "up" at the top is a silent no-op that still lands focus on the other button.
   const first = d1<{ id: string }>("SELECT id FROM gallery_images WHERE site_id='bistro' ORDER BY position, id LIMIT 1")[0].id;
-  const v = version();
+  // The row itself, not content_version: other tests edit bistro's content in parallel.
+  const position = () => d1<{ position: number }>(`SELECT position FROM gallery_images WHERE id = '${first}'`)[0].position;
+  const before = position();
   const res = await post(page, { csrf: await csrf(page), action: "move", id: first, direction: "up" });
   expect(res.headers().location).toBe(`${GALLERY}?changed=${first}%3Aup`);
-  expect(version()).toBe(v);
+  expect(position()).toBe(before);
   for (const p of [a, b])
     await entry(page, p.id)
       .getByRole("button", { name: `Ta bort från galleriet: ${p.sv}` })
