@@ -144,7 +144,14 @@ describe("step 3: the confirmation is fresh", () => {
     const { result } = await confirmWith(session, auth);
     const device = await new SoftAuthenticator().register(result.body.options as never, SITES.bistro.origin, SITES.bistro.rpID);
     const late = new Date(now.getTime() + 6 * 60 * 1000);
-    expect((await addPasskeyVerify(ctx("bistro", cookieValue(result.cookies[0]), late), session, device)).status).toBe(400);
+    expect(await addPasskeyVerify(ctx("bistro", cookieValue(result.cookies[0]), late), session, device)).toMatchObject({ status: 400, body: { error: "challenge-expired" } });
     expect(await count("SELECT count(*) AS n FROM passkeys WHERE user_id = ?", session.userId)).toBe(1);
+  });
+
+  it("names a missing confirmation cookie as expired, not as a failed verification (review L3)", async () => {
+    const { session, auth } = await enrolled("owner@bistro.se");
+    const { result } = await confirmWith(session, auth);
+    const device = await new SoftAuthenticator().register(result.body.options as never, SITES.bistro.origin, SITES.bistro.rpID);
+    expect(await addPasskeyVerify(ctx("bistro"), session, device)).toMatchObject({ status: 400, body: { error: "challenge-expired" } });
   });
 });

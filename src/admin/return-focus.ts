@@ -9,7 +9,9 @@
  * - focus the control if the browser didn't;
  * - scroll it to the middle of the screen if it isn't fully on screen, whoever focused it.
  *
- * Where the browser already did both (desktop Chrome, Firefox), it does nothing.
+ * Where the browser already did both (desktop Chrome, Firefox), it does nothing. And once the
+ * owner has touched, scrolled or typed, the second check leaves the page where they put it
+ * (review L4, 18 Oct): on a slow connection they may be on their way elsewhere before `load`.
  */
 
 /** The parts of the page this needs; a plain object in tests. */
@@ -31,11 +33,28 @@ export function returnFocus(target: FocusTarget | null, active: unknown, viewpor
   return { focused, scrolled: !onScreen };
 }
 
-if (typeof document !== "undefined") {
-  const run = () => returnFocus(document.querySelector<HTMLElement>("[autofocus]"), document.activeElement, window.innerHeight);
+/**
+ * What says the owner has taken over. Not `scroll`: the first check and the browser's own
+ * autofocus scroll the page too, and those must not cancel the second check.
+ */
+export const OWNER_INPUT = ["touchstart", "wheel", "keydown", "pointerdown"] as const;
+
+type Win = Pick<Window, "addEventListener" | "requestAnimationFrame">;
+
+/** Run now, and again a frame after `load` unless the owner has touched the page by then. */
+export function runNowAndAfterLoad(run: () => void, win: Win, loaded: boolean): void {
   run();
-  // Again once everything has loaded and laid out: the browser may have moved the page since.
-  const later = () => requestAnimationFrame(() => run());
-  if (document.readyState === "complete") later();
-  else window.addEventListener("load", later, { once: true });
+  let touched = false;
+  for (const type of OWNER_INPUT) win.addEventListener(type, () => (touched = true), { once: true, passive: true, capture: true });
+  const later = () => win.requestAnimationFrame(() => (touched ? undefined : run()));
+  if (loaded) later();
+  else win.addEventListener("load", later, { once: true });
+}
+
+if (typeof document !== "undefined") {
+  runNowAndAfterLoad(
+    () => returnFocus(document.querySelector<HTMLElement>("[autofocus]"), document.activeElement, window.innerHeight),
+    window,
+    document.readyState === "complete",
+  );
 }

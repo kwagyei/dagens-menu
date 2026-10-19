@@ -40,7 +40,7 @@ describe("sandbox can't be set or loosened by pasted code", () => {
     ["in a div", `<div class="booking">${FRAME}</div>`],
     ["deep in wrappers", `<div><p><span>${FRAME}</span></p></div>`],
     ["two frames of one provider", `${FRAME}<div>${FRAME}</div>`],
-    ["with every allowed iframe attribute", `<iframe src="${SRC}" width="100%" height="800" allow="payment *" allowfullscreen loading="lazy" referrerpolicy="no-referrer" frameborder="0" scrolling="no" name="b" title="t"></iframe>`],
+    ["with every allowed iframe attribute", `<iframe src="${SRC}" width="100%" height="800" allow="payment *" allowfullscreen loading="lazy" referrerpolicy="no-referrer" frameborder="0" scrolling="no" title="t"></iframe>`],
   ])("gives every frame exactly the page's sandbox: %s", (_name, code) => {
     const sandboxes = sandboxesIn(html(code));
     expect(sandboxes.length).toBeGreaterThan(0);
@@ -68,6 +68,14 @@ describe("only a known provider's https origin can be framed", () => {
     ["another port", `<iframe src="https://widget.thefork.com:8443/abc"></iframe>`],
     ["no src", `<iframe title="x"></iframe>`],
     ["frames from two providers", `${FRAME}<iframe src="https://book.easytable.com/book/?id=1"></iframe>`],
+  ])("refuses %s", (_name, code) => refused(code));
+});
+
+describe("embed code can't shadow the page's own ids (review L5)", () => {
+  it.each([
+    ["an id on a wrapper", `<div id="booking-content">${FRAME}</div>`],
+    ["an id on the frame", `<iframe id="booking-content" src="${SRC}"></iframe>`],
+    ["a name on the frame, which becomes a window property", `<iframe name="booking" src="${SRC}"></iframe>`],
   ])("refuses %s", (_name, code) => refused(code));
 });
 

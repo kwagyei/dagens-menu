@@ -93,7 +93,7 @@ jobs:
           npm run seed -- --site ${{ matrix.site }}
       - name: Serve the built Worker
         run: |
-          npx wrangler dev --port 8788 --persist-to .wrangler/state > wrangler-dev.log 2>&1 &
+          npx wrangler dev --port 8788 --persist-to .wrangler/state --var SESSION_SECRET:$(openssl rand -hex 32) > wrangler-dev.log 2>&1 &
           for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:8788/ && exit 0; sleep 1; done
           cat wrangler-dev.log; exit 1
       - name: All 14 routes render, and nothing third-party loads before consent
@@ -103,6 +103,9 @@ jobs:
         run: npm run -s image-variants -- --site ${{ matrix.site }} --check
       - name: Every public photo has width, height and srcset, and its sizes are served
         run: node scripts/check-images.mjs --url http://localhost:8788
+      # The admin's CSP allows no inline script; astro.config.mjs keeps its script a file (L2).
+      - name: Admin pages load their script from a file, never inline
+        run: node scripts/check-admin-scripts.mjs --url http://localhost:8788
 
   # The deploy gate: the owner's journeys and the security model, no retries. The tester's
   # edge-case sweeps run in e2e-edge.yml, which never blocks a deploy. The gate is split into

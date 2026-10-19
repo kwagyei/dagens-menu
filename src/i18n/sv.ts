@@ -96,6 +96,7 @@ export default {
   "admin.security.addConfirmed": "Bekräftat. Skapa nu passkeyn på den nya enheten.",
   "admin.security.addCreate": "Skapa den nya passkeyn",
   "admin.security.addAlreadyHere": "Den här enheten har redan din passkey. Skapa den nya på en annan telefon eller dator, eller välj den i passkey-fönstret.",
+  "admin.security.addStartAgain": "Den nya passkeyn kunde inte sparas. Börja om och bekräfta med din nuvarande passkey. Om den nya enheten ändå sparade en passkey kan du ta bort den i enhetens lösenordshanterare.",
   "admin.security.signOutEverywhere": "Logga ut överallt",
   "admin.security.signOutEverywhereLead": "Avslutar alla inloggningar, även på andra enheter.",
   "admin.security.removed": "Passkeyn är borttagen, och inloggningarna som gjordes med den är avslutade.",

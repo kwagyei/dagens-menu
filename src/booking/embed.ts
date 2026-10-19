@@ -16,10 +16,12 @@ import { type BookingPreset, listPresets } from "./presets";
 // fresh serialization of what was parsed, never the pasted text: anything the parser doesn't
 // understand is refused rather than guessed at, since the CSP is derived from what's checked.
 const VOID = new Set(["br"]);
-const GLOBAL_ATTRS = new Set(["id", "class", "title", "style", "lang", "role", "aria-label"]);
+// No `id`, and no `name` on a frame: either could shadow an element or a window property the
+// page's own scripts look up, such as booking-content (review L5, 18 Oct).
+const GLOBAL_ATTRS = new Set(["class", "title", "style", "lang", "role", "aria-label"]);
 // No `sandbox`: the page sets its own (SANDBOX), which pasted code can't loosen.
 const TAG_ATTRS: Record<string, Set<string>> = {
-  iframe: new Set(["src", "width", "height", "allow", "allowfullscreen", "loading", "referrerpolicy", "frameborder", "scrolling", "name"]),
+  iframe: new Set(["src", "width", "height", "allow", "allowfullscreen", "loading", "referrerpolicy", "frameborder", "scrolling"]),
   a: new Set(["href", "target", "rel"]),
   div: new Set(),
   span: new Set(),
