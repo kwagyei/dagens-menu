@@ -8,6 +8,7 @@ import { restaurantDay } from "../../../content/hours";
 import { formatPrice } from "../../../content/load";
 import { adminMenu, type Direction, moveCategory, moveMenuItem } from "../../../db/menu";
 import { setSoldOut } from "../../../db/repository";
+import { ENTRY_ID, undoableEntry } from "../../../db/undo";
 import { getLocale, localePath, t } from "../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
@@ -54,6 +55,10 @@ if (Astro.locals.session) {
 }
 
 const done = Astro.url.searchParams.get("done");
+// After a delete, the flash offers to undo it while its history entry can still be undone (ADR-018).
+const entry = Astro.url.searchParams.get("entry") ?? "";
+const undoable = page && done === "deleted" && ENTRY_ID.test(entry) ? await undoableEntry(page.repo, entry) : null;
+const restorePath = page?.path("/menu/restore/") ?? "";
 // After a quick action, focus returns to the control just used (M5.7). A move that reached
 // the top or bottom disables that button, so focus goes to the other direction's instead.
 const [changedAction, changedId, changedDir] = (Astro.url.searchParams.get("changed") ?? "").split(":");
@@ -71,6 +76,11 @@ const message: Record<string, string> = {
   "pick-category": t(locale, "admin.menu.pickCategory"),
   "saved-not-featured": t(locale, "admin.menu.savedNotFeatured"),
   "added-not-featured": t(locale, "admin.menu.addedNotFeatured"),
+  restored: t(locale, "admin.menu.restored"),
+  "restored-no-photo": t(locale, "admin.menu.restoredNoPhoto"),
+  "restored-not-featured": t(locale, "admin.menu.restoredNotFeatured"),
+  "already-back": t(locale, "admin.menu.alreadyBack"),
+  "cant-restore": t(locale, "admin.menu.cantRestore"),
   expired: t(locale, "admin.error.form"),
 };
 ---
@@ -83,9 +93,18 @@ const message: Record<string, string> = {
         <p class="admin-muted mt-1">{t(locale, "admin.menu.lead")}</p>
       </div>
       {done && message[done] && (
-        <p class="admin-message" role="status">
-          {message[done]}
-        </p>
+        <div class="admin-message" role="status">
+          <p>{message[done]}</p>
+          {undoable && (
+            <form method="post" action={restorePath} class="mt-2">
+              <input type="hidden" name="csrf" value={page?.csrf} />
+              <input type="hidden" name="entry" value={undoable.id} />
+              <button class="admin-button admin-button-quiet" type="submit">
+                {t(locale, "admin.menu.undo")}
+              </button>
+            </form>
+          )}
+        </div>
       )}
 
       {menu.map((category, ci) => (

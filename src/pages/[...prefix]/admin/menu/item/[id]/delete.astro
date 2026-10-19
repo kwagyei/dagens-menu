@@ -16,7 +16,9 @@ const id = Astro.params.id ?? "";
 if (Astro.request.method === "POST") {
   if (!(await page.postedForm())) return Astro.redirect(`${page.path("/")}?done=expired`, 303);
   const result = await deleteMenuItem(repo, id);
-  return Astro.redirect(`${page.path("/")}?done=${result.ok ? "deleted" : "not-found"}`, 303);
+  // The entry's id lets the menu page offer "Ångra" for this delete (ADR-018).
+  const done = result.ok ? `deleted${result.entryId ? `&entry=${result.entryId}` : ""}` : "not-found";
+  return Astro.redirect(`${page.path("/")}?done=${done}`, 303);
 }
 
 const item = await getMenuItem(repo, id);

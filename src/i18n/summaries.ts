@@ -77,6 +77,7 @@ const RULES: Rule[] = [
   [CATEGORY, /^(.*): renamed to (.*)$/, (m) => `${m[1]}: nytt namn ${m[2]}`],
   [[...DISH, ...CATEGORY], /^(.*): moved (up|down)$/, (m, e) => `${m[1]}: ${direction(m[2], e)}`],
   [[...DISH, ...CATEGORY, ...PHOTO], /^(.*): deleted$/, (m, e) => `${m[1]}: ${done(e, "borttagen", "borttaget")}`],
+  [DISH, /^(.*): restored$/, (m) => `${m[1]}: återställd`],
   // Photos and the gallery
   [PHOTO, /^(.*): description changed$/, (m) => `${m[1]}: beskrivningen ändrad`],
   [PHOTO, /^uploaded a photo \((\d+ × \d+)\): (.*)$/s, (m) => `laddade upp ett foto (${m[1]}): ${m[2]}`],
