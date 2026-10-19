@@ -111,8 +111,9 @@ const current = (path: string) => (path !== section ? undefined : here === path 
         padding: 0.75rem 1rem;
         background: var(--color-surface);
       }
+      /* Dark enough for 4.5:1 on every theme's background, marigold included. */
       .admin-error {
-        color: #a1260d;
+        color: #8a1f0a;
         font-weight: 600;
       }
       .admin-input {
@@ -127,7 +128,7 @@ const current = (path: string) => (path !== section ? undefined : here === path 
         font-size: 1rem;
       }
       .admin-input[aria-invalid="true"] {
-        border-color: #a1260d;
+        border-color: #8a1f0a;
         border-width: 2px;
       }
       .admin-small-button {
