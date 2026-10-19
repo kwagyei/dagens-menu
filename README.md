@@ -33,8 +33,10 @@ date themselves.
 - A menu with EU-14 allergens, dietary tags and sold-out items, plus schema.org `Restaurant`
   and `Menu` JSON-LD for search results.
 - A booking widget in three modes (embed, link-out, phone/email fallback). An embed is a
-  sandboxed `<iframe>` from one of five known providers (WaiterAid, TheFork, Formitable,
-  easyTable, Quandoo); BokaBord.se is a link-out preset.
+  sandboxed `<iframe>` from a known provider. TheFork and easyTable have verified embed
+  addresses; the WaiterAid, Formitable and Quandoo presets name iframe origins that haven't
+  been checked against a real widget yet, so a restaurant using one of those should start
+  with link-out. BokaBord.se is a link-out preset.
 - A cookie consent banner with equally weighted Accept and Decline. The map and booking
   embeds load only after consent.
 - The privacy page is generated from the site settings, so it only describes services

@@ -11,7 +11,9 @@ export interface BookingPreset {
   requiresConsent: boolean;
   /**
    * The origins an embed may frame. A page's CSP allows these, and only these, as frames when
-   * the site's embed code uses this provider (src/booking/embed.ts).
+   * the site's embed code uses this provider (src/booking/embed.ts). Verified against a real
+   * widget only where there is an embedPattern (TheFork, easyTable); the others are the
+   * providers' likely widget hosts, unchecked (review L1, 18 Oct), so start those on link-out.
    */
   origins: string[];
   docs: string;
