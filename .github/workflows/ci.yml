@@ -105,8 +105,8 @@ jobs:
         run: npm run -s image-variants -- --site ${{ matrix.site }} --check
       - name: Every public photo has width, height and srcset, and its sizes are served
         run: node scripts/check-images.mjs --url http://localhost:8788
-      # The admin's CSP allows no inline script; astro.config.mjs keeps its script a file (L2).
-      - name: Admin pages load their script from a file, never inline
+      # No CSP allows an inline script; astro.config.mjs keeps every component script a file.
+      - name: No page carries an inline script
         run: node scripts/check-admin-scripts.mjs --url http://localhost:8788
 
   # The deploy gate: the owner's journeys and the security model, no retries. The tester's

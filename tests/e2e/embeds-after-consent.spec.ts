@@ -45,7 +45,7 @@ test.describe("third-party embeds", () => {
     const requested = await stubProviders(context);
     const response = await page.goto("/book/");
     const policy = response?.headers()["content-security-policy"] ?? "";
-    expect(policy).toContain("script-src 'self' 'unsafe-inline';");
+    expect(policy).toContain("script-src 'self';");
     expect(policy).toContain(`frame-src 'self' ${BOOKING} ${MAP};`);
     await expect(page.getByRole("button", { name: "Visa bokningen" })).toBeVisible();
     expect(requested).toEqual([]);

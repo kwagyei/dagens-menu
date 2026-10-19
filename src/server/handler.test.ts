@@ -59,7 +59,7 @@ describe("handlePage", () => {
     const res = await handlePage(get("/book/"), deps({}, { content: withEmbeds }), page);
     const policy = res.headers.get("Content-Security-Policy");
     // Frames only: no provider ever runs script on the site's origin (security review M1).
-    expect(policy).toContain("script-src 'self' 'unsafe-inline';");
+    expect(policy).toContain("script-src 'self';");
     expect(policy).toContain("frame-src 'self' https://app.waiteraid.com https://www.google.com;");
     const admin = await handlePage(get("/admin/"), deps({}, { content: withEmbeds }), page);
     expect(admin.headers.get("Content-Security-Policy")).not.toMatch(/waiteraid|google/);
