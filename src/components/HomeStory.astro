@@ -1,25 +1,38 @@
 ---
 /**
- * The opening of the About story on the home page, with a link to the rest (owner feedback
- * B5, C5). Both home designs show it, from this one component, so they can't drift apart
- * (review L6, 18 Oct). Renders nothing when the story is empty.
+ * The opening of the About story on the home page, with a photo and a link to the rest (owner
+ * feedback B5, C5). Both home designs show it, from this one component, so they can't drift
+ * apart (review L6, 18 Oct). Renders nothing when the story is empty.
+ *
+ * The photo is one the owner already chose for the About page (identity pass, 19 Oct): classic
+ * shows the story photo, the room; modern shows the kitchen photo as a round portrait.
  */
+import Photo from "./Photo.astro";
 import { localized } from "../content/load";
 import { teaser } from "../content/teaser";
 import { getLocale, localePath, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
-const story = teaser(localized(Astro.locals.content.pages.about.story, locale));
+const { pages, theme } = Astro.locals.content;
+const story = teaser(localized(pages.about.story, locale));
+const photo = theme.style === "classic" ? pages.about.storyImage : pages.about.kitchenImage;
 ---
 
 {story && (
   <section class="home-story" aria-labelledby="story-title">
-    <h2 class="section-title" id="story-title">
-      {t(locale, "about.story.heading")}
-    </h2>
-    <p>{story}</p>
-    <a class="link-strong" href={localePath(locale, "/about/")}>
-      {t(locale, "home.story.more")}
-    </a>
+    {photo && (
+      <div class="home-story__photo">
+        <Photo ref={photo} slot="story" class="home-story__img" />
+      </div>
+    )}
+    <div class="home-story__text">
+      <h2 class="section-title" id="story-title">
+        {t(locale, "about.story.heading")}
+      </h2>
+      <p>{story}</p>
+      <a class="link-strong" href={localePath(locale, "/about/")}>
+        {t(locale, "home.story.more")}
+      </a>
+    </div>
   </section>
 )}
