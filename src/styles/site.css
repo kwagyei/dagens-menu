@@ -69,6 +69,20 @@
 .arc { display: block; width: 100%; height: auto; overflow: visible; color: var(--color-secondary); }
 .squiggle { display: block; width: 5.25rem; height: 1.25rem; color: var(--color-text); }
 
+/* --- Classic textures (identity pass, owner feedback B2) ------------
+   Linen on the page, oak as a frame (never under text), both drawn in CSS:
+   no image requests. The weave lays 2-3 % of the text colour over the
+   background, so text contrast holds. */
+[data-style="classic"] .site, [data-style="classic"] .linen {
+  background-color: var(--color-bg);
+  background-image:
+    repeating-linear-gradient(0deg, color-mix(in srgb, var(--color-text) 3%, transparent) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--color-text) 2.2%, transparent) 0 1px, transparent 1px 4px);
+}
+.wood {
+  background: #d9c6a8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='260'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0032 0.11' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.40  0 0 0 0 0.25  1.4 0 0 0 -0.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23D9C6A8'/%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.75'/%3E%3C/svg%3E") 0 0 / 900px 260px;
+}
+
 /* --- Buttons ---------------------------------------------------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
@@ -189,7 +203,13 @@
 .hero-ljus__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; transform: scale(1.15); }
 .hero-ljus::before {
   content: ""; position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(180deg, rgba(10, 30, 38, 0.5) 0%, rgba(10, 30, 38, 0.06) 22%, rgba(10, 30, 38, 0.5) 44%, rgba(10, 30, 38, 0.84) 62%, rgba(10, 30, 38, 0.92) 100%);
+  background: linear-gradient(180deg, rgba(10, 30, 38, 0.65) 0%, rgba(10, 30, 38, 0.06) 22%, rgba(10, 30, 38, 0.5) 44%, rgba(10, 30, 38, 0.84) 62%, rgba(10, 30, 38, 0.92) 100%);
+}
+/* Low window light across the top of the photo; static, so reduced motion is unaffected. */
+.hero-ljus::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(112deg, transparent 0 18%, rgb(255 246 226 / 0.16) 18% 25%, transparent 25% 31%, rgb(255 246 226 / 0.11) 31% 35%, transparent 35%);
+  mask-image: linear-gradient(180deg, #000 0 40%, transparent 68%);
 }
 .hero-ljus > :not(.hero-ljus__img) { position: relative; z-index: 2; }
 .hero-ljus .hero-ljus__nav { position: absolute; top: 0; left: 0; right: 0; z-index: 3; padding: 0.5rem 0.625rem; }
@@ -205,7 +225,7 @@
 @media (min-width: 56.25rem) {
   .hero-ljus { min-height: 42.5rem; padding-bottom: 4.5rem; }
   .hero-ljus__img { transform: none; object-position: 50% 42%; }
-  .hero-ljus::before { background: linear-gradient(180deg, rgba(10, 30, 38, 0.55) 0%, rgba(10, 30, 38, 0.12) 22%, rgba(10, 30, 38, 0.7) 48%, rgba(10, 30, 38, 0.9) 100%); }
+  .hero-ljus::before { background: linear-gradient(180deg, rgba(10, 30, 38, 0.65) 0%, rgba(10, 30, 38, 0.12) 22%, rgba(10, 30, 38, 0.7) 48%, rgba(10, 30, 38, 0.9) 100%); }
   .hero-ljus .hero-ljus__nav { padding: 1.125rem 2.5rem; }
   .hero-ljus__nav .site-nav { justify-content: center; }
   .hero-ljus .arc { top: 9.375rem; left: 50%; width: 45rem; transform: translateX(-50%); }
@@ -250,12 +270,15 @@
   .home-intro__voice { max-width: 30ch; font-size: 2.6rem; }
 }
 
-.home-lunch { background: var(--color-surface); padding: 1.875rem var(--pad); display: grid; gap: 1rem; }
+/* The lunch list: a linen card laid on the oak table. */
+.home-lunch { padding: 1.875rem var(--pad); }
+.home-lunch__card { display: grid; gap: 1rem; padding: 1.5rem 1.25rem 1.25rem; box-shadow: 0 18px 40px -24px rgb(29 51 65 / 0.55); }
 .home-lunch .arc { color: var(--color-secondary); }
 @media (min-width: 56.25rem) {
-  .home-lunch { grid-template-columns: 1fr 1.5fr; column-gap: 5rem; align-items: start; padding-block: 4rem; }
-  .home-lunch > * { grid-column: 1; }
-  .home-lunch > .home-lunch__list { grid-column: 2; grid-row: 1 / span 2; }
+  .home-lunch { padding-block: 4rem; }
+  .home-lunch__card { max-width: 65rem; margin-inline: auto; grid-template-columns: 1fr 1.5fr; column-gap: 5rem; align-items: start; padding: 3rem 3.5rem; }
+  .home-lunch__card > * { grid-column: 1; }
+  .home-lunch__card > .home-lunch__list { grid-column: 2; grid-row: 1 / span 2; }
 }
 
 /* The opening of the About story, with a link to the rest (both designs). */
@@ -356,9 +379,11 @@
 [data-style="classic"] .catbar { border-block: 1px solid var(--color-border); padding: 0 0.5rem; }
 [data-style="classic"] .catbar a { padding: 0 0.75rem; font: 500 0.75rem/1 var(--font-body); letter-spacing: 0.14em; text-transform: uppercase; }
 [data-style="classic"] .catbar a[aria-current] { color: var(--color-primary); box-shadow: inset 0 -2px 0 var(--color-accent); }
+/* The printed card is linen paper on the oak table. */
+[data-style="classic"] .menu-table { padding: 0.875rem; }
 [data-style="classic"] .menu-card {
-  margin: 1.375rem 0.875rem 0; padding: 1.75rem 1.125rem 1.125rem; display: grid; gap: 2.125rem;
-  background: var(--color-surface); outline: 1px solid var(--color-border); outline-offset: -7px;
+  padding: 1.75rem 1.125rem 1.125rem; display: grid; gap: 2.125rem;
+  outline: 1px solid var(--color-border); outline-offset: -7px; box-shadow: 0 18px 40px -24px rgb(29 51 65 / 0.55);
 }
 [data-style="classic"] .menu-cat { display: grid; gap: 0.625rem; }
 [data-style="classic"] .menu-cat > h2 {
@@ -405,7 +430,8 @@
 
 @media (min-width: 56.25rem) {
   [data-style="classic"] .catbar { justify-content: center; }
-  [data-style="classic"] .menu-card { display: block; columns: 2; column-gap: 4rem; max-width: 65rem; margin: 2.75rem auto 0; padding: 3.25rem 3.5rem 2.25rem; }
+  [data-style="classic"] .menu-table { padding: 3.5rem var(--pad); }
+  [data-style="classic"] .menu-card { display: block; columns: 2; column-gap: 4rem; max-width: 65rem; margin: 0 auto; padding: 3.25rem 3.5rem 2.25rem; }
   [data-style="classic"] .menu-card .menu-cat { break-inside: avoid; margin-bottom: 2.75rem; }
   [data-style="classic"] .menu-note { column-span: all; }
   [data-style="modern"] .menu-cat { grid-template-columns: 1fr 1fr; column-gap: 4rem; padding-top: 2.5rem; }
@@ -464,6 +490,7 @@
 }
 .voice { padding: 2.5rem var(--pad); background: var(--color-surface); text-align: center; display: grid; justify-items: center; gap: 1rem; }
 .voice p { max-width: 30ch; }
+[data-style="classic"] .voice { background: radial-gradient(120% 80% at 15% 0%, rgb(255 255 255 / 0.75), transparent 60%), var(--color-surface); }
 [data-style="classic"] .voice p { font: 400 1.75rem/1.25 var(--font-heading); }
 [data-style="modern"] .voice p { font: 400 2.25rem/1.05 var(--font-display); text-transform: uppercase; text-wrap: balance; }
 

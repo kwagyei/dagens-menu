@@ -118,19 +118,21 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
       <HomeStory />
 
       {lunch && lunchItems.length > 0 && (
-        <section class="home-lunch" aria-labelledby="lunch-title">
-          <svg class="arc" viewBox="0 0 360 70" aria-hidden="true" focusable="false">
-            <path d="M8 66 Q180 -14 352 66" fill="none" stroke="currentColor" stroke-width="1.5" />
-            <circle cx="290" cy="40" r="7" fill="currentColor" />
-          </svg>
-          <h2 class="section-title" id="lunch-title">
-            {localized(lunch.name, locale)}
-          </h2>
-          <ul class="plain home-lunch__list">
-            {lunchItems.map((item) => (
-              <MenuRow item={item} brief />
-            ))}
-          </ul>
+        <section class="home-lunch wood" aria-labelledby="lunch-title">
+          <div class="home-lunch__card linen">
+            <svg class="arc" viewBox="0 0 360 70" aria-hidden="true" focusable="false">
+              <path d="M8 66 Q180 -14 352 66" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <circle cx="290" cy="40" r="7" fill="currentColor" />
+            </svg>
+            <h2 class="section-title" id="lunch-title">
+              {localized(lunch.name, locale)}
+            </h2>
+            <ul class="plain home-lunch__list">
+              {lunchItems.map((item) => (
+                <MenuRow item={item} brief />
+              ))}
+            </ul>
+          </div>
         </section>
       )}
     </>
