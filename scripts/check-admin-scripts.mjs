@@ -16,14 +16,18 @@ export const ADMIN_ROUTES = ["/admin/", "/en/admin/", "/admin/invite/", "/en/adm
 /** What's wrong with the <script> tags in one admin page. */
 export function checkAdminScripts(html) {
   const problems = [];
-  const scripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
-  const srcs = scripts.map(([, attrs]) => /\ssrc=["']?([^"'\s>]+)/i.exec(attrs)?.[1]).filter(Boolean);
+  // Comments first: a script tag inside one neither runs nor loads anything.
+  const live = html.replace(/<!--[\s\S]*?-->/g, "");
+  const scripts = [...live.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)];
+  const srcs = scripts.map(([, attrs]) => /\ssrc\s*=\s*["']?([^"'\s>]+)/i.exec(attrs)?.[1]).filter(Boolean);
   for (const [, attrs, body] of scripts) {
-    if (/\ssrc=/i.test(attrs)) continue;
-    if (/type=["']?application\/(ld\+)?json/i.test(attrs)) continue; // data, not a script
+    if (/\ssrc\s*=/i.test(attrs)) continue;
+    if (/\stype\s*=\s*["']?application\/(ld\+)?json["'\s>]?/i.test(` ${attrs}`)) continue; // data, not a script
     problems.push(`an inline <script${attrs}> (${body.trim().slice(0, 60)}…)`);
   }
-  if (!srcs.some((s) => /AdminLayout/.test(s))) problems.push("no external AdminLayout script");
+  // The file's own name, not a query string or another path segment.
+  const fileName = (src) => new URL(src, "https://x/").pathname.split("/").pop();
+  if (!srcs.some((s) => /^AdminLayout\b/.test(fileName(s)))) problems.push("no external AdminLayout script");
   return problems;
 }
 
