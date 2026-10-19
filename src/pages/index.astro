@@ -7,8 +7,8 @@ import { photoSources } from "../content/images";
  *
  * Classic: full-bleed photo, the town, then the name in the display serif under the arc, a
  * swipe strip of the highlighted dishes, the owner's own line, and the lunch list when the menu has one.
- * Modern: the name as one huge two-line word biting into a rounded photo, the orange oval, the
- * tagline beside it, pill slices of a dish photo on phones, and the highlights as cards.
+ * Modern: the name as one huge two-line word biting into a rounded photo on a wax-print cloth,
+ * the pepper-red oval, the tagline beside it, a strip-weave divider, pill slices of a dish photo on phones, and the highlights as cards.
  */
 import Base from "../layouts/Base.astro";
 import HomeStory from "../components/HomeStory.astro";
@@ -164,14 +164,13 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
           {t(locale, "home.book")}
         </a>
         <div class="hero-dag__side">
-          <svg class="squiggle" viewBox="0 0 84 20" aria-hidden="true" focusable="false">
-            <path d="M3 12 q 6.5 -9 13 0 t 13 0 t 13 0 t 13 0 t 13 0 t 13 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-          </svg>
+          <span class="wax-strip wax-strip--short" aria-hidden="true"></span>
           <p class="big">{tagline}</p>
           {voice && <p>{voice}</p>}
           <p class="hours-badge">{todayText}</p>
         </div>
       </section>
+      <div class="wax-strip" aria-hidden="true"></div>
 
       {pages.home.ctaImage && (
         <div class="slices-band narrow-only">

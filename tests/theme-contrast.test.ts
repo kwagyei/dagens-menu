@@ -3,7 +3,7 @@
  * for body text; identity pass, 19 Oct). The pairs follow site.css: which colour each look
  * puts on which background.
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "../src/content/contrast";
 
@@ -25,7 +25,7 @@ describe("contrastRatio", () => {
 
 type Colours = Record<string, string>;
 const sites = readdirSync(new URL("../sites/", import.meta.url), { withFileTypes: true })
-  .filter((d) => d.isDirectory())
+  .filter((d) => d.isDirectory() && existsSync(new URL(`../sites/${d.name}/theme.json`, import.meta.url)))
   .map((d) => d.name);
 const themes = sites.map((site) => ({
   site,
@@ -44,7 +44,13 @@ function pairs(style: string): [string, string, string][] {
   ];
   return style === "classic"
     ? [...common, ["accent", "background", "prices and eyebrows"], ["accent", "surface", "prices on the menu card"], ["background", "accent", "primary button"]]
-    : [...common, ["secondary", "accent", "primary button"], ["background", "text", "badge, price pills"], ["background", "secondary", "story band heading"]];
+    : [
+        ...common,
+        ["surface", "accent", "primary button"],
+        ["background", "text", "badge, price pills"],
+        ["background", "secondary", "story band heading, the sticker"],
+        ["surface", "secondary", "story band text"],
+      ];
 }
 
 describe.each(themes)("$site theme", ({ style, colors }) => {

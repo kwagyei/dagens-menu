@@ -6,7 +6,8 @@
      Nordic serif (Hedvig Letters, one weight, no italic) under a low sun,
      linen, oak and window light, a printed menu on a table.
    - modern ("Dag", Chez Abena): one huge condensed word biting into a
-     rounded photo, an orange oval button, squiggles and pill shapes.
+     rounded photo laid on a wax-print cloth, a pepper-red oval button,
+     wax-print rings, strip weave and saw-tooth edges, pill shapes.
 
    Colours and fonts come from theme.json (custom properties set in
    Base.astro), so a client recolours a look without touching CSS.
@@ -69,7 +70,6 @@
 .arc { display: block; width: 100%; height: auto; overflow: visible; color: var(--color-secondary); }
 .horizon { display: block; width: 100%; height: 1.375rem; color: var(--color-secondary); }
 .menu-cat .horizon { width: 6rem; height: 1rem; }
-.squiggle { display: block; width: 5.25rem; height: 1.25rem; color: var(--color-text); }
 
 /* --- Classic textures (identity pass, owner feedback B2) ------------
    Linen on the page, oak as a frame (never under text), both drawn in CSS:
@@ -83,6 +83,34 @@
 }
 .wood {
   background: #d9c6a8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='260'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0032 0.11' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.40  0 0 0 0 0.25  1.4 0 0 0 -0.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23D9C6A8'/%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.75'/%3E%3C/svg%3E") 0 0 / 900px 260px;
+}
+
+/* --- Modern wax-print motifs (identity pass, owner feedback C2) ------
+   Generic wax-print geometry, drawn in CSS from the theme's colours, so a
+   recolour carries through: concentric rings, a kente-like strip weave and
+   saw teeth where two colour bands meet. No Adinkra symbols: they carry
+   specific meanings. All decoration, aria-hidden, nothing animates. */
+.wax-rings, [data-style="modern"] .hero-dag__img, [data-style="modern"] .menu-cat > h2 .wax-swatch {
+  background-color: var(--color-secondary);
+  background-image:
+    radial-gradient(circle, var(--color-bg) 0 4px, transparent 4.5px 8px, var(--color-surface) 8.5px 10px, transparent 10.5px 14px, var(--color-bg) 14.5px 16px, transparent 16.5px),
+    radial-gradient(circle, var(--color-accent) 0 3px, transparent 3.5px);
+  background-size: 44px 44px;
+  background-position: 0 0, 22px 22px;
+}
+.wax-strip, [data-style="modern"] .menu-list::before {
+  height: 1.125rem;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, var(--color-surface) 38%, transparent) 3px 5px),
+    repeating-linear-gradient(90deg, var(--color-text) 0 34px, var(--color-bg) 34px 38px, var(--color-accent) 38px 72px, var(--color-bg) 72px 76px, var(--color-secondary) 76px 110px, var(--color-bg) 110px 114px);
+}
+.wax-strip--short { width: 5.25rem; border-radius: 999px; }
+/* Teeth: set --above to the colour of the band above, on the band below. */
+.teeth, [data-style="modern"] .site-footer::before, [data-style="modern"] .home-story::before {
+  height: 14px;
+  background:
+    linear-gradient(135deg, var(--above) 50%, transparent 50%) 0 0 / 22px 14px,
+    linear-gradient(225deg, var(--above) 50%, transparent 50%) 0 0 / 22px 14px;
 }
 
 /* --- Buttons ---------------------------------------------------- */
@@ -99,7 +127,7 @@
 [data-style="classic"] .btn-light:hover { background: var(--color-surface); }
 [data-style="classic"] .btn-secondary { background: transparent; color: var(--color-text); box-shadow: inset 0 0 0 1px currentColor; }
 [data-style="modern"] .btn { font: 400 1.125rem/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.01em; border-radius: 999px; padding: 0 1.5rem; }
-[data-style="modern"] .btn-primary { background: var(--color-accent); color: var(--color-secondary); }
+[data-style="modern"] .btn-primary { background: var(--color-accent); color: var(--color-surface); }
 [data-style="modern"] .btn-primary:hover { filter: brightness(1.06); }
 [data-style="modern"] .btn-secondary { background: transparent; color: var(--color-text); box-shadow: inset 0 0 0 2px currentColor; }
 [data-style="modern"] .pill { width: 9.375rem; height: 3.875rem; padding: 0; border-radius: 50%; font-size: 1.25rem; }
@@ -289,6 +317,15 @@
 .home-story__img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
 [data-style="classic"] .home-story { border-top: 1px solid var(--color-border); }
 [data-style="classic"] .home-story p { font: 400 1.0625rem/1.65 var(--font-body); }
+/* Modern: an indigo band with a saw-tooth top, the portrait in a wax-print halo. */
+[data-style="modern"] .home-story { --above: var(--color-bg); position: relative; padding-top: calc(2.25rem + 14px); background: var(--color-secondary); color: var(--color-surface); justify-items: center; text-align: center; }
+[data-style="modern"] .home-story::before { content: ""; position: absolute; top: 0; left: 0; right: 0; }
+[data-style="modern"] .home-story__text { justify-items: center; }
+[data-style="modern"] .home-story .section-title, [data-style="modern"] .home-story .link-strong { color: var(--color-bg); }
+[data-style="modern"] .home-story__photo { width: 11rem; aspect-ratio: 1; padding: 0.625rem; border-radius: 50%; box-sizing: border-box; box-shadow: 0 0 0 4px var(--color-bg); }
+[data-style="modern"] .home-story__photo { background-color: var(--color-secondary); background-image: radial-gradient(circle, var(--color-bg) 0 4px, transparent 4.5px 8px, var(--color-surface) 8.5px 10px, transparent 10.5px); background-size: 22px 22px; }
+[data-style="modern"] .home-story__img { aspect-ratio: 1; height: 100%; border-radius: 50%; }
+[data-style="modern"] .home-story :focus-visible { outline-color: var(--color-bg); }
 @media (min-width: 56.25rem) {
   .home-story { padding-block: 4rem; }
   .home-story:has(.home-story__photo) { grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
@@ -300,8 +337,9 @@
 .hero-dag { padding: 0.25rem 0.875rem 1.375rem; }
 .hero-dag__photo { position: relative; }
 .hero-dag__img {
-  width: 100%; height: 15.625rem; object-fit: cover; object-position: 50% 62%; background: var(--color-surface);
+  width: 100%; height: 15.625rem; object-fit: cover; object-position: 50% 62%;
   border-radius: 46px 46px 120px 120px / 46px 46px 60px 60px;
+  box-sizing: border-box; padding: 7px; /* the cloth shows round the plate (wax-rings below) */
 }
 .hero-dag__nav { position: absolute; top: 0.75rem; left: 0.75rem; right: 0.75rem; z-index: 3; }
 .hero-dag__nav .site-nav { justify-content: space-between; }
@@ -315,11 +353,11 @@
 
 .star {
   display: grid; place-items: center; width: 6.5rem; height: 6.5rem; padding: 1.125rem; text-align: center; text-decoration: none;
-  background: var(--color-accent); color: var(--color-secondary); font: 400 1rem/1.05 var(--font-display); text-transform: uppercase;
+  background: var(--color-secondary); color: var(--color-bg); font: 400 1rem/1.05 var(--font-display); text-transform: uppercase;
   clip-path: polygon(100% 50%, 90.9% 59.3%, 95% 71.7%, 82.8% 76.2%, 81.2% 89.1%, 68.2% 87.8%, 61.1% 98.7%, 50% 92%, 38.9% 98.7%, 31.8% 87.8%, 18.8% 89.1%, 17.2% 76.2%, 5% 71.7%, 9.1% 59.3%, 0% 50%, 9.1% 40.7%, 5% 28.3%, 17.2% 23.8%, 18.8% 10.9%, 31.8% 12.2%, 38.9% 1.3%, 50% 8%, 61.1% 1.3%, 68.2% 12.2%, 81.2% 10.9%, 82.8% 23.8%, 95% 28.3%, 90.9% 40.7%);
 }
 /* The clip path would cut off an outline, so focus inverts the sticker instead. */
-.star:focus-visible { outline: none; background: var(--color-secondary); color: var(--color-accent); }
+.star:focus-visible { outline: none; background: var(--color-text); color: var(--color-bg); }
 .hero-dag__photo > .star { position: absolute; right: 2.5rem; bottom: -2.75rem; z-index: 2; width: 8.25rem; height: 8.25rem; font-size: 1.3rem; }
 
 .slices-band { display: grid; justify-items: center; padding: 2rem 1rem 1.5rem; }
@@ -337,7 +375,7 @@
 .dish-card img, .dish-card__plain { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 1.75rem; }
 .dish-card__plain { background: var(--color-surface); }
 .dish-card figcaption { position: absolute; left: 0.75rem; right: 0.75rem; bottom: 0.75rem; display: flex; justify-content: space-between; align-items: end; gap: 0.5rem; }
-.dish-card figcaption span { padding: 0.4375rem 0.8125rem 0.375rem; border-radius: 999px; font: 400 1.375rem/1 var(--font-display); text-transform: uppercase; background: var(--color-bg); color: var(--color-text); }
+.dish-card figcaption span { padding: 0.4375rem 0.8125rem 0.375rem; border-radius: 999px; font: 400 1.375rem/1 var(--font-display); text-transform: uppercase; background: var(--color-surface); color: var(--color-text); }
 .dish-card figcaption .dish-card__price { background: var(--color-text); color: var(--color-bg); text-transform: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 @media (min-width: 56.25rem) {
@@ -413,18 +451,22 @@
 [data-style="modern"] .catbar { gap: 0.5rem; padding: 0.5rem var(--pad); }
 [data-style="modern"] .catbar a { padding: 0 1rem; border-radius: 999px; box-shadow: inset 0 0 0 2px var(--color-text); font-weight: 700; font-size: 0.90625rem; }
 [data-style="modern"] .catbar a[aria-current] { background: var(--color-text); color: var(--color-bg); }
-[data-style="modern"] .menu-list { display: grid; gap: 0.5rem; padding: 0.5rem var(--pad) 0; }
+/* The list sits on a cream cloth with a woven selvedge along its top. */
+[data-style="modern"] .menu-list { display: grid; gap: 0.5rem; margin: 0.75rem 0.625rem 0; padding: 0.5rem calc(var(--pad) - 0.625rem) 1.5rem; background: var(--color-surface); border-radius: 1.75rem; overflow: hidden; }
+[data-style="modern"] .menu-list::before { content: ""; display: block; margin: -0.5rem calc(0.625rem - var(--pad)) 0.5rem; }
 [data-style="modern"] .menu-cat { display: grid; gap: 0.25rem; padding-top: 1.25rem; }
 [data-style="modern"] .menu-cat > h2 { display: flex; align-items: center; gap: 0.75rem; font: 400 2.5rem/1 var(--font-display); text-transform: uppercase; }
-[data-style="modern"] .menu-cat > h2 svg { width: 3.75rem; height: 1rem; flex: none; }
+[data-style="modern"] .menu-cat > h2 .wax-swatch { width: 4.25rem; height: 1.625rem; flex: none; border-radius: 999px; background-position: 50% 50%, calc(50% + 22px) calc(50% + 22px); }
 .menu-item { display: grid; align-content: start; gap: 0.375rem; padding-block: 1rem; border-bottom: 2px solid var(--rule); }
 .menu-item__top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
 .menu-item h3, .menu-item .price { font: 400 1.625rem/1 var(--font-display); text-transform: uppercase; }
 .menu-item .price { text-transform: none; }
 .menu-item__body { display: grid; grid-template-columns: 1fr auto; gap: 0.375rem 0.875rem; align-items: start; }
 .menu-item__text { display: grid; gap: 0.375rem; min-width: 0; }
-.menu-item__thumb { width: 5.25rem; height: 5.25rem; object-fit: cover; border-radius: 50%; }
+/* A plate on a print: cream, marigold and indigo rings round each round photo. */
+.menu-item__thumb { width: 5.25rem; height: 5.25rem; object-fit: cover; border-radius: 50%; margin: 9px; box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 6px var(--color-bg), 0 0 0 9px var(--color-secondary); }
 .menu-item .chip { padding: 0.1875rem 0.6875rem; border: 2px solid currentColor; border-radius: 999px; font-size: 0.8125rem; font-weight: 700; }
+.menu-item .chip--spicy { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-surface); } /* heat at a glance */
 .menu-item .meta { font-size: 0.875rem; color: var(--color-text-muted); }
 .menu-item .out { justify-self: start; padding: 0.375rem 0.75rem; border-radius: 999px; background: var(--color-text); color: var(--color-bg); font: 700 0.8125rem/1 var(--font-body); }
 .menu-item.is-out h3, .menu-item.is-out .price { color: var(--color-text-muted); }
@@ -470,14 +512,16 @@
 [data-style="classic"] .site-footer__name { font: 400 1.75rem/1.1 var(--font-display); letter-spacing: -0.01em; }
 [data-style="classic"] .site-footer__social a { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-hero-text) 45%, transparent); }
 [data-style="classic"] .site-footer__social a:hover { background: color-mix(in srgb, var(--color-hero-text) 12%, transparent); }
-[data-style="modern"] .site-footer__squiggle { color: var(--color-hero-text); }
-[data-style="modern"] .site-footer__name { font: 400 2.25rem/1 var(--font-display); text-transform: uppercase; }
+[data-style="modern"] .site-footer { --above: var(--color-bg); }
+/* On home the story's indigo band ends the page, so the teeth are indigo there. */
+[data-style="modern"] .site:has(main > .home-story:last-child) .site-footer { --above: var(--color-secondary); }
+[data-style="modern"] .site-footer::before { content: ""; display: block; }
+[data-style="modern"] .site-footer__name { font: 400 2.25rem/1 var(--font-display); text-transform: uppercase; color: var(--color-bg); }
 [data-style="modern"] .site-footer__social a { background: var(--color-bg); color: var(--color-text); }
 [data-style="modern"] .site-footer__social a:focus-visible { outline-color: var(--color-bg); }
 [data-style="modern"] .site-footer__links { border-top-width: 2px; font-weight: 600; }
 @media (min-width: 56.25rem) {
   .site-footer__inner { grid-template-columns: 1.3fr 1fr 1fr; gap: 2.5rem; padding-block: 3.25rem 2.75rem; }
-  .site-footer__squiggle { grid-column: 1 / -1; }
   .site-footer__links { border-top: 0; padding-top: 0; }
 }
 

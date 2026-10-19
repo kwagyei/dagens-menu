@@ -14,7 +14,6 @@ import { getLocale, t, localePath } from "../i18n";
 const settings = Astro.locals.content.settings;
 const hours = Astro.locals.content.hours;
 const today = Astro.locals.today;
-const style = Astro.locals.content.theme.style;
 const locale = getLocale(Astro.url);
 const altLocale = locale === "sv" ? "en" : "sv";
 const altPath = locale === "sv" ? `/en${Astro.url.pathname}` : Astro.url.pathname.replace(/^\/en/, "") || "/";
@@ -59,11 +58,6 @@ const socials = Object.entries(settings.socialLinks).map(([network, url]) => ({
 
 <footer class="site-footer">
   <div class="site-footer__inner">
-    {style === "modern" && (
-      <svg class="squiggle site-footer__squiggle" viewBox="0 0 84 20" aria-hidden="true" focusable="false">
-        <path d="M3 12 q 6.5 -9 13 0 t 13 0 t 13 0 t 13 0 t 13 0 t 13 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-      </svg>
-    )}
     <div class="site-footer__col">
       <p class="site-footer__name">{siteName}</p>
       <p class="site-footer__tagline">{localized(settings.tagline, locale)}</p>
