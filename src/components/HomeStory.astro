@@ -1,0 +1,21 @@
+---
+/**
+ * The opening of the About story on the home page, with a link to the rest (owner feedback
+ * B5, C5). Both home designs show it, from this one component, so they can't drift apart
+ * (review L6, 18 Oct). Renders nothing when the story is empty.
+ */
+import { localized } from "../content/load";
+import { teaser } from "../content/teaser";
+import { getLocale, localePath, t } from "../i18n";
+
+const locale = getLocale(Astro.url);
+const story = teaser(localized(Astro.locals.content.pages.about.story, locale));
+---
+
+{story && (
+  <section class="home-story" aria-labelledby="story-title">
+    <h2 class="section-title" id="story-title">{t(locale, "about.story.heading")}</h2>
+    <p>{story}</p>
+    <a class="link-strong" href={localePath(locale, "/about/")}>{t(locale, "home.story.more")}</a>
+  </section>
+)}
