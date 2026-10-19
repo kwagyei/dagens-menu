@@ -15,7 +15,10 @@ import { getLocale, localePath, t } from "../i18n";
 const locale = getLocale(Astro.url);
 const { pages, theme } = Astro.locals.content;
 const story = teaser(localized(pages.about.story, locale));
-const photo = theme.style === "classic" ? pages.about.storyImage : pages.about.kitchenImage;
+const ref = theme.style === "classic" ? pages.about.storyImage : pages.about.kitchenImage;
+// Only a photo the library knows: Photo renders nothing for any other, which would leave an
+// empty column (or an empty halo) behind.
+const photo = ref && Astro.locals.content.images.some((i) => i.ref === ref) ? ref : undefined;
 ---
 
 {story && (
