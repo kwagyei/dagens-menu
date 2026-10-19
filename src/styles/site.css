@@ -140,7 +140,8 @@
 .hours-badge::before { content: ""; flex: none; width: 0.4375rem; height: 0.4375rem; border-radius: 50%; background: currentColor; }
 [data-style="classic"] .hours-badge { border-block: 1px solid rgba(255, 255, 255, 0.55); font: 500 0.875rem/1 var(--font-body); letter-spacing: 0.06em; }
 [data-style="modern"] .hours-badge { border-radius: 999px; padding: 0 1.125rem; background: var(--color-text); color: var(--color-bg); font: 600 0.9375rem/1 var(--font-body); }
-[data-style="modern"] .hours-badge::before { width: 0.5625rem; height: 0.5625rem; background: var(--color-accent); }
+/* Red on dark green is only 1.7:1, so the dot carries a ring in the badge's text colour. */
+[data-style="modern"] .hours-badge::before { width: 0.5625rem; height: 0.5625rem; background: var(--color-accent); box-shadow: 0 0 0 2px var(--color-bg); }
 
 /* --- Navigation ------------------------------------------------- */
 .site-nav { display: flex; align-items: center; gap: 0.25rem; }
