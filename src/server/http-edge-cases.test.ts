@@ -38,8 +38,7 @@ function deps(overrides: Partial<HandlerDeps> = {}, loaded: Partial<LoadedConten
 
 const ok = async (_s: PageState) => new Response("<h1>page</h1>", { headers: { "Content-Type": "text/html" } });
 const notFound = async (_s: PageState) => new Response("<h1>404</h1>", { status: 404, headers: { "Content-Type": "text/html" } });
-const req = (path: string, init: RequestInit & { headers?: Record<string, string> } = {}) =>
-  new Request(`https://x.workers.dev${path}`, init);
+const req = (path: string, init: RequestInit & { headers?: Record<string, string> } = {}) => new Request(`https://x.workers.dev${path}`, init);
 
 async function etagOf(path: string): Promise<string> {
   const res = await handlePage(req(path), deps(), ok);
@@ -74,7 +73,7 @@ describe("M3.3 conditional requests", () => {
     ['"a","b",W/"b1-7-2026-10-16"', true],
     ['"b1-7-2026-10-16-x"', false],
     ['W/"b1-7-2026-10-15"', false],
-    ['b1-7-2026-10-16', false], // unquoted is not an entity tag
+    ["b1-7-2026-10-16", false], // unquoted is not an entity tag
   ])("If-None-Match %j → %s", (header, expected) => {
     expect(isNotModified(req("/", { headers: { "If-None-Match": header } }), 'W/"b1-7-2026-10-16"')).toBe(expected);
   });

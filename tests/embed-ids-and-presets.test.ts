@@ -20,7 +20,11 @@ describe("every preset's own embed pattern still parses", () => {
 });
 
 describe("the demo sites' embed code, if any, still parses", () => {
-  it.each(readdirSync("sites", { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name))("%s", (site) => {
+  it.each(
+    readdirSync("sites", { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name),
+  )("%s", (site) => {
     const settings = JSON.parse(readFileSync(`sites/${site}/content/settings.json`, "utf8"));
     if (settings.booking.embedCode?.trim()) accepted(settings.booking.embedCode);
   });

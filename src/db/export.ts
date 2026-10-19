@@ -26,7 +26,9 @@ export interface ExportedSite {
 /** Each upload's stored widths, smallest first: what an export lists so a restore can fetch the master. */
 export async function uploadWidths(db: D1Database, site: string): Promise<Record<string, number[]>> {
   const rows = await db
-    .prepare("SELECT v.image_id AS id, v.width FROM image_variants v JOIN images i ON i.site_id = v.site_id AND i.id = v.image_id WHERE v.site_id = ? AND i.kind = 'upload' ORDER BY v.image_id, v.width")
+    .prepare(
+      "SELECT v.image_id AS id, v.width FROM image_variants v JOIN images i ON i.site_id = v.site_id AND i.id = v.image_id WHERE v.site_id = ? AND i.kind = 'upload' ORDER BY v.image_id, v.width",
+    )
     .bind(site)
     .all<{ id: string; width: number }>();
   const out: Record<string, number[]> = {};

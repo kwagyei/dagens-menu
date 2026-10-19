@@ -28,7 +28,11 @@ const ctx = (challengeCookie?: string, at = now, site: "bistro" | "westafrican" 
   now: at,
   challengeCookie,
 });
-const n = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<number>("n"))!;
+const n = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<number>("n"))!;
 const counts = async () => ({
   passkeys: await n("SELECT count(*) AS n FROM passkeys"),
   added: await n("SELECT count(*) AS n FROM audit_log WHERE entity = 'passkey' AND action = 'create'"),

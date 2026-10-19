@@ -50,19 +50,29 @@ const sources = image ? photoSources(image) : null;
 const alt = !image || DECORATIVE.has(slot) ? "" : localized(image.alt, locale);
 ---
 
-{image && (sources ? (
-  <img
-    class={className}
-    src={sources.src}
-    srcset={sources.srcset}
-    sizes={SIZES[slot]}
-    width={sources.width}
-    height={sources.height}
-    alt={alt}
-    loading={first ? "eager" : "lazy"}
-    fetchpriority={first ? "high" : undefined}
-    decoding="async"
-  />
-) : (
-  <img class={className} src={image.ref} alt={alt} width={image.width} height={image.height} loading={first ? "eager" : "lazy"} fetchpriority={first ? "high" : undefined} decoding="async" />
-))}
+{image &&
+  (sources ? (
+    <img
+      class={className}
+      src={sources.src}
+      srcset={sources.srcset}
+      sizes={SIZES[slot]}
+      width={sources.width}
+      height={sources.height}
+      alt={alt}
+      loading={first ? "eager" : "lazy"}
+      fetchpriority={first ? "high" : undefined}
+      decoding="async"
+    />
+  ) : (
+    <img
+      class={className}
+      src={image.ref}
+      alt={alt}
+      width={image.width}
+      height={image.height}
+      loading={first ? "eager" : "lazy"}
+      fetchpriority={first ? "high" : undefined}
+      decoding="async"
+    />
+  ))}

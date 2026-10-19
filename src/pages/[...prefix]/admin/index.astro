@@ -82,12 +82,18 @@ const message: Record<string, string> = {
         <h1 class="text-3xl font-bold">{t(locale, "admin.menu.heading")}</h1>
         <p class="admin-muted mt-1">{t(locale, "admin.menu.lead")}</p>
       </div>
-      {done && message[done] && <p class="admin-message" role="status">{message[done]}</p>}
+      {done && message[done] && (
+        <p class="admin-message" role="status">
+          {message[done]}
+        </p>
+      )}
 
       {menu.map((category, ci) => (
         <section class="admin-card p-4 space-y-3" id={`category-${category.id}`} aria-labelledby={`category-title-${category.id}`}>
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <h2 class="text-xl font-semibold" id={`category-title-${category.id}`}>{category.name[locale]}</h2>
+            <h2 class="text-xl font-semibold" id={`category-title-${category.id}`}>
+              {category.name[locale]}
+            </h2>
             <div class="flex flex-wrap gap-2">
               {(["up", "down"] as const).map((dir) => (
                 <form method="post">
@@ -99,12 +105,22 @@ const message: Record<string, string> = {
                     class="admin-small-button"
                     type="submit"
                     disabled={(dir === "up" && ci === 0) || (dir === "down" && ci === menu.length - 1)}
-                    autofocus={focusMove("move-category", category.id, dir, (dir === "up" && ci === 0) || (dir === "down" && ci === menu.length - 1), (dir === "down" && ci === 0) || (dir === "up" && ci === menu.length - 1))}
+                    autofocus={focusMove(
+                      "move-category",
+                      category.id,
+                      dir,
+                      (dir === "up" && ci === 0) || (dir === "down" && ci === menu.length - 1),
+                      (dir === "down" && ci === 0) || (dir === "up" && ci === menu.length - 1),
+                    )}
                     aria-label={`${t(locale, dir === "up" ? "admin.menu.up" : "admin.menu.down")}: ${category.name[locale]}`}
-                  >{dir === "up" ? "↑" : "↓"}</button>
+                  >
+                    {dir === "up" ? "↑" : "↓"}
+                  </button>
                 </form>
               ))}
-              <a class="admin-small-button inline-flex items-center" href={page.path(`/menu/category/${category.id}/`)}>{t(locale, "admin.menu.renameCategory")}</a>
+              <a class="admin-small-button inline-flex items-center" href={page.path(`/menu/category/${category.id}/`)}>
+                {t(locale, "admin.menu.renameCategory")}
+              </a>
             </div>
           </div>
 
@@ -124,7 +140,9 @@ const message: Record<string, string> = {
                         {item.featured && <span class="admin-badge">★ {t(locale, "admin.menu.featured")}</span>}
                       </p>
                     </div>
-                    <a class="admin-small-button inline-flex items-center shrink-0" href={page.path(`/menu/item/${item.id}/`)}>{t(locale, "admin.menu.edit")}</a>
+                    <a class="admin-small-button inline-flex items-center shrink-0" href={page.path(`/menu/item/${item.id}/`)}>
+                      {t(locale, "admin.menu.edit")}
+                    </a>
                   </div>
                   <div class="flex flex-wrap gap-2">
                     <form method="post">
@@ -132,7 +150,12 @@ const message: Record<string, string> = {
                       <input type="hidden" name="action" value="sold-out" />
                       <input type="hidden" name="id" value={item.id} />
                       <input type="hidden" name="value" value={soldOut ? "0" : "1"} />
-                      <button class="admin-button" type="submit" autofocus={changedAction === "sold-out" && changedId === item.id} aria-label={`${soldOut ? t(locale, "admin.menu.backOnSale") : t(locale, "admin.menu.soldOut")}: ${item.name[locale]}`}>
+                      <button
+                        class="admin-button"
+                        type="submit"
+                        autofocus={changedAction === "sold-out" && changedId === item.id}
+                        aria-label={`${soldOut ? t(locale, "admin.menu.backOnSale") : t(locale, "admin.menu.soldOut")}: ${item.name[locale]}`}
+                      >
                         {soldOut ? t(locale, "admin.menu.backOnSale") : t(locale, "admin.menu.soldOut")}
                       </button>
                     </form>
@@ -146,9 +169,17 @@ const message: Record<string, string> = {
                           class="admin-small-button"
                           type="submit"
                           disabled={(dir === "up" && ii === 0) || (dir === "down" && ii === category.items.length - 1)}
-                          autofocus={focusMove("move-item", item.id, dir, (dir === "up" && ii === 0) || (dir === "down" && ii === category.items.length - 1), (dir === "down" && ii === 0) || (dir === "up" && ii === category.items.length - 1))}
+                          autofocus={focusMove(
+                            "move-item",
+                            item.id,
+                            dir,
+                            (dir === "up" && ii === 0) || (dir === "down" && ii === category.items.length - 1),
+                            (dir === "down" && ii === 0) || (dir === "up" && ii === category.items.length - 1),
+                          )}
                           aria-label={`${t(locale, dir === "up" ? "admin.menu.up" : "admin.menu.down")}: ${item.name[locale]}`}
-                        >{dir === "up" ? "↑" : "↓"}</button>
+                        >
+                          {dir === "up" ? "↑" : "↓"}
+                        </button>
                       </form>
                     ))}
                   </div>
@@ -156,11 +187,15 @@ const message: Record<string, string> = {
               );
             })}
           </ul>
-          <a class="admin-button admin-button-quiet" href={page.path(`/menu/new/?category=${category.id}`)}>+ {t(locale, "admin.menu.addDish")}</a>
+          <a class="admin-button admin-button-quiet" href={page.path(`/menu/new/?category=${category.id}`)}>
+            + {t(locale, "admin.menu.addDish")}
+          </a>
         </section>
       ))}
 
-      <a class="admin-button" href={page.path("/menu/category/new/")}>+ {t(locale, "admin.menu.addCategory")}</a>
+      <a class="admin-button" href={page.path("/menu/category/new/")}>
+        + {t(locale, "admin.menu.addCategory")}
+      </a>
     </section>
   ) : (
     <section class="space-y-6">
@@ -176,8 +211,12 @@ const message: Record<string, string> = {
         data-working={t(locale, "admin.working")}
         data-cancelled={t(locale, "admin.error.cancelled")}
         data-failed={t(locale, "admin.error.failed")}
-      >{t(locale, "admin.signIn.button")}</button>
-      <p class="admin-message" data-needs-js>{t(locale, "admin.noScript")}</p>
+      >
+        {t(locale, "admin.signIn.button")}
+      </button>
+      <p class="admin-message" data-needs-js>
+        {t(locale, "admin.noScript")}
+      </p>
       {/* The passkey script replaces this text once the owner tries to sign in. */}
       <p id="status" role="status" aria-live="polite" class:list={[done === "expired" && "admin-message"]}>
         {done === "expired" && t(locale, "admin.signIn.expired")}

@@ -7,15 +7,7 @@ import { env } from "cloudflare:workers";
 import { beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../../src/auth/crypto";
 import { issueInvite, revokeStatements } from "../../src/auth/invites";
-import {
-  addPasskeyVerify,
-  type CeremonyContext,
-  enrolOptions,
-  enrolVerify,
-  loginOptions,
-  loginVerify,
-  removePasskey,
-} from "../../src/auth/passkeys";
+import { addPasskeyVerify, type CeremonyContext, enrolOptions, enrolVerify, loginOptions, loginVerify, removePasskey } from "../../src/auth/passkeys";
 import { getSession, type Session, signOutEverywhere } from "../../src/auth/sessions";
 import { recentChanges } from "../../src/db/audit";
 import { prepare, stmt } from "../../src/db/sql";
@@ -104,9 +96,7 @@ describe("M3: security events are audited", () => {
   it("an invite from the operator: no actor, the owner's email, never the token", async () => {
     const token = await invite();
     const rows = await auditRows();
-    expect(rows).toEqual([
-      { user_id: null, entity: "invite", entity_id: await userId(), action: "create", summary: `${OWNER}: invited as owner; link valid 72 hours` },
-    ]);
+    expect(rows).toEqual([{ user_id: null, entity: "invite", entity_id: await userId(), action: "create", summary: `${OWNER}: invited as owner; link valid 72 hours` }]);
     expect(JSON.stringify(rows)).not.toContain(token);
     expect(JSON.stringify(rows)).not.toContain(await sha256Hex(token));
   });
@@ -155,9 +145,7 @@ describe("M3: security events are audited", () => {
     const again = await second.register(options.body.options as never, BISTRO.origin, BISTRO.rpID);
     expect(await addPasskeyVerify(ctx(cookieValue(options.cookies[0])), signedIn, again)).toMatchObject({ status: 409, body: { error: "already-registered" } });
     const added = (await auditRows()).filter((r) => r.entity === "passkey" && r.action === "create");
-    expect(added).toEqual([
-      { user_id: await userId(), entity: "passkey", entity_id: await userId(), action: "create", summary: `${OWNER}: another device's passkey added` },
-    ]);
+    expect(added).toEqual([{ user_id: await userId(), entity: "passkey", entity_id: await userId(), action: "create", summary: `${OWNER}: another device's passkey added` }]);
     expect(JSON.stringify(added)).not.toContain(second.id);
   });
 

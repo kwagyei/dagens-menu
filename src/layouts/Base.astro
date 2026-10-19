@@ -25,22 +25,26 @@ const hours = Astro.locals.content.hours;
 const theme = Astro.locals.content.theme;
 const locale = getLocale(Astro.url);
 const siteName = localized(settings.name, locale);
-const { title = siteName, description = localized(settings.tagline, locale), jsonLd, bare = false } =
-  Astro.props;
+const { title = siteName, description = localized(settings.tagline, locale), jsonLd, bare = false } = Astro.props;
 // The fonts each look shows above the fold, fetched early so the hero doesn't reflow.
-const preloadFonts =
-  theme.style === "classic"
-    ? ["/fonts/CormorantGaramond-SemiBold.woff2", "/fonts/Jost-Medium.woff2"]
-    : ["/fonts/Anton-Regular.woff2"];
+const preloadFonts = theme.style === "classic" ? ["/fonts/CormorantGaramond-SemiBold.woff2", "/fonts/Jost-Medium.woff2"] : ["/fonts/Anton-Regular.woff2"];
 const pageTitle = title === siteName ? siteName : `${title} | ${siteName}`;
 const links = pageLinks(Astro.url, locale);
 // Every page previews with the home page's hero photo: one picture that says "this restaurant".
 const homeHero = Astro.locals.content.pages.home.heroImage;
-const preview = ogImage(Astro.locals.content.images.find((i) => i.ref === homeHero), Astro.url.origin);
+const preview = ogImage(
+  Astro.locals.content.images.find((i) => i.ref === homeHero),
+  Astro.url.origin,
+);
 
 const dayMap: Record<string, string> = {
-  monday: "Mo", tuesday: "Tu", wednesday: "We",
-  thursday: "Th", friday: "Fr", saturday: "Sa", sunday: "Su",
+  monday: "Mo",
+  tuesday: "Tu",
+  wednesday: "We",
+  thursday: "Th",
+  friday: "Fr",
+  saturday: "Sa",
+  sunday: "Su",
 };
 
 const openingHours: string[] = [];
@@ -86,7 +90,9 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
-    {preloadFonts.map((href) => <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />)}
+    {preloadFonts.map((href) => (
+      <link rel="preload" href={href} as="font" type="font/woff2" crossorigin />
+    ))}
     <link rel="canonical" href={links.canonical} />
     <link rel="alternate" hreflang="sv" href={links.sv} />
     <link rel="alternate" hreflang="en" href={links.en} />
@@ -111,7 +117,6 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
 
     <!-- JSON-LD -->
     <script type="application/ld+json" set:html={serializeJsonLd(effectiveJsonLd)} />
-
     <style
       define:vars={{
         "color-primary": theme.colors.primary,
@@ -129,13 +134,14 @@ const effectiveJsonLd = jsonLd || restaurantJsonLd;
         "font-heading": theme.fonts.heading,
         "font-display": theme.fonts.display,
         "font-body": theme.fonts.body,
-        "radius": theme.cornerRadius,
+        radius: theme.cornerRadius,
       }}
-    >
-    </style>
+    ></style>
   </head>
   <body class="site">
-    <a href={bare ? "#page-title" : "#main-content"} class="skip-link">{t(locale, "nav.skip")}</a>
+    <a href={bare ? "#page-title" : "#main-content"} class="skip-link">
+      {t(locale, "nav.skip")}
+    </a>
 
     {!bare && <Header />}
 

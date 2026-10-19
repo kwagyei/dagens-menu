@@ -56,7 +56,7 @@ export class JsonContentSource implements ContentSource {
       try {
         raw[key] = JSON.parse(text);
       } catch (error) {
-        throw new Error(`Content file ${path} is not valid JSON: ${(error as Error).message}`);
+        throw new Error(`Content file ${path} is not valid JSON: ${(error as Error).message}`, { cause: error });
       }
     }
     const result = siteContentSchema(this.site).safeParse(raw);

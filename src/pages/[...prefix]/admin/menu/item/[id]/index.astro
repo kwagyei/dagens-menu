@@ -21,8 +21,7 @@ const { locale, repo } = page;
 const id = Astro.params.id ?? "";
 const item = await getMenuItem(repo, id);
 if (!item) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
-const isFeatured = async () =>
-  (await repo.db.prepare("SELECT 1 AS x FROM home_highlights WHERE site_id = ? AND item_id = ?").bind(repo.siteId, id).first("x")) !== null;
+const isFeatured = async () => (await repo.db.prepare("SELECT 1 AS x FROM home_highlights WHERE site_id = ? AND item_id = ?").bind(repo.siteId, id).first("x")) !== null;
 
 let values: ItemFormValues = {
   name_sv: item.name.sv,
@@ -80,11 +79,17 @@ const photoName = photo ? photo.alt[locale] : t(locale, "admin.pick.none");
 <AdminLayout title={t(locale, "admin.item.editHeading")} csrf={page.csrf}>
   <section class="space-y-6">
     <h1 class="text-3xl font-bold">{t(locale, "admin.item.editHeading")}</h1>
-    {conflict && <p class="admin-message" role="alert" tabindex="-1" autofocus>{t(locale, "admin.item.conflict")}</p>}
+    {conflict && (
+      <p class="admin-message" role="alert" tabindex="-1" autofocus>
+        {t(locale, "admin.item.conflict")}
+      </p>
+    )}
     <div class="admin-card p-3 flex flex-wrap items-center gap-3" id="dish-photo">
       {photoThumb && <img src={photoThumb.src} alt="" width="72" height={Math.round((72 * photoThumb.height) / photoThumb.width)} class="rounded shrink-0" />}
       <p class="min-w-0 flex-1">{t(locale, "admin.dishPhoto.link").replace("{photo}", photoName)}</p>
-      <a class="admin-small-button inline-flex items-center" href={page.path(`/menu/item/${id}/photo/`)}>{t(locale, "admin.dishPhoto.change")}</a>
+      <a class="admin-small-button inline-flex items-center" href={page.path(`/menu/item/${id}/photo/`)}>
+        {t(locale, "admin.dishPhoto.change")}
+      </a>
     </div>
     <ItemForm
       locale={locale}
@@ -96,6 +101,10 @@ const photoName = photo ? photo.alt[locale] : t(locale, "admin.pick.none");
       submitLabel={t(locale, "admin.item.save")}
       cancelHref={`${page.path("/")}#item-${id}`}
     />
-    <p class="pt-4"><a class="admin-error underline admin-target" href={page.path(`/menu/item/${id}/delete/`)}>{t(locale, "admin.item.delete")}</a></p>
+    <p class="pt-4">
+      <a class="admin-error underline admin-target" href={page.path(`/menu/item/${id}/delete/`)}>
+        {t(locale, "admin.item.delete")}
+      </a>
+    </p>
   </section>
 </AdminLayout>

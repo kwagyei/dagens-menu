@@ -64,14 +64,18 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
     <>
       <section class="hero-ljus" aria-labelledby="page-title">
         <Photo ref={heroImage} slot="hero" class="hero-ljus__img" first />
-        <div class="hero-ljus__nav"><SiteNav variant="hero" /></div>
+        <div class="hero-ljus__nav">
+          <SiteNav variant="hero" />
+        </div>
         <svg class="arc" viewBox="0 0 360 120" aria-hidden="true" focusable="false">
           <path d="M8 112 Q180 -22 352 112" fill="none" stroke="currentColor" stroke-width="1.5" />
           <circle cx="70" cy="72" r="7" fill="currentColor" />
         </svg>
         <h1 id="page-title">{siteName}</h1>
         <p class="hero-ljus__tagline">{tagline}</p>
-        <a class="btn btn-light" href={localePath(locale, "/book/")}>{t(locale, "home.book")}</a>
+        <a class="btn btn-light" href={localePath(locale, "/book/")}>
+          {t(locale, "home.book")}
+        </a>
         <p class="hours-badge">{todayText}</p>
       </section>
 
@@ -88,7 +92,10 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
               <li>
                 <figure class:list={{ strip__plain: !item.image }}>
                   <Photo ref={item.image} slot="strip" />
-                  <figcaption>{localized(item.name, locale)}<span>{formatPrice(item.price)}</span></figcaption>
+                  <figcaption>
+                    {localized(item.name, locale)}
+                    <span>{formatPrice(item.price)}</span>
+                  </figcaption>
                 </figure>
               </li>
             ))}
@@ -99,7 +106,9 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
 
       <section class="home-intro" aria-label={t(locale, "nav.menu")}>
         {voice && <p class="home-intro__voice">{voice}</p>}
-        <a class="btn btn-primary" href={localePath(locale, "/menu/")}>{t(locale, "home.fullMenu")}</a>
+        <a class="btn btn-primary" href={localePath(locale, "/menu/")}>
+          {t(locale, "home.fullMenu")}
+        </a>
       </section>
 
       <HomeStory />
@@ -110,9 +119,13 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
             <path d="M8 66 Q180 -14 352 66" fill="none" stroke="currentColor" stroke-width="1.5" />
             <circle cx="290" cy="40" r="7" fill="currentColor" />
           </svg>
-          <h2 class="section-title" id="lunch-title">{localized(lunch.name, locale)}</h2>
+          <h2 class="section-title" id="lunch-title">
+            {localized(lunch.name, locale)}
+          </h2>
           <ul class="plain home-lunch__list">
-            {lunchItems.map((item) => <MenuRow item={item} brief />)}
+            {lunchItems.map((item) => (
+              <MenuRow item={item} brief />
+            ))}
           </ul>
         </section>
       )}
@@ -122,20 +135,30 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
       <section class="hero-dag" aria-labelledby="page-title">
         <div class="hero-dag__photo">
           {heroImage ? <Photo ref={heroImage} slot="hero" class="hero-dag__img" first /> : <div class="hero-dag__img" />}
-          <div class="hero-dag__nav"><SiteNav variant="hero" /></div>
-          <a class="star wide-only" href={localePath(locale, "/menu/")}>{t(locale, "home.seeMenu")}</a>
+          <div class="hero-dag__nav">
+            <SiteNav variant="hero" />
+          </div>
+          <a class="star wide-only" href={localePath(locale, "/menu/")}>
+            {t(locale, "home.seeMenu")}
+          </a>
         </div>
         <h1 class="hero-dag__word" id="page-title">
           <svg class="narrow-only" viewBox={`0 0 100 ${wordHeight}`} role="img" aria-label={siteName}>
             {wordLines.map((line) => (
-              <text x="0" y={line.y} font-size={line.size} textLength="100" lengthAdjust="spacingAndGlyphs">{line.text}</text>
+              <text x="0" y={line.y} font-size={line.size} textLength="100" lengthAdjust="spacingAndGlyphs">
+                {line.text}
+              </text>
             ))}
           </svg>
           <svg class="wide-only" viewBox={`0 0 100 ${oneLineHeight}`} role="img" aria-label={siteName}>
-            <text x="0" y={oneLineY} font-size={oneLineSize} textLength="100" lengthAdjust="spacingAndGlyphs">{oneLine}</text>
+            <text x="0" y={oneLineY} font-size={oneLineSize} textLength="100" lengthAdjust="spacingAndGlyphs">
+              {oneLine}
+            </text>
           </svg>
         </h1>
-        <a class="btn btn-primary pill" href={localePath(locale, "/book/")}>{t(locale, "home.book")}</a>
+        <a class="btn btn-primary pill" href={localePath(locale, "/book/")}>
+          {t(locale, "home.book")}
+        </a>
         <div class="hero-dag__side">
           <svg class="squiggle" viewBox="0 0 84 20" aria-hidden="true" focusable="false">
             <path d="M3 12 q 6.5 -9 13 0 t 13 0 t 13 0 t 13 0 t 13 0 t 13 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
@@ -152,7 +175,9 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
             <i style={`background-image: url("${ctaUrl}")`}></i>
             <i style={`background-image: url("${ctaUrl}")`}></i>
             <i style={`background-image: url("${ctaUrl}")`}></i>
-            <a class="star" href={localePath(locale, "/menu/")}>{t(locale, "home.seeMenu")}</a>
+            <a class="star" href={localePath(locale, "/menu/")}>
+              {t(locale, "home.seeMenu")}
+            </a>
           </div>
         </div>
       )}
@@ -160,8 +185,12 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
       {highlights.length > 0 && (
         <section class="home-dishes" aria-labelledby="dishes-title">
           <div class="home-dishes__head">
-            <h2 class="section-title" id="dishes-title">{t(locale, "home.fromKitchen")}</h2>
-            <a class="link-strong" href={localePath(locale, "/menu/")}>{t(locale, "home.fullMenu")}</a>
+            <h2 class="section-title" id="dishes-title">
+              {t(locale, "home.fromKitchen")}
+            </h2>
+            <a class="link-strong" href={localePath(locale, "/menu/")}>
+              {t(locale, "home.fullMenu")}
+            </a>
           </div>
           <ul class="dish-cards">
             {highlights.map(({ item }) => (

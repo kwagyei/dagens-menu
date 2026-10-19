@@ -50,7 +50,12 @@ const asResult = (r: unknown) => r as { ok: boolean; error?: string; issues?: Ar
 
 beforeEach(async () => {
   await db.batch([db.prepare("DELETE FROM sites"), db.prepare("DELETE FROM users")]);
-  await db.batch(prepare(db, seedStatements("bistro", content, () => ({ id: "0".repeat(64), mime: "image/jpeg" }))));
+  await db.batch(
+    prepare(
+      db,
+      seedStatements("bistro", content, () => ({ id: "0".repeat(64), mime: "image/jpeg" })),
+    ),
+  );
   await db.prepare("INSERT INTO sites (id) VALUES ('westafrican')").run();
 });
 
@@ -173,7 +178,7 @@ describe("smuggled fields", () => {
       map_embed: "https://evil.example/",
       embed: "<iframe>",
       social_youtube: "https://evil.example/",
-      "social___proto__": "https://evil.example/",
+      social___proto__: "https://evil.example/",
       __proto__: "x",
     };
     for (const [k, v] of Object.entries(base)) form.set(k, v);
@@ -188,7 +193,22 @@ describe("smuggled fields", () => {
 
 describe("phone and email: what the schema accepts, D1 must accept too", () => {
   // The form trims the ends only, so interior odd whitespace reaches the schema.
-  const phones = ["+46 8 123 456", "08-123 456 78", "0701234567", "070 1234567", "070\t1234567", "070\n1234567", "070　1234567", "070 1234567", "070﻿1234567", "070 1234567", "070 1234567 ", "+ 0701234567", "--------1234567", "+46--8 123 456"];
+  const phones = [
+    "+46 8 123 456",
+    "08-123 456 78",
+    "0701234567",
+    "070 1234567",
+    "070\t1234567",
+    "070\n1234567",
+    "070　1234567",
+    "070 1234567",
+    "070﻿1234567",
+    "070 1234567",
+    "070 1234567 ",
+    "+ 0701234567",
+    "--------1234567",
+    "+46--8 123 456",
+  ];
   it.each(phones)("phone %j: if the schema takes it, the database must store it (no throw)", async (phone) => {
     const { settings: s, settingsVersion } = await current();
     const accepted = settingsSchema.shape.phone.safeParse(phone).success;
@@ -197,7 +217,25 @@ describe("phone and email: what the schema accepts, D1 must accept too", () => {
     else expect(outcome).toMatchObject({ ok: false, error: "invalid" });
   });
 
-  const emails = ["a@b.se", "a+tag@b.se", "a@b.c", "a@b..c", "a@.b.c", "a.@b.c", "a@b.c.", "‮a@b.se", "a@b​.se", "a​@b.se", "a<b>@c.se", 'a"b@c.se', "a'b@c.se", "a@b.se ", "ä@b.se", "a@b.se%0d", "a@b/c.se"];
+  const emails = [
+    "a@b.se",
+    "a+tag@b.se",
+    "a@b.c",
+    "a@b..c",
+    "a@.b.c",
+    "a.@b.c",
+    "a@b.c.",
+    "‮a@b.se",
+    "a@b​.se",
+    "a​@b.se",
+    "a<b>@c.se",
+    'a"b@c.se',
+    "a'b@c.se",
+    "a@b.se ",
+    "ä@b.se",
+    "a@b.se%0d",
+    "a@b/c.se",
+  ];
   it.each(emails)("email %j: if the schema takes it, the database must store it (no throw)", async (email) => {
     const { settings: s, settingsVersion } = await current();
     const accepted = settingsSchema.shape.email.safeParse(email).success;
@@ -221,7 +259,18 @@ describe("phone and email: what the schema accepts, D1 must accept too", () => {
 
   it("the form parser gives the same verdict as the schema for interior whitespace in a phone number", () => {
     const form = new FormData();
-    for (const [k, v] of Object.entries({ name_sv: "N", name_en: "N", tagline_sv: "T", tagline_en: "T", cuisine_sv: "C", cuisine_en: "C", address: "A 1", phone: "070 1234567", email: "a@b.se" })) form.set(k, v);
+    for (const [k, v] of Object.entries({
+      name_sv: "N",
+      name_en: "N",
+      tagline_sv: "T",
+      tagline_en: "T",
+      cuisine_sv: "C",
+      cuisine_en: "C",
+      address: "A 1",
+      phone: "070 1234567",
+      email: "a@b.se",
+    }))
+      form.set(k, v);
     const parsed = parseSettingsForm(form, "en");
     // Either a friendly field error, or a settings object the repository can store. Never the latter followed by a throw.
     expect(parsed.settings === null || Object.keys(parsed.errors).length === 0).toBe(true);
@@ -296,20 +345,29 @@ describe("pull quote", () => {
     expect(audit).toContain("pullQuote");
   });
 
-  it.each([
-    [{ sv: "Bara svenska", en: "" }],
-    [{ sv: "", en: "Only English" }],
-    [{ sv: "Text", en: "   " }],
-    [{ sv: "Text", en: "​‮" }],
-  ])("refuses %j (one language only)", async (pullQuote) => {
-    const { pages: p, pagesVersion } = await current();
-    expect(asResult(await updatePageTexts(bistro, pagesVersion, { ...p, pullQuote })).ok).toBe(false);
-  });
+  it.each([[{ sv: "Bara svenska", en: "" }], [{ sv: "", en: "Only English" }], [{ sv: "Text", en: "   " }], [{ sv: "Text", en: "​‮" }]])(
+    "refuses %j (one language only)",
+    async (pullQuote) => {
+      const { pages: p, pagesVersion } = await current();
+      expect(asResult(await updatePageTexts(bistro, pagesVersion, { ...p, pullQuote })).ok).toBe(false);
+    },
+  );
 
   it("form: both blank (spaces, ZWSP, newlines) removes it; one language gives an error on the empty one only", () => {
     const f = (o: Record<string, string>) => {
       const form = new FormData();
-      for (const [k, v] of Object.entries({ home_tagline_sv: "H", home_tagline_en: "H", pull_quote_sv: "", pull_quote_en: "", about_story_sv: "S", about_story_en: "S", about_chef_sv: "C", about_chef_en: "C", ...o })) form.set(k, v);
+      for (const [k, v] of Object.entries({
+        home_tagline_sv: "H",
+        home_tagline_en: "H",
+        pull_quote_sv: "",
+        pull_quote_en: "",
+        about_story_sv: "S",
+        about_story_en: "S",
+        about_chef_sv: "C",
+        about_chef_en: "C",
+        ...o,
+      }))
+        form.set(k, v);
       return parsePageTextsForm(form, "en");
     };
     expect(f({ pull_quote_sv: " ​\n", pull_quote_en: "\t" }).texts?.pullQuote).toBeNull();
@@ -390,7 +448,12 @@ describe("site isolation", () => {
   it("with both sites seeded, an edit on one is invisible on the other and audited under its own site", async () => {
     const west = { ...content, settings: { ...content.settings, name: { sv: "Chez", en: "Chez" } } } as unknown as StoredContent;
     await db.prepare("DELETE FROM sites WHERE id = 'westafrican'").run();
-    await db.batch(prepare(db, seedStatements("westafrican", west, () => ({ id: "1".repeat(64), mime: "image/jpeg" }))));
+    await db.batch(
+      prepare(
+        db,
+        seedStatements("westafrican", west, () => ({ id: "1".repeat(64), mime: "image/jpeg" })),
+      ),
+    );
     const c = await current();
     await updateSettings(bistro, c.settingsVersion, { ...c.settings, name: { sv: "Ändrad", en: "Changed" } });
     const w = await adminTexts(ctx("westafrican"));

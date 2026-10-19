@@ -47,7 +47,11 @@ async function uploaded(site = "bistro", id?: string): Promise<string> {
   expect(await addUpload(ctx(site), u)).toMatchObject({ ok: true });
   return u.id;
 }
-const n = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<{ n: number }>())!.n;
+const n = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<{ n: number }>())!.n;
 const version = (site = "bistro") => db.prepare("SELECT content_version AS v FROM sites WHERE id = ?").bind(site).first<number>("v");
 const variants = (site: string, id: string) => n("SELECT count(*) AS n FROM image_variants WHERE site_id = ? AND image_id = ?", site, id);
 const exists = (site: string, id: string) => n("SELECT count(*) AS n FROM images WHERE site_id = ? AND id = ?", site, id);
@@ -58,7 +62,9 @@ async function westafricanPageRow() {
   const row = await db.prepare("SELECT * FROM page_content WHERE site_id = 'bistro'").first<Record<string, unknown>>();
   const cols = Object.keys(row!).filter((c) => !c.endsWith("_image_id"));
   await db
-    .prepare(`INSERT INTO page_content (${cols.join(", ")}) SELECT ${cols.map((c) => (c === "site_id" ? "'westafrican'" : c)).join(", ")} FROM page_content WHERE site_id = 'bistro'`)
+    .prepare(
+      `INSERT INTO page_content (${cols.join(", ")}) SELECT ${cols.map((c) => (c === "site_id" ? "'westafrican'" : c)).join(", ")} FROM page_content WHERE site_id = 'bistro'`,
+    )
     .run();
 }
 
@@ -96,7 +102,10 @@ describe("delete safety: every use type keeps the photo", () => {
     const inGallery = await uploaded();
     const free = await uploaded();
     await db.prepare("UPDATE menu_items SET image_id = ? WHERE site_id = 'bistro' AND id = ?").bind(onDish, DISH).run();
-    await db.prepare("UPDATE gallery_images SET image_id = ? WHERE site_id = 'bistro' AND position = (SELECT max(position) FROM gallery_images WHERE site_id = 'bistro')").bind(inGallery).run();
+    await db
+      .prepare("UPDATE gallery_images SET image_id = ? WHERE site_id = 'bistro' AND position = (SELECT max(position) FROM gallery_images WHERE site_id = 'bistro')")
+      .bind(inGallery)
+      .run();
     expect(await deleteUnusedImages(bistro)).toEqual({ deleted: 1 });
     expect(await exists("bistro", onDish)).toBe(1);
     expect(await exists("bistro", inGallery)).toBe(1);
@@ -124,10 +133,14 @@ describe("races between the confirmation and the POST", () => {
   it("concurrent delete and assignment never leave a dangling reference", async () => {
     for (let round = 0; round < 5; round++) {
       const id = await uploaded();
-      const assign = db.prepare("UPDATE menu_items SET image_id = ? WHERE site_id = 'bistro' AND id = ?").bind(id, DISH).run().then(
-        () => "assigned",
-        () => "assign-failed",
-      );
+      const assign = db
+        .prepare("UPDATE menu_items SET image_id = ? WHERE site_id = 'bistro' AND id = ?")
+        .bind(id, DISH)
+        .run()
+        .then(
+          () => "assigned",
+          () => "assign-failed",
+        );
       const del = deleteImage(bistro, id);
       const [a, d] = await Promise.all([assign, del]);
       const stillThere = await exists("bistro", id);
@@ -148,10 +161,14 @@ describe("races between the confirmation and the POST", () => {
   it("deleteUnusedImages while a photo is being assigned: the assigned one survives", async () => {
     const a = await uploaded();
     const b = await uploaded();
-    const assign = db.prepare("UPDATE page_content SET story_image_id = ? WHERE site_id = 'bistro'").bind(a).run().then(
-      () => "assigned",
-      () => "assign-failed",
-    );
+    const assign = db
+      .prepare("UPDATE page_content SET story_image_id = ? WHERE site_id = 'bistro'")
+      .bind(a)
+      .run()
+      .then(
+        () => "assigned",
+        () => "assign-failed",
+      );
     const [assigned, result] = await Promise.all([assign, deleteUnusedImages(bistro)]);
     const story = await db.prepare("SELECT story_image_id AS s FROM page_content WHERE site_id = 'bistro'").first<string | null>("s");
     if (assigned === "assigned" && story === a) expect(await exists("bistro", a)).toBe(1);

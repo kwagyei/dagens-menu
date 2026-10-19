@@ -8,8 +8,13 @@ import { signedInOwner } from "./helpers";
 const BASE = "http://localhost:8790";
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
 const SEEDED: Record<string, [string, string] | null> = {
-  monday: ["11:00", "22:00"], tuesday: ["11:00", "22:00"], wednesday: ["11:00", "22:00"],
-  thursday: ["11:00", "23:00"], friday: ["11:00", "23:00"], saturday: ["12:00", "23:00"], sunday: null,
+  monday: ["11:00", "22:00"],
+  tuesday: ["11:00", "22:00"],
+  wednesday: ["11:00", "22:00"],
+  thursday: ["11:00", "23:00"],
+  friday: ["11:00", "23:00"],
+  saturday: ["12:00", "23:00"],
+  sunday: null,
 };
 const SEEDED_TOKEN = "11:00-22:00,11:00-22:00,11:00-22:00,11:00-23:00,11:00-23:00,12:00-23:00,closed";
 
@@ -20,12 +25,18 @@ const week = (over: Record<string, [string, string] | null> = {}) => {
   const f: Record<string, string> = { action: "weekly" };
   for (const d of DAYS) {
     const h = w[d];
-    if (h) { f[`${d}_open`] = h[0]; f[`${d}_close`] = h[1]; } else { f[`${d}_closed`] = "on"; f[`${d}_open`] = ""; f[`${d}_close`] = ""; }
+    if (h) {
+      f[`${d}_open`] = h[0];
+      f[`${d}_close`] = h[1];
+    } else {
+      f[`${d}_closed`] = "on";
+      f[`${d}_open`] = "";
+      f[`${d}_close`] = "";
+    }
   }
   return f;
 };
-const post = async (page: Page, path: string, form: Record<string, string>) =>
-  page.request.post(path, { form, maxRedirects: 0, headers: { Origin: BASE } });
+const post = async (page: Page, path: string, form: Record<string, string>) => page.request.post(path, { form, maxRedirects: 0, headers: { Origin: BASE } });
 /** Load the hours page, return what a form rendered now would carry. */
 async function open(page: Page, path = "/admin/hours/") {
   await page.goto(path);
@@ -49,7 +60,9 @@ test("the rendered form carries the week as its token", async ({ page }) => {
   try {
     const { token } = await open(page);
     expect(token).toBe(SEEDED_TOKEN);
-  } finally { await restore(page); }
+  } finally {
+    await restore(page);
+  }
 });
 
 test("AC1/2: a stale form is refused with 409 and the alert, keeps typed values, nothing written; saving again overwrites", async ({ page }) => {
@@ -64,7 +77,9 @@ test("AC1/2: a stale form is refused with 409 and the alert, keeps typed values,
     await page.goBack().catch(() => {});
     // Re-open a *stale* form: reload the page state captured earlier by posting the old token from the UI.
     await page.goto("/admin/hours/");
-    await page.evaluate((t) => { (document.querySelector("input[name=weekly_token]") as HTMLInputElement).value = t; }, token);
+    await page.evaluate((t) => {
+      (document.querySelector("input[name=weekly_token]") as HTMLInputElement).value = t;
+    }, token);
     await page.locator("input[name=tuesday_open]").fill("09:15");
     await page.locator("input[name=tuesday_close]").fill("10:45");
     const [res] = await Promise.all([
@@ -86,14 +101,18 @@ test("AC1/2: a stale form is refused with 409 and the alert, keeps typed values,
 
     // Conflict again, then save again on the refreshed form: overwrites.
     await page.goto("/admin/hours/");
-    await page.evaluate((t) => { (document.querySelector("input[name=weekly_token]") as HTMLInputElement).value = t; }, token);
+    await page.evaluate((t) => {
+      (document.querySelector("input[name=weekly_token]") as HTMLInputElement).value = t;
+    }, token);
     await page.locator("input[name=tuesday_open]").fill("09:15");
     await page.getByRole("button", { name: "Spara öppettiderna" }).click();
     await expect(page.getByRole("alert").filter({ hasText: "Någon annan" })).toBeVisible();
     await page.getByRole("button", { name: "Spara öppettiderna" }).click();
     await expect(page.getByRole("status")).toHaveText("Sparat.");
     await expect(page.locator("input[name=tuesday_open]")).toHaveValue("09:15");
-  } finally { await restore(page); }
+  } finally {
+    await restore(page);
+  }
 });
 
 test("AC1 english: the conflict and the unchanged message are in English under /en/admin", async ({ page }) => {
@@ -115,7 +134,9 @@ test("AC1 english: the conflict and the unchanged message are in English under /
     expect(u.headers().location).toContain("/en/admin/hours/?done=unchanged");
     await page.goto(u.headers().location);
     await expect(page.getByRole("status")).toHaveText("No changes to save.");
-  } finally { await restore(page); }
+  } finally {
+    await restore(page);
+  }
 });
 
 test("AC3: an unchanged save says so in Swedish, writes no history row, and the message is a status", async ({ page }) => {
@@ -158,7 +179,9 @@ test("AC4: missing, empty, garbage and wrong tokens are conflicts (409) and writ
       maxRedirects: 0,
     });
     expect([303, 409]).toContain(dup.status()); // documents behaviour; either is a checked write
-  } finally { await restore(page); }
+  } finally {
+    await restore(page);
+  }
 });
 
 test("AC5: a stale form that changed nothing is not a conflict; identical second save is unchanged", async ({ page }) => {
@@ -175,7 +198,9 @@ test("AC5: a stale form that changed nothing is not a conflict; identical second
     expect(stale.headers().location).toContain("done=unchanged");
     await page.goto("/admin/hours/");
     await expect(page.locator("input[name=sunday_open]")).toHaveValue("12:00");
-  } finally { await restore(page); }
+  } finally {
+    await restore(page);
+  }
 });
 
 test("AC8: a validation error (422) keeps the submitted token, even a stale one", async ({ page }) => {
@@ -191,7 +216,9 @@ test("AC8: a validation error (422) keeps the submitted token, even a stale one"
     const forged = await post(page, "/admin/hours/", { csrf, weekly_token: "forged", ...week({ tuesday: ["11:00", "11:00"] }) });
     expect(forged.status()).toBe(422);
     expect(await forged.text()).toContain('name="weekly_token" value="forged"');
-  } finally { await restore(page); }
+  } finally {
+    await restore(page);
+  }
 });
 
 test("AC6: works with JavaScript off: conflict and unchanged are plain form posts with alert/status", async ({ browser, page }) => {
@@ -233,5 +260,7 @@ test("AC6: conflict and unchanged pages have no axe-visible structure problems (
     expect((html.match(/role="alert"/g) ?? []).length).toBe(1);
     expect((html.match(/<h1/g) ?? []).length).toBe(1);
     expect(html).not.toContain('role="status"');
-  } finally { await restore(page); }
+  } finally {
+    await restore(page);
+  }
 });

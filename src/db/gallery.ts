@@ -112,8 +112,7 @@ export async function removeFromGallery(ctx: RepoContext, id: string): Promise<W
 /** Move a gallery photo one place earlier or later. */
 export async function moveGalleryImage(ctx: RepoContext, id: string, direction: Direction): Promise<WriteResult> {
   if (!galleryRowId(id)) return { ok: false, error: "not-found" };
-  const read = async () =>
-    (await ctx.db.prepare("SELECT id, position FROM gallery_images WHERE site_id = ? ORDER BY position, id").bind(ctx.siteId).all<Placed>()).results;
+  const read = async () => (await ctx.db.prepare("SELECT id, position FROM gallery_images WHERE site_id = ? ORDER BY position, id").bind(ctx.siteId).all<Placed>()).results;
   return swapWithNeighbour(ctx, "gallery_images", read, id, direction, {
     entity: "gallery_image",
     entityId: id,

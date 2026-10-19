@@ -68,7 +68,10 @@ describe("chunk boundaries are byte-exact", () => {
       }
       await photosOf(content, uploads, viaFile);
       for (const [id, [v]] of uploads) {
-        const row = await db.prepare("SELECT typeof(bytes) AS t, length(bytes) AS n, hex(bytes) AS h FROM image_variants WHERE site_id = ? AND image_id = ?").bind(SITE, id).first<{ t: string; n: number; h: string }>();
+        const row = await db
+          .prepare("SELECT typeof(bytes) AS t, length(bytes) AS n, hex(bytes) AS h FROM image_variants WHERE site_id = ? AND image_id = ?")
+          .bind(SITE, id)
+          .first<{ t: string; n: number; h: string }>();
         expect(row?.t, `length ${v.bytes.length}`).toBe("blob");
         expect(row?.n, `length ${v.bytes.length}`).toBe(v.bytes.length);
         expect(row?.h.toLowerCase() === toHex(v.bytes), `length ${v.bytes.length}`).toBe(true);
@@ -113,7 +116,10 @@ describe("several uploads round-trip", () => {
     }
     expect(after.content.menu.categories[0].items[0].image).toBe(inUse);
     for (const [id, variants] of uploads) {
-      const rows = await db.prepare("SELECT width, length(bytes) AS n, hex(bytes) AS h FROM image_variants WHERE site_id = ? AND image_id = ? ORDER BY width").bind(SITE, id).all<{ width: number; n: number; h: string }>();
+      const rows = await db
+        .prepare("SELECT width, length(bytes) AS n, hex(bytes) AS h FROM image_variants WHERE site_id = ? AND image_id = ? ORDER BY width")
+        .bind(SITE, id)
+        .all<{ width: number; n: number; h: string }>();
       expect(rows.results.map((r) => r.width)).toEqual(variants.map((v) => v.width));
       for (const [i, r] of rows.results.entries()) expect(r.h.toLowerCase() === toHex(variants[i].bytes)).toBe(true);
       const img = await db.prepare("SELECT width, height, byte_size FROM images WHERE site_id = ? AND id = ?").bind(SITE, id).first();
@@ -124,7 +130,12 @@ describe("several uploads round-trip", () => {
   it("another site's rows are untouched by a restore of bistro", async () => {
     const other = await sha(new TextEncoder().encode("westafrican-photo"));
     await db.prepare("INSERT OR IGNORE INTO sites (id) VALUES ('westafrican')").run();
-    await db.prepare("INSERT INTO images (site_id, id, kind, path, mime, width, height, byte_size, alt_sv, alt_en) VALUES ('westafrican', ?, 'upload', NULL, 'image/webp', 400, 300, 3, 'a', 'b')").bind(other).run();
+    await db
+      .prepare(
+        "INSERT INTO images (site_id, id, kind, path, mime, width, height, byte_size, alt_sv, alt_en) VALUES ('westafrican', ?, 'upload', NULL, 'image/webp', 400, 300, 3, 'a', 'b')",
+      )
+      .bind(other)
+      .run();
     await db.prepare("INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES ('westafrican', ?, 400, 'image/webp', X'010203')").bind(other).run();
     await photosOf(structuredClone(base), new Map(), false);
     const n = await db.prepare("SELECT count(*) AS n FROM image_variants WHERE site_id = 'westafrican'").first<{ n: number }>();

@@ -36,8 +36,7 @@ export interface AdminTexts {
 
 type Row = Record<string, unknown>;
 const pair = (r: Row, column: string): Localized => ({ sv: r[`${column}_sv`] as string, en: r[`${column}_en`] as string });
-const issuesOf = (error: { issues: Array<{ path: PropertyKey[]; message: string }> }) =>
-  error.issues.map((i) => ({ path: i.path.map(String).join("."), message: i.message }));
+const issuesOf = (error: { issues: Array<{ path: PropertyKey[]; message: string }> }) => error.issues.map((i) => ({ path: i.path.map(String).join("."), message: i.message }));
 
 export async function adminTexts(ctx: RepoContext): Promise<AdminTexts | null> {
   const [settings, pages] = await ctx.db.batch<Row>([

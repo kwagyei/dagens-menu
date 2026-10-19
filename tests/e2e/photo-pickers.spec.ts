@@ -22,7 +22,7 @@ async function choose(page: Page, path: string, label: string | RegExp) {
 test("a dish's photo is chosen from the library, shown with the dish on the home page, and counted as a use", async ({ page }) => {
   await signedInOwner(page);
   const photo = await uploadPhoto(page);
-    // A featured dish: the home page shows its photo on every style (the classic menu page is text only).
+  // A featured dish: the home page shows its photo on every style (the classic menu page is text only).
   const [dish] = d1<{ id: string; name_sv: string; image_id: string | null }>(
     "SELECT m.id, m.name_sv, m.image_id FROM menu_items m JOIN home_highlights h ON h.site_id = m.site_id AND h.item_id = m.id WHERE m.site_id = 'bistro' AND m.available = 1 AND m.sold_out_on IS NULL ORDER BY h.position LIMIT 1",
   );
@@ -56,7 +56,9 @@ test("a dish's photo is chosen from the library, shown with the dish on the home
 test("a page photo is chosen per slot, shown on its page, and the other slots stay as they were", async ({ page }) => {
   await signedInOwner(page);
   const photo = await uploadPhoto(page);
-  const [before] = d1<Record<string, string | null>>("SELECT hero_image_id, cta_image_id, menu_hero_image_id, story_image_id, kitchen_image_id FROM page_content WHERE site_id = 'bistro'");
+  const [before] = d1<Record<string, string | null>>(
+    "SELECT hero_image_id, cta_image_id, menu_hero_image_id, story_image_id, kitchen_image_id FROM page_content WHERE site_id = 'bistro'",
+  );
   try {
     await page.goto("/admin/photos/");
     await page.getByRole("link", { name: "Välj sidornas foton" }).click();
@@ -68,7 +70,9 @@ test("a page photo is chosen per slot, shown on its page, and the other slots st
 
     await page.goto("/admin/page-photos/");
     await expect(page.locator("#slot-story")).toContainText(`Nu: ${photo.sv}`);
-    const [after] = d1<Record<string, string | null>>("SELECT hero_image_id, cta_image_id, menu_hero_image_id, story_image_id, kitchen_image_id FROM page_content WHERE site_id = 'bistro'");
+    const [after] = d1<Record<string, string | null>>(
+      "SELECT hero_image_id, cta_image_id, menu_hero_image_id, story_image_id, kitchen_image_id FROM page_content WHERE site_id = 'bistro'",
+    );
     expect(after).toEqual({ ...before, story_image_id: photo.id });
 
     await page.goto("/about/");

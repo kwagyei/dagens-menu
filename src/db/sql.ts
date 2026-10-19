@@ -20,6 +20,7 @@ export function prepare(db: D1Database, statements: readonly Statement[]): D1Pre
 // Text that wrangler's file runner would mangle before SQLite sees it: it strips
 // "BEGIN TRANSACTION;" and "COMMIT;" anywhere in the file, quotes or not, and a NUL ends the
 // statement. Such strings are written as hex bytes instead, which nothing can rewrite.
+// eslint-disable-next-line no-control-regex -- the NUL byte is exactly what this looks for.
 const UNSAFE_IN_FILE = /BEGIN|COMMIT|\u0000/i;
 
 const hex = (bytes: Uint8Array) => Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");

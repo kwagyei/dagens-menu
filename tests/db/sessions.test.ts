@@ -31,10 +31,7 @@ beforeEach(async () => {
 async function signIn(site = "bistro", when = now) {
   const s = await newSession(userId, site, "test-passkey", when);
   await db.batch(
-    prepare(db, [
-      stmt("INSERT INTO passkeys (id, user_id, site_id, public_key) VALUES ('test-passkey', ?, ?, x'00') ON CONFLICT DO NOTHING", userId, site),
-      s.statement,
-    ]),
+    prepare(db, [stmt("INSERT INTO passkeys (id, user_id, site_id, public_key) VALUES ('test-passkey', ?, ?, x'00') ON CONFLICT DO NOTHING", userId, site), s.statement]),
   );
   return s.token;
 }

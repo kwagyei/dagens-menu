@@ -45,7 +45,11 @@ function exportTo(out: string, target: D1Target): void {
       wrangler(["d1", "export", target.database, where, "--config", target.config, "--table", table, "--no-schema", "--output", file, "-y"]);
     },
   });
-  console.log(`backup: exported ${Object.entries(tables).map(([t, n]) => `${t} ${n}`).join(", ")}`);
+  console.log(
+    `backup: exported ${Object.entries(tables)
+      .map(([t, n]) => `${t} ${n}`)
+      .join(", ")}`,
+  );
 }
 
 function verify(dir: string): void {
@@ -58,7 +62,9 @@ function verify(dir: string): void {
     fail(`${manifestFile} isn't valid JSON: ${(error as Error).message}`);
   }
   if (!Array.isArray(manifest.migrations) || typeof manifest.tables !== "object") fail(`${manifestFile} has no migrations or tables`);
-  const known = readdirSync(resolve(root, "migrations")).filter((f) => f.endsWith(".sql")).sort();
+  const known = readdirSync(resolve(root, "migrations"))
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
   const unknown = manifest.migrations.filter((m) => !known.includes(m));
   if (unknown.length) fail(`the backup's schema is newer than this checkout (unknown migrations: ${unknown.join(", ")})`);
   if (manifest.migrations.length === 0) fail(`${manifestFile} lists no migrations, so the schema its files were taken under is unknown`);
@@ -75,11 +81,14 @@ function verify(dir: string): void {
       for (const name of names) copyFileSync(resolve(root, "migrations", name), join(migrationsDir, name));
     };
     const config = join(work, "wrangler.json");
-    writeFileSync(config, JSON.stringify({
-      name: "backup-verify",
-      compatibility_date: "2026-10-01",
-      d1_databases: [{ binding: "DB", database_name: "backup-verify", database_id: "00000000-0000-0000-0000-000000000000", migrations_dir: migrationsDir }],
-    }));
+    writeFileSync(
+      config,
+      JSON.stringify({
+        name: "backup-verify",
+        compatibility_date: "2026-10-01",
+        d1_databases: [{ binding: "DB", database_name: "backup-verify", database_id: "00000000-0000-0000-0000-000000000000", migrations_dir: migrationsDir }],
+      }),
+    );
     const local = ["--local", "--config", config, "--persist-to", join(work, "state")];
     const count = (table: string) =>
       (JSON.parse(wrangler(["d1", "execute", "backup-verify", ...local, "--json", "--command", `SELECT count(*) AS n FROM "${table}"`]))[0].results as { n: number }[])[0].n;

@@ -31,7 +31,7 @@ interface Chunk {
 function chunksOf(file: Uint8Array): Chunk[] {
   const out: Chunk[] = [];
   const view = new DataView(file.buffer, file.byteOffset, file.byteLength);
-  for (let at = 12; at < file.length; ) {
+  for (let at = 12; at < file.length;) {
     const size = view.getUint32(at + 4, true);
     out.push({ id: new TextDecoder().decode(file.subarray(at, at + 4)), payload: file.slice(at + 8, at + 8 + size) });
     at += 8 + size + (size % 2);
@@ -294,16 +294,31 @@ describe("tester: checkLadder", () => {
 
   it("accepts an aspect difference of exactly 1 % (no floating-point loss at the boundary)", () => {
     // 400 × 100 against 1600 × 396: |400·396 − 1600·100| = 1600 = 1 % of 1600·100.
-    expect(checkLadder([{ width: 400, height: 100 }, { width: 800, height: 198 }, { width: 1200, height: 297 }, { width: 1600, height: 396 }])).toEqual({ ok: true });
-    expect(checkLadder([{ width: 400, height: 101 }, { width: 800, height: 198 }, { width: 1200, height: 297 }, { width: 1600, height: 396 }]).ok).toBe(false);
+    expect(
+      checkLadder([
+        { width: 400, height: 100 },
+        { width: 800, height: 198 },
+        { width: 1200, height: 297 },
+        { width: 1600, height: 396 },
+      ]),
+    ).toEqual({ ok: true });
+    expect(
+      checkLadder([
+        { width: 400, height: 101 },
+        { width: 800, height: 198 },
+        { width: 1200, height: 297 },
+        { width: 1600, height: 396 },
+      ]).ok,
+    ).toBe(false);
   });
 
   it("accepts the honest ladder for ordinary photos of every master width", () => {
-    for (let W = 320; W <= 1600; W++) for (const ratio of [4 / 3, 3 / 2, 16 / 9, 1, 3 / 4, 2 / 3, 9 / 16]) {
-      const H = Math.round(W / ratio);
-      if (H > 2400) continue;
-      expect(checkLadder(ladder(W, H)), `${W}×${H}`).toEqual({ ok: true });
-    }
+    for (let W = 320; W <= 1600; W++)
+      for (const ratio of [4 / 3, 3 / 2, 16 / 9, 1, 3 / 4, 2 / 3, 9 / 16]) {
+        const H = Math.round(W / ratio);
+        if (H > 2400) continue;
+        expect(checkLadder(ladder(W, H)), `${W}×${H}`).toEqual({ ok: true });
+      }
   });
 
   // TESTER FINDING (Medium): a 1 % tolerance on the ratio is less than half a pixel once a

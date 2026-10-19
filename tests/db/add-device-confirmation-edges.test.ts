@@ -28,7 +28,11 @@ const ctx = (challengeCookie?: string, at = now): CeremonyContext => ({
   now: at,
   challengeCookie,
 });
-const one = async <T>(sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<T>())!;
+const one = async <T>(sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<T>())!;
 
 async function enrolled(email: string): Promise<{ session: Session; auth: SoftAuthenticator }> {
   const issued = await issueInvite("bistro", email, now);
@@ -47,7 +51,12 @@ async function step1(session: Session) {
 }
 
 beforeEach(async () => {
-  await db.batch([db.prepare("DELETE FROM sites"), db.prepare("DELETE FROM users"), db.prepare("DELETE FROM used_challenges"), db.prepare("INSERT INTO sites (id) VALUES ('bistro'), ('westafrican')")]);
+  await db.batch([
+    db.prepare("DELETE FROM sites"),
+    db.prepare("DELETE FROM users"),
+    db.prepare("DELETE FROM used_challenges"),
+    db.prepare("INSERT INTO sites (id) VALUES ('bistro'), ('westafrican')"),
+  ]);
 });
 
 describe("no other challenge cookie stands in for the confirmation", () => {

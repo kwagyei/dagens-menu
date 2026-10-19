@@ -74,8 +74,7 @@ describe("prototype keys from JSON", () => {
 });
 
 describe("dates and times", () => {
-  const exception = (date: string) => (c: Content) =>
-    (c.hours.exceptions = [{ date, note: { sv: "Stängt", en: "Closed" }, hours: null }]);
+  const exception = (date: string) => (c: Content) => (c.hours.exceptions = [{ date, note: { sv: "Stängt", en: "Closed" }, hours: null }]);
 
   it("accepts a leap day in a leap year", () => {
     expect(parse(exception("2028-02-29")).success).toBe(true);

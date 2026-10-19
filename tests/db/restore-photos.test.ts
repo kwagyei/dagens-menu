@@ -38,7 +38,15 @@ beforeAll(async () => {
   const master = new Uint8Array(130_000);
   for (let at = 0; at < master.length; at += 65_536) crypto.getRandomValues(master.subarray(at, at + 65_536));
   uploadId = await sha(master);
-  uploads = new Map([[uploadId, [{ width: 400, height: 300, bytes: small }, { width: 800, height: 600, bytes: master }]]]);
+  uploads = new Map([
+    [
+      uploadId,
+      [
+        { width: 400, height: 300, bytes: small },
+        { width: 800, height: 600, bytes: master },
+      ],
+    ],
+  ]);
   const { theme: _t, ...parsed } = siteContentSchema(SITE).parse({ settings, hours, menu, pages, gallery, images: imageLibrary, theme });
   content = structuredClone(parsed) as StoredContent;
   content.images.push({ ref: uploadId, alt: { sv: "Ägarens foto av köttbullar", en: "The owner's photo of meatballs" } });

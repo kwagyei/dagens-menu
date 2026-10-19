@@ -153,7 +153,10 @@ export async function listUploads(ctx: RepoContext): Promise<UploadListing[]> {
     alt: { sv: r.alt_sv, en: r.alt_en },
     width: r.width,
     height: r.height,
-    widths: r.widths.split(",").map(Number).sort((a, b) => a - b),
+    widths: r.widths
+      .split(",")
+      .map(Number)
+      .sort((a, b) => a - b),
     createdAt: r.created_at,
   }));
 }

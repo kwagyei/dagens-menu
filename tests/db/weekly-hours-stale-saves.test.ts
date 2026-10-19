@@ -33,7 +33,12 @@ const rows = () => db.prepare("SELECT weekday, opens, closes FROM weekly_hours W
 
 beforeEach(async () => {
   await db.batch([db.prepare("DELETE FROM sites"), db.prepare("DELETE FROM users")]);
-  await db.batch(prepare(db, seedStatements("bistro", content, () => ({ id: "0".repeat(64), mime: "image/jpeg" }))));
+  await db.batch(
+    prepare(
+      db,
+      seedStatements("bistro", content, () => ({ id: "0".repeat(64), mime: "image/jpeg" })),
+    ),
+  );
   await db.prepare("INSERT INTO sites (id) VALUES ('westafrican')").run();
 });
 

@@ -44,7 +44,6 @@ const withAuth = async (page: Page) => {
     page.request.post(path, { form: withCsrf ? { csrf, ...form } : form, maxRedirects: 0, headers: { Origin: BASE } });
   return { csrf, post };
 };
-const exceptionsText = async (page: Page) => page.locator("#exceptions ul").innerText();
 /**
  * The week's version token from a freshly loaded hours page. Since M4 a weekly save without the
  * token the form was rendered with is a 409, so every raw weekly POST that should succeed sends it.
@@ -67,7 +66,10 @@ test("closing after midnight is saved and shows as written on every public surfa
   await signedInOwner(page);
   await page.goto("/admin/hours/");
   const fri = group(page, "Fredag");
-  await fri.getByLabel("Stängt").uncheck().catch(() => {});
+  await fri
+    .getByLabel("Stängt")
+    .uncheck()
+    .catch(() => {});
   await fri.getByLabel("Öppnar").fill("18:00");
   await fri.getByLabel("Stänger").fill("01:00");
   await page.getByRole("button", { name: "Spara öppettiderna" }).click();
@@ -90,7 +92,10 @@ test("open == close and closed-with-times: nothing is saved for the first, close
   await signedInOwner(page);
   await page.goto("/admin/hours/");
   const mon = group(page, "Måndag");
-  await mon.getByLabel("Stängt").uncheck().catch(() => {});
+  await mon
+    .getByLabel("Stängt")
+    .uncheck()
+    .catch(() => {});
   await mon.getByLabel("Öppnar").fill("10:00");
   await mon.getByLabel("Stänger").fill("10:00");
   await group(page, "Tisdag").getByLabel("Öppnar").fill("09:00");
@@ -187,11 +192,7 @@ test("CSRF: all three actions are refused without a valid token and change nothi
   const { csrf, post } = await withAuth(page);
   const date = daysAhead(200);
   expect((await post("/admin/hours/", exceptionForm(date, { note_sv: "Behåll", note_en: "Keep" }))).status()).toBe(303);
-  const bodies: Array<Record<string, string>> = [
-    weeklyForm({ monday_open: "03:00" }),
-    exceptionForm(daysAhead(201)),
-    { action: "remove-exception", date },
-  ];
+  const bodies: Array<Record<string, string>> = [weeklyForm({ monday_open: "03:00" }), exceptionForm(daysAhead(201)), { action: "remove-exception", date }];
   const page0 = await (await page.request.get("/admin/hours/")).text();
   for (const body of bodies) {
     for (const bad of [undefined, "", "garbage", (csrf.startsWith("A") ? "B" : "A") + csrf.slice(1)]) {
@@ -343,7 +344,11 @@ test("markup in a note is escaped in the admin and on the public pages", async (
   const { post } = await withAuth(page);
   const date = daysAhead(80);
   await post("/admin/hours/", exceptionForm(date, { note_sv: `<img src=x onerror="window.pwned=1">`, note_en: `"><script>window.pwned=1</script>` }));
-  for (const [path, shown] of [["/admin/hours/", "<img src=x"], ["/contact/", "<img src=x"], ["/en/contact/", "<script>window.pwned=1</script>"]]) {
+  for (const [path, shown] of [
+    ["/admin/hours/", "<img src=x"],
+    ["/contact/", "<img src=x"],
+    ["/en/contact/", "<script>window.pwned=1</script>"],
+  ]) {
     await page.goto(path);
     expect(await page.evaluate(() => (window as unknown as { pwned?: number }).pwned)).toBeUndefined();
     await expect(page.locator("main")).toContainText(shown);
@@ -383,7 +388,10 @@ test("the English admin stays under /en/admin/ through every redirect and shows 
   await mondayOpens.fill(before === "10:30" ? "10:15" : "10:30");
   await page.getByRole("button", { name: "Save opening hours" }).click();
   expect(page.url()).toMatch(/\/en\/admin\/hours\/\?done=saved/);
-  await page.locator("#exceptions li", { hasText: "Holiday" }).getByRole("button", { name: /Remove/ }).click();
+  await page
+    .locator("#exceptions li", { hasText: "Holiday" })
+    .getByRole("button", { name: /Remove/ })
+    .click();
   expect(page.url()).toMatch(/\/en\/admin\/hours\/\?done=deleted/);
   await expect(page.getByRole("status")).toHaveText("Deleted.");
   // Expired form, in English.
@@ -420,7 +428,12 @@ test("375px: no horizontal overflow on the hours page and every control is at le
   const small = await page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>("main button, main input:not([type=hidden]):not([type=checkbox]), main select, main a")]
       .filter((e) => e.offsetParent)
-      .map((e) => ({ tag: e.tagName, name: (e as HTMLInputElement).name || e.textContent?.trim().slice(0, 20), h: Math.round(e.getBoundingClientRect().height), w: Math.round(e.getBoundingClientRect().width) }))
+      .map((e) => ({
+        tag: e.tagName,
+        name: (e as HTMLInputElement).name || e.textContent?.trim().slice(0, 20),
+        h: Math.round(e.getBoundingClientRect().height),
+        w: Math.round(e.getBoundingClientRect().width),
+      }))
       .filter((e) => e.h < 44 || e.w < 44),
   );
   expect(small, "targets under 44px").toEqual([]);
@@ -465,7 +478,10 @@ test("no JavaScript: save week, add exception, reject a bad one, remove", async 
   await p.getByRole("button", { name: "Lägg till dag" }).click();
   await expect(p.locator("#date-error")).toContainText("redan en avvikande dag");
   await expect(p.getByLabel("Anledning på svenska")).toHaveValue("Dubblett");
-  await p.locator("#exceptions li", { hasText: "Utan JS" }).getByRole("button", { name: /Ta bort/ }).click();
+  await p
+    .locator("#exceptions li", { hasText: "Utan JS" })
+    .getByRole("button", { name: /Ta bort/ })
+    .click();
   await expect(p.getByRole("status")).toHaveText("Borttaget.");
   await noJs.close();
   await restoreWeek(page);

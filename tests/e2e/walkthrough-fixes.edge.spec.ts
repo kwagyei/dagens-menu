@@ -60,9 +60,21 @@ test("the return-focus script is an external file and nothing is blocked on ever
     for (const path of paths) {
       const resp = await page.goto(`${prefix}${path}`);
       const label = `${prefix}${path} (${resp?.status()})`;
-      const scripts = await page.evaluate(() => [...document.scripts].map((s) => ({ src: s.src, inline: s.src === "" && s.type !== "application/ld+json" && s.textContent!.trim().length > 0 })));
-      expect.soft(scripts.filter((s) => s.inline), `inline scripts: ${label}`).toEqual([]);
-      expect.soft(scripts.some((s) => /AdminLayout.*\.js$/.test(s.src)), `return-focus external: ${label}`).toBe(true);
+      const scripts = await page.evaluate(() =>
+        [...document.scripts].map((s) => ({ src: s.src, inline: s.src === "" && s.type !== "application/ld+json" && s.textContent!.trim().length > 0 })),
+      );
+      expect
+        .soft(
+          scripts.filter((s) => s.inline),
+          `inline scripts: ${label}`,
+        )
+        .toEqual([]);
+      expect
+        .soft(
+          scripts.some((s) => /AdminLayout.*\.js$/.test(s.src)),
+          `return-focus external: ${label}`,
+        )
+        .toBe(true);
       expect.soft(await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []), `violations: ${label}`).toEqual([]);
     }
   }
@@ -113,7 +125,12 @@ test("public pages carry no admin script and still run their own", async ({ page
   for (const path of ["/", "/en/", "/menu/", "/book/", "/contact/", "/gallery/"]) {
     await page.goto(path);
     const srcs = await page.evaluate(() => [...document.scripts].map((s) => s.src));
-    expect.soft(srcs.filter((s) => /AdminLayout|return-focus/.test(s)), path).toEqual([]);
+    expect
+      .soft(
+        srcs.filter((s) => /AdminLayout|return-focus/.test(s)),
+        path,
+      )
+      .toEqual([]);
     expect.soft(await page.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? []), `violations ${path}`).toEqual([]);
   }
   // The consent banner is the public page's inline-able script: it must still work.
@@ -183,7 +200,10 @@ test("InvalidStateError from the browser itself maps to the already message", as
 test("the page-photos link in the admin menu: order, wrapping at 375 px, no axe violations, both languages", async ({ page }) => {
   await signedInOwner(page);
   await page.setViewportSize({ width: 375, height: 800 });
-  for (const [prefix, L] of [["", sv], ["/en", en]] as const) {
+  for (const [prefix, L] of [
+    ["", sv],
+    ["/en", en],
+  ] as const) {
     for (const path of ["/admin/", "/admin/page-photos/", "/admin/photos/"]) {
       await page.goto(`${prefix}${path}`);
       const nav = page.getByRole("navigation", { name: L["admin.title"] });
@@ -196,7 +216,12 @@ test("the page-photos link in the admin menu: order, wrapping at 375 px, no axe 
       expect.soft(box.x + box.width, "inside the viewport").toBeLessThanOrEqual(375);
       expect.soft(await page.evaluate(() => document.documentElement.scrollWidth), "no horizontal scroll").toBeLessThanOrEqual(375);
       const { violations } = await new AxeBuilder({ page }).include("header").withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
-      expect.soft(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`), `axe nav ${prefix}${path}`).toEqual([]);
+      expect
+        .soft(
+          violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`),
+          `axe nav ${prefix}${path}`,
+        )
+        .toEqual([]);
     }
   }
   // Keyboard order: Tab from "Foton" reaches "Sidornas foton", then "Galleri".
@@ -208,7 +233,10 @@ test("the page-photos link in the admin menu: order, wrapping at 375 px, no axe 
   await expect(page.getByRole("navigation", { name: sv["admin.title"] }).getByRole("link", { name: sv["admin.nav.gallery"] })).toBeFocused();
 });
 
-for (const [prefix, L] of [["", sv], ["/en", en]] as const) {
+for (const [prefix, L] of [
+  ["", sv],
+  ["/en", en],
+] as const) {
   test(`${prefix || "/sv"}: Foton with no photos of its own says the built-in ones are below`, async ({ page }) => {
     await signedInOwner(page);
     const uploads = d1<{ n: number }>("select count(*) as n from images where kind = 'upload'")[0]?.n ?? 0;
@@ -236,4 +264,3 @@ test("the admin menu marks the current section, on its page and on the pages ins
   await expect(navEn.getByRole("link", { name: en["admin.nav.photos"], exact: true })).toHaveAttribute("aria-current", "page");
   await expect(navEn.getByRole("link", { name: en["admin.nav.pagePhotos"] })).not.toHaveAttribute("aria-current");
 });
-

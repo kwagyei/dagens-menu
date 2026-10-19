@@ -12,8 +12,7 @@ test.beforeEach(clearOfMidnight);
 
 test.describe.configure({ timeout: 90_000 });
 
-const passkeysOf = (email: string) =>
-  d1<{ n: number }>(`SELECT count(*) AS n FROM passkeys p JOIN users u ON u.id = p.user_id WHERE u.email = '${email}'`)[0].n;
+const passkeysOf = (email: string) => d1<{ n: number }>(`SELECT count(*) AS n FROM passkeys p JOIN users u ON u.id = p.user_id WHERE u.email = '${email}'`)[0].n;
 
 for (const [prefix, L, label] of [
   ["", sv, "Swedish"],

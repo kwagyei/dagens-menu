@@ -37,7 +37,7 @@ async function addDish(page: Page, section: ReturnType<Page["locator"]>, name: s
   await page.getByRole("button", { name: "Lägg till rätt" }).click();
 }
 
-const csrfOf = async (page: Page) => (await page.locator("input[name=csrf]").first().inputValue());
+const csrfOf = async (page: Page) => await page.locator("input[name=csrf]").first().inputValue();
 
 test("price input forms through the real form", async ({ page }) => {
   await signedInOwner(page);
@@ -188,13 +188,7 @@ test("every new form carries a CSRF token, and a missing or wrong one changes no
   await signedInOwner(page);
   const cat = menu.categories[1];
   const item = cat.items[0];
-  const pagesWithForms = [
-    "/admin/",
-    `/admin/menu/new/?category=${cat.id}`,
-    `/admin/menu/item/${item.id}/`,
-    `/admin/menu/item/${item.id}/delete/`,
-    "/admin/menu/category/new/",
-  ];
+  const pagesWithForms = ["/admin/", `/admin/menu/new/?category=${cat.id}`, `/admin/menu/item/${item.id}/`, `/admin/menu/item/${item.id}/delete/`, "/admin/menu/category/new/"];
   // the category id is generated for newly made ones; look up the real ones from the page
   await page.goto("/admin/");
   const catIds = await page.locator("section[id^='category-']").evaluateAll((els) => els.map((e) => e.id.replace("category-", "")));
@@ -260,7 +254,12 @@ test("garbage ids, garbage directions and another site's ids", async ({ page }) 
       if (res.status() === 303) expect(res.headers().location).toContain("done=not-found");
     }
     if (id === "") continue;
-    for (const path of [`/admin/menu/item/${encodeURIComponent(id)}/`, `/admin/menu/item/${encodeURIComponent(id)}/delete/`, `/admin/menu/category/${encodeURIComponent(id)}/`, `/admin/menu/category/${encodeURIComponent(id)}/delete/`]) {
+    for (const path of [
+      `/admin/menu/item/${encodeURIComponent(id)}/`,
+      `/admin/menu/item/${encodeURIComponent(id)}/delete/`,
+      `/admin/menu/category/${encodeURIComponent(id)}/`,
+      `/admin/menu/category/${encodeURIComponent(id)}/delete/`,
+    ]) {
       const get = await page.request.get(path, { maxRedirects: 0 });
       expect([303, 404, 400], path).toContain(get.status());
       const p = await post(path, { name_sv: "x", name_en: "x", description_sv: "x", description_en: "x", price: "1", row_version: "0" });
@@ -273,7 +272,13 @@ test("garbage ids, garbage directions and another site's ids", async ({ page }) 
   expect(await order()).toEqual(before);
   // a garbage direction: must not move anything (it should be ignored or rejected)
   // the first dish of a category with at least two dishes, so a move down would be visible
-  const first = (await page.locator("section[id^='category-']").filter({ has: page.locator("li + li") }).first().locator("li[id^='item-']").first().getAttribute("id"))!.replace("item-", "");
+  const first = (await page
+    .locator("section[id^='category-']")
+    .filter({ has: page.locator("li + li") })
+    .first()
+    .locator("li[id^='item-']")
+    .first()
+    .getAttribute("id"))!.replace("item-", "");
   await page.goto("/admin/");
   const before2 = await order();
   const res2 = await post("/admin/", { action: "move-item", id: first, direction: "sideways" });
@@ -328,9 +333,9 @@ test("long names on a 375px screen do not overflow, in the admin or on the publi
   expect.soft(await overflow("/menu/"), "public menu overflows horizontally").toBeLessThanOrEqual(0);
   // targets: buttons at least 44px tall on the list
   await page.goto("/admin/");
-  const small = await page.locator("main button, main a.admin-button, main a.admin-small-button").evaluateAll((els) =>
-    els.filter((e) => (e as HTMLElement).offsetParent && e.getBoundingClientRect().height < 40).length,
-  );
+  const small = await page
+    .locator("main button, main a.admin-button, main a.admin-small-button")
+    .evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent && e.getBoundingClientRect().height < 40).length);
   expect.soft(small, "controls under 40px tall").toBe(0);
 });
 

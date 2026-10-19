@@ -96,7 +96,8 @@ if (values.from) {
   const read = readExportFile(text, site, { theme, settings: fromRepository.settings, images: fromRepository.images });
   if (!read.ok) fail(`${values.from}: ${read.error}`);
   if (read.operatorFieldsReplaced) console.warn(`seed: the file's booking and map settings differ from sites/${site}/; keeping the repository's (operator-only).`);
-  if (read.highlightImagesDropped > 0) console.warn(`seed: the file is format 1; dropped ${read.highlightImagesDropped} per-highlight photo(s), which the content model no longer has.`);
+  if (read.highlightImagesDropped > 0)
+    console.warn(`seed: the file is format 1; dropped ${read.highlightImagesDropped} per-highlight photo(s), which the content model no longer has.`);
   content = read.content;
   if (read.uploads.length > 0) {
     console.log(`seed: bringing back ${read.uploads.length} uploaded photo(s)${values.photos ? ` (from ${values.photos} where present)` : ""}.`);
@@ -106,7 +107,9 @@ if (values.from) {
       fail((error as Error).message);
     }
   }
-  summary = `Restored from ${basename(values.from).replace(/[^\w.-]/g, "_").slice(0, 80)} (exported ${read.exportedAt})`;
+  summary = `Restored from ${basename(values.from)
+    .replace(/[^\w.-]/g, "_")
+    .slice(0, 80)} (exported ${read.exportedAt})`;
   console.log(`seed: restoring "${site}" from ${values.from} (exported ${read.exportedAt}).`);
 }
 
@@ -136,4 +139,6 @@ try {
 }
 execute("seed", target, statements);
 const items = content.menu.categories.reduce((n, c) => n + c.items.length, 0);
-console.log(`seed: ${values.reset ? "replaced" : "loaded"} "${site}" in the ${targetName(target)} database: ${content.menu.categories.length} categories, ${items} dishes, ${statements.length} statements.`);
+console.log(
+  `seed: ${values.reset ? "replaced" : "loaded"} "${site}" in the ${targetName(target)} database: ${content.menu.categories.length} categories, ${items} dishes, ${statements.length} statements.`,
+);

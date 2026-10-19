@@ -21,7 +21,11 @@ function upload(widths = [400, 800], sizes = widths.map(() => 1000)): Upload {
 
 const variantHex = (site: string, id: string) =>
   db.prepare("SELECT width, hex(bytes) AS h FROM image_variants WHERE site_id = ? AND image_id = ? ORDER BY width").bind(site, id).all<{ width: number; h: string }>();
-const count = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<{ n: number }>())!.n;
+const count = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<{ n: number }>())!.n;
 /** A big upload row without bytes, to bring a site or the database near a limit cheaply. */
 const filler = (site: string, bytes: number) =>
   db.batch([

@@ -10,7 +10,9 @@ const locale = getLocale(Astro.url);
 
 <header class="site-bar">
   <div class="site-bar__inner">
-    <a class="site-bar__name" href={localePath(locale, "/")}>{localized(settings.name, locale)}</a>
+    <a class="site-bar__name" href={localePath(locale, "/")}>
+      {localized(settings.name, locale)}
+    </a>
     <SiteNav variant="bar" />
   </div>
 </header>

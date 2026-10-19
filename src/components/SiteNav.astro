@@ -61,11 +61,15 @@ const current = (path: string) => (currentPath === path ? { "aria-current": "pag
   <ul class="site-nav__links">
     {links.map(({ key, path, wideOnly, end, modernOnly }) => (
       <li class:list={{ "wide-only": wideOnly, "site-nav__end": end, "modern-only": modernOnly }}>
-        <a href={localePath(locale, path)} {...current(path)}>{t(locale, key)}</a>
+        <a href={localePath(locale, path)} {...current(path)}>
+          {t(locale, key)}
+        </a>
       </li>
     ))}
     <li class="wide-only">
-      <a href={altPath} hreflang={altLocale} lang={altLocale}>{t(altLocale, "site.language")}</a>
+      <a href={altPath} hreflang={altLocale} lang={altLocale}>
+        {t(altLocale, "site.language")}
+      </a>
     </li>
   </ul>
   <details class="site-nav__more narrow-only">
@@ -80,9 +84,17 @@ const current = (path: string) => (currentPath === path ? { "aria-current": "pag
     </summary>
     <ul id="nav-menu">
       {more.map(({ key, path }) => (
-        <li><a href={localePath(locale, path)} {...current(path)}>{t(locale, key)}</a></li>
+        <li>
+          <a href={localePath(locale, path)} {...current(path)}>
+            {t(locale, key)}
+          </a>
+        </li>
       ))}
-      <li><a href={altPath} hreflang={altLocale} lang={altLocale}>{t(altLocale, "site.language")}</a></li>
+      <li>
+        <a href={altPath} hreflang={altLocale} lang={altLocale}>
+          {t(altLocale, "site.language")}
+        </a>
+      </li>
     </ul>
   </details>
 </nav>

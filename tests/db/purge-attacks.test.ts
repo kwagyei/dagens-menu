@@ -19,7 +19,11 @@ const DAY = 24 * 60 * 60 * S;
 const at = (ms: number) => isoSeconds(new Date(now.getTime() + ms));
 const USER = "owner0000001";
 const token = (i: number) => `t${String(i).padStart(42, "0")}`;
-const n = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<number>("n"))!;
+const n = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<number>("n"))!;
 const purge = (site = "bistro", when = now) => db.batch(prepare(db, purgeStatements(site, when)));
 
 beforeEach(async () => {
@@ -84,7 +88,9 @@ describe("purge deletes an invite only when findInvite refuses it, and never a l
 describe("a failed batch deletes nothing", () => {
   it("rolls back every delete and the note when a later statement fails", async () => {
     await db.batch([
-      db.prepare("INSERT INTO sessions (token_hash, user_id, site_id, created_at, last_seen_at, expires_at) VALUES (?, ?, 'bistro', ?, ?, ?)").bind("a".repeat(64), USER, at(-40 * DAY), at(-20 * DAY), at(-DAY)),
+      db
+        .prepare("INSERT INTO sessions (token_hash, user_id, site_id, created_at, last_seen_at, expires_at) VALUES (?, ?, 'bistro', ?, ?, ?)")
+        .bind("a".repeat(64), USER, at(-40 * DAY), at(-20 * DAY), at(-DAY)),
       db.prepare("INSERT INTO audit_log (site_id, at, entity, action, summary) VALUES ('bistro', ?, 'menu_item', 'update', 'old')").bind(at(-200 * DAY)),
     ]);
     const statements = purgeStatements("bistro", now);
@@ -137,15 +143,22 @@ describe("history retention", () => {
 
   it("prunes security records (invites, passkeys, revocations) at 180 days like any other entry", async () => {
     await db.batch([
-      db.prepare("INSERT INTO audit_log (site_id, at, entity, action, summary) VALUES ('bistro', ?, 'invite', 'create', 'a@b.se: invited as owner; link valid 72 hours')").bind(at(-181 * DAY)),
-      db.prepare("INSERT INTO audit_log (site_id, at, entity, action, summary) VALUES ('bistro', ?, 'passkey', 'create', 'a@b.se: first passkey created from the invite')").bind(at(-181 * DAY)),
+      db
+        .prepare("INSERT INTO audit_log (site_id, at, entity, action, summary) VALUES ('bistro', ?, 'invite', 'create', 'a@b.se: invited as owner; link valid 72 hours')")
+        .bind(at(-181 * DAY)),
+      db
+        .prepare("INSERT INTO audit_log (site_id, at, entity, action, summary) VALUES ('bistro', ?, 'passkey', 'create', 'a@b.se: first passkey created from the invite')")
+        .bind(at(-181 * DAY)),
     ]);
     await purge();
     expect(await n("SELECT count(*) AS n FROM audit_log WHERE entity IN ('invite', 'passkey')")).toBe(0);
   });
 
   it("a later purge, 181 days on, removes the earlier note and counts it", async () => {
-    await db.prepare("INSERT INTO audit_log (site_id, at, entity, action, summary) VALUES ('bistro', ?, 'menu_item', 'update', 'old')").bind(at(-200 * DAY)).run();
+    await db
+      .prepare("INSERT INTO audit_log (site_id, at, entity, action, summary) VALUES ('bistro', ?, 'menu_item', 'update', 'old')")
+      .bind(at(-200 * DAY))
+      .run();
     await purge();
     await purge("bistro", new Date(now.getTime() + 181 * DAY));
     const left = (await db.prepare("SELECT summary FROM audit_log").all<{ summary: string }>()).results.map((r) => r.summary);
@@ -153,7 +166,10 @@ describe("history retention", () => {
   });
 
   it("writes no note for another site and never deletes another site's history, even with an empty site id", async () => {
-    await db.prepare("INSERT INTO audit_log (site_id, at, entity, action, summary) VALUES ('westafrican', ?, 'menu_item', 'update', 'old')").bind(at(-200 * DAY)).run();
+    await db
+      .prepare("INSERT INTO audit_log (site_id, at, entity, action, summary) VALUES ('westafrican', ?, 'menu_item', 'update', 'old')")
+      .bind(at(-200 * DAY))
+      .run();
     await purge("");
     await purge("%");
     await purge("bistro' OR '1'='1");

@@ -50,7 +50,11 @@ describe("handlePage", () => {
   it("widens a public page's CSP to the site's own booking provider and map only", async () => {
     const withEmbeds = {
       ...content,
-      settings: { ...content.settings, booking: { provider: "embed" as const, embedCode: `<iframe src="https://app.waiteraid.com/booking/x"></iframe>` }, mapEmbed: "https://www.google.com/maps/embed?pb=x" },
+      settings: {
+        ...content.settings,
+        booking: { provider: "embed" as const, embedCode: `<iframe src="https://app.waiteraid.com/booking/x"></iframe>` },
+        mapEmbed: "https://www.google.com/maps/embed?pb=x",
+      },
     };
     const res = await handlePage(get("/book/"), deps({}, { content: withEmbeds }), page);
     const policy = res.headers.get("Content-Security-Policy");

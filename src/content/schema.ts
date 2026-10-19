@@ -98,9 +98,7 @@ export const isoDate = z
   }, `must be between ${DATE_RANGE.minYear} and ${DATE_RANGE.maxYear}`);
 
 // close < open is allowed: it means closing after midnight.
-export const dayHours = z
-  .strictObject({ open: time, close: time })
-  .refine((h) => h.open !== h.close, "must not open and close at the same minute");
+export const dayHours = z.strictObject({ open: time, close: time }).refine((h) => h.open !== h.close, "must not open and close at the same minute");
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -171,21 +169,31 @@ export const menuSchema = (site: string) =>
       ),
     })
     .superRefine((menu, ctx) => {
-      reportDuplicates(ctx, menu.categories.map((c) => c.id), (i) => ["categories", i, "id"], "category id");
+      reportDuplicates(
+        ctx,
+        menu.categories.map((c) => c.id),
+        (i) => ["categories", i, "id"],
+        "category id",
+      );
       const positions = menu.categories.flatMap((c, ci) => c.items.map((item, ii) => ({ id: item.id, ci, ii })));
-      reportDuplicates(ctx, positions.map((p) => p.id), (i) => ["categories", positions[i].ci, "items", positions[i].ii, "id"], "item id");
+      reportDuplicates(
+        ctx,
+        positions.map((p) => p.id),
+        (i) => ["categories", positions[i].ci, "items", positions[i].ii, "id"],
+        "item id",
+      );
     });
 
 export const hoursSchema = z.strictObject({
-  weekly: z.strictObject(
-    Object.fromEntries(WEEKDAYS.map((d) => [d, dayHours.nullable()])) as Record<
-      (typeof WEEKDAYS)[number],
-      z.ZodNullable<typeof dayHours>
-    >,
+  weekly: z.strictObject(Object.fromEntries(WEEKDAYS.map((d) => [d, dayHours.nullable()])) as Record<(typeof WEEKDAYS)[number], z.ZodNullable<typeof dayHours>>),
+  exceptions: z.array(z.strictObject({ date: isoDate, note: localizedText(TEXT_LIMITS.short), hours: dayHours.nullable() })).superRefine((list, ctx) =>
+    reportDuplicates(
+      ctx,
+      list.map((e) => e.date),
+      (i) => [i, "date"],
+      "exception date",
+    ),
   ),
-  exceptions: z
-    .array(z.strictObject({ date: isoDate, note: localizedText(TEXT_LIMITS.short), hours: dayHours.nullable() }))
-    .superRefine((list, ctx) => reportDuplicates(ctx, list.map((e) => e.date), (i) => [i, "date"], "exception date")),
 });
 
 const settingsFields = z.strictObject({
@@ -246,14 +254,13 @@ export const settingsSchema = settingsFields.superRefine((s, ctx) => {
 
 export const pagesSchema = (site: string) =>
   z.strictObject({
-    home: z
-      .strictObject({
-        tagline: localizedText(TEXT_LIMITS.short),
-        highlights: z.array(itemId).max(MAX_HIGHLIGHTS, `must have at most ${MAX_HIGHLIGHTS} highlights`).refine(unique, "must not repeat a highlight"),
-        heroImage: imageRef(site).optional(),
-        pullQuote: localizedText(TEXT_LIMITS.short).optional(),
-        ctaImage: imageRef(site).optional(),
-      }),
+    home: z.strictObject({
+      tagline: localizedText(TEXT_LIMITS.short),
+      highlights: z.array(itemId).max(MAX_HIGHLIGHTS, `must have at most ${MAX_HIGHLIGHTS} highlights`).refine(unique, "must not repeat a highlight"),
+      heroImage: imageRef(site).optional(),
+      pullQuote: localizedText(TEXT_LIMITS.short).optional(),
+      ctaImage: imageRef(site).optional(),
+    }),
     menu: z.strictObject({ heroImage: imageRef(site).optional() }),
     about: z.strictObject({
       story: localizedText(TEXT_LIMITS.long),
@@ -322,7 +329,12 @@ export const siteContentSchema = (site: string) =>
     .superRefine((c, ctx) => {
       // The library: each ref once, and every image the content shows must be in it. Each
       // problem is reported at the reference itself, not one level up (M1 review, L3).
-      reportDuplicates(ctx, c.images.map((i) => i.ref), (i) => ["images", i, "ref"], "image");
+      reportDuplicates(
+        ctx,
+        c.images.map((i) => i.ref),
+        (i) => ["images", i, "ref"],
+        "image",
+      );
       const listed = new Map(c.images.map((i) => [i.ref, i]));
       for (const { ref, path } of imageReferences(c)) {
         if (!listed.has(ref)) ctx.addIssue({ code: "custom", path, message: `is not in the image library (images)` });

@@ -19,16 +19,20 @@ async function seedValidRows() {
     db.prepare("DELETE FROM users"),
     db.prepare("DELETE FROM rate_limits"),
     db.prepare("INSERT INTO sites (id) VALUES ('bistro')"),
-    db.prepare("INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg', 'Foto', 'Photo')").bind(IMG),
+    db
+      .prepare("INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', '/images/bistro/a.jpg', 'image/jpeg', 'Foto', 'Photo')")
+      .bind(IMG),
     db.prepare(
       `INSERT INTO settings (site_id, name_sv, name_en, tagline_sv, tagline_en, cuisine_sv, cuisine_en, address, phone, email)
        VALUES ('bistro', 'Bistro', 'Bistro', 'Mat', 'Food', 'Svensk', 'Swedish', 'Gatan 1', '+46 8 123 45 67', 'hej@x.se')`,
     ),
     db.prepare("INSERT INTO menu_categories (site_id, id, slug, name_sv, name_en, position) VALUES ('bistro', ?, 'mains', 'Varmrätter', 'Mains', 0)").bind(CAT),
-    db.prepare(
-      `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position)
+    db
+      .prepare(
+        `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position)
        VALUES ('bistro', ?, ?, 'Soppa', 'Soup', 'Varm', 'Hot', 14500, 0)`,
-    ).bind(ITEM, CAT),
+      )
+      .bind(ITEM, CAT),
     db.prepare("INSERT INTO users (id, email) VALUES (?, 'owner@x.se')").bind(USER),
     db.prepare("INSERT INTO memberships (user_id, site_id, role) VALUES (?, 'bistro', 'owner')").bind(USER),
   ]);
@@ -38,7 +42,10 @@ beforeEach(seedValidRows);
 
 async function rejected(sql: string, ...params: unknown[]): Promise<string> {
   try {
-    await db.prepare(sql).bind(...params).run();
+    await db
+      .prepare(sql)
+      .bind(...params)
+      .run();
   } catch (error) {
     return String((error as Error).message);
   }
@@ -98,15 +105,12 @@ describe("menu_categories rejects", () => {
   });
 
   it("a duplicate slug on the same site", async () => {
-    expect(
-      await rejected("INSERT INTO menu_categories (site_id, id, slug, name_sv, name_en, position) VALUES ('bistro', 'cat000000002', 'mains', 'A', 'A', 1)"),
-    ).toMatch(/UNIQUE/);
+    expect(await rejected("INSERT INTO menu_categories (site_id, id, slug, name_sv, name_en, position) VALUES ('bistro', 'cat000000002', 'mains', 'A', 'A', 1)")).toMatch(/UNIQUE/);
   });
 });
 
 describe("hours reject", () => {
-  const weekly = (opens: string | null, closes: string | null) =>
-    rejected("INSERT INTO weekly_hours (site_id, weekday, opens, closes) VALUES ('bistro', 0, ?, ?)", opens, closes);
+  const weekly = (opens: string | null, closes: string | null) => rejected("INSERT INTO weekly_hours (site_id, weekday, opens, closes) VALUES ('bistro', 0, ?, ?)", opens, closes);
   const exception = (date: string, opens: string | null = null, closes: string | null = null) =>
     rejected("INSERT INTO hours_exceptions (site_id, date, opens, closes, note_sv, note_en) VALUES ('bistro', ?, ?, ?, 'Stängt', 'Closed')", date, opens, closes);
 
@@ -164,7 +168,10 @@ describe("page_content rejects", () => {
 describe("images reject", () => {
   it.each([
     ["a static image without a path", "INSERT INTO images (site_id, id, kind, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'static', 'image/jpeg', 'Foto', 'Photo')"],
-    ["an upload with a path", "INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'upload', '/images/bistro/b.jpg', 'image/webp', 'Foto', 'Photo')"],
+    [
+      "an upload with a path",
+      "INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'upload', '/images/bistro/b.jpg', 'image/webp', 'Foto', 'Photo')",
+    ],
     ["an SVG", "INSERT INTO images (site_id, id, kind, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'upload', 'image/svg+xml', 'Foto', 'Photo')"],
   ])("%s", async (_name, sql) => {
     expect(await rejected(sql, "c".repeat(64))).toMatch(/CHECK/);
@@ -180,9 +187,9 @@ describe("images reject", () => {
   it("a variant over 1 MiB", async () => {
     await db.prepare("INSERT INTO images (site_id, id, kind, mime, alt_sv, alt_en) VALUES ('bistro', ?, 'upload', 'image/webp', 'Foto', 'Photo')").bind("d".repeat(64)).run();
     const tooBig = new Uint8Array(1048577);
-    expect(
-      await rejected("INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES ('bistro', ?, 640, 'image/webp', ?)", "d".repeat(64), tooBig),
-    ).toMatch(/CHECK/);
+    expect(await rejected("INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES ('bistro', ?, 640, 'image/webp', ?)", "d".repeat(64), tooBig)).toMatch(
+      /CHECK/,
+    );
   });
 });
 
@@ -214,9 +221,11 @@ describe("auth tables", () => {
   it("revoke everything when a membership is deleted", async () => {
     await db.batch([
       db.prepare("INSERT INTO passkeys (id, user_id, site_id, public_key) VALUES ('cred1', ?, 'bistro', x'01')").bind(USER),
-      db.prepare(
-        "INSERT INTO sessions (token_hash, user_id, site_id, created_at, last_seen_at, expires_at) VALUES (?, ?, 'bistro', '2026-10-16T10:00:00Z', '2026-10-16T10:00:00Z', '2026-11-15T10:00:00Z')",
-      ).bind("f".repeat(64), USER),
+      db
+        .prepare(
+          "INSERT INTO sessions (token_hash, user_id, site_id, created_at, last_seen_at, expires_at) VALUES (?, ?, 'bistro', '2026-10-16T10:00:00Z', '2026-10-16T10:00:00Z', '2026-11-15T10:00:00Z')",
+        )
+        .bind("f".repeat(64), USER),
     ]);
     await db.prepare("DELETE FROM memberships WHERE user_id = ?").bind(USER).run();
     expect(await db.prepare("SELECT (SELECT count(*) FROM passkeys) + (SELECT count(*) FROM sessions) AS n").first("n")).toBe(0);
@@ -247,7 +256,10 @@ describe("content_version", () => {
     ["opening hours", "INSERT INTO weekly_hours (site_id, weekday, opens, closes) VALUES ('bistro', 2, '11:00', '22:00')"],
     ["a holiday", "INSERT INTO hours_exceptions (site_id, date, note_sv, note_en) VALUES ('bistro', '2026-12-24', 'Julafton', 'Christmas Eve')"],
     ["a deleted dish", `DELETE FROM menu_items WHERE id = '${ITEM}'`],
-    ["a new image", `INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', '${"9".repeat(64)}', 'static', '/images/bistro/b.jpg', 'image/jpeg', 'Foto', 'Photo')`],
+    [
+      "a new image",
+      `INSERT INTO images (site_id, id, kind, path, mime, alt_sv, alt_en) VALUES ('bistro', '${"9".repeat(64)}', 'static', '/images/bistro/b.jpg', 'image/jpeg', 'Foto', 'Photo')`,
+    ],
   ])("moves on with %s, by a trigger, whoever writes it", async (_name, sql) => {
     const before = await version();
     await db.prepare(sql).run();

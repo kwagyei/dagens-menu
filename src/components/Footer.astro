@@ -75,7 +75,9 @@ const socials = Object.entries(settings.socialLinks).map(([network, url]) => ({
     </div>
 
     <div class="site-footer__col">
-      <p class="site-footer__today">{t(locale, "hours.today")}: {range(today.hours)}</p>
+      <p class="site-footer__today">
+        {t(locale, "hours.today")}: {range(today.hours)}
+      </p>
       <details class="site-footer__week">
         <summary>{t(locale, "footer.allHours")}</summary>
         <dl>
@@ -109,25 +111,27 @@ const socials = Object.entries(settings.socialLinks).map(([network, url]) => ({
               {icon ? (
                 <a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${siteName} ${t(locale, "footer.on")} ${name}`}>
                   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    {icon.stroke ? (
-                      <path d={icon.path} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                    ) : (
-                      <path d={icon.path} fill="currentColor" />
-                    )}
+                    {icon.stroke ? <path d={icon.path} fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /> : <path d={icon.path} fill="currentColor" />}
                   </svg>
                 </a>
               ) : (
-                <a class="site-footer__social-text" href={url} target="_blank" rel="noopener noreferrer">{name}</a>
+                <a class="site-footer__social-text" href={url} target="_blank" rel="noopener noreferrer">
+                  {name}
+                </a>
               )}
             </li>
           ))}
         </ul>
       )}
       <p class="site-footer__links">
-        <a href={altPath} hreflang={altLocale} lang={altLocale}>{t(altLocale, "site.language")}</a>
+        <a href={altPath} hreflang={altLocale} lang={altLocale}>
+          {t(altLocale, "site.language")}
+        </a>
         <a href={localePath(locale, "/privacy/")}>{t(locale, "nav.privacy")}</a>
         {needsConsent(settings) && (
-          <button id="change-consent" type="button">{t(locale, "consent.change")}</button>
+          <button id="change-consent" type="button">
+            {t(locale, "consent.change")}
+          </button>
         )}
       </p>
     </div>

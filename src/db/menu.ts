@@ -61,15 +61,10 @@ export async function adminMenu(ctx: RepoContext): Promise<AdminCategory[]> {
   }));
 }
 
-const issuesOf = (error: { issues: Array<{ path: PropertyKey[]; message: string }> }) =>
-  error.issues.map((i) => ({ path: i.path.join("."), message: i.message }));
+const issuesOf = (error: { issues: Array<{ path: PropertyKey[]; message: string }> }) => error.issues.map((i) => ({ path: i.path.join("."), message: i.message }));
 
 /** Add a dish at the end of a category. */
-export async function createMenuItem(
-  ctx: RepoContext,
-  categoryId: string,
-  edit: MenuItemEdit,
-): Promise<WriteResult & { id?: string }> {
+export async function createMenuItem(ctx: RepoContext, categoryId: string, edit: MenuItemEdit): Promise<WriteResult & { id?: string }> {
   const id = newId();
   const checked = menuItemSchema(ctx.siteId).safeParse({
     id,
@@ -201,9 +196,17 @@ export async function swapWithNeighbour(
         `UPDATE ${table} SET position = CASE id WHEN ? THEN ? ELSE ? END
          WHERE site_id = ? AND id IN (?, ?)
            AND (SELECT count(*) FROM ${table} WHERE site_id = ? AND ((id = ? AND position = ?) OR (id = ? AND position = ?))) = 2`,
-        a.id, b.position, a.position,
-        ctx.siteId, a.id, b.id,
-        ctx.siteId, a.id, a.position, b.id, b.position,
+        a.id,
+        b.position,
+        a.position,
+        ctx.siteId,
+        a.id,
+        b.id,
+        ctx.siteId,
+        a.id,
+        a.position,
+        b.id,
+        b.position,
       ),
       entry,
     );
@@ -220,12 +223,8 @@ export async function moveMenuItem(ctx: RepoContext, id: string, direction: Dire
     .first<{ category_id: string; name_sv: string }>();
   if (!item) return { ok: false, error: "not-found" };
   const read = async () =>
-    (
-      await ctx.db
-        .prepare("SELECT id, position FROM menu_items WHERE site_id = ? AND category_id = ? ORDER BY position, id")
-        .bind(ctx.siteId, item.category_id)
-        .all<Placed>()
-    ).results;
+    (await ctx.db.prepare("SELECT id, position FROM menu_items WHERE site_id = ? AND category_id = ? ORDER BY position, id").bind(ctx.siteId, item.category_id).all<Placed>())
+      .results;
   return swapWithNeighbour(ctx, "menu_items", read, id, direction, {
     entity: "menu_item",
     entityId: id,
@@ -238,8 +237,7 @@ export async function moveMenuItem(ctx: RepoContext, id: string, direction: Dire
 export async function moveCategory(ctx: RepoContext, id: string, direction: Direction): Promise<WriteResult> {
   const name = await ctx.db.prepare("SELECT name_sv FROM menu_categories WHERE site_id = ? AND id = ?").bind(ctx.siteId, id).first<string>("name_sv");
   if (name === null) return { ok: false, error: "not-found" };
-  const read = async () =>
-    (await ctx.db.prepare("SELECT id, position FROM menu_categories WHERE site_id = ? ORDER BY position, id").bind(ctx.siteId).all<Placed>()).results;
+  const read = async () => (await ctx.db.prepare("SELECT id, position FROM menu_categories WHERE site_id = ? ORDER BY position, id").bind(ctx.siteId).all<Placed>()).results;
   return swapWithNeighbour(ctx, "menu_categories", read, id, direction, {
     entity: "menu_category",
     entityId: id,
@@ -305,12 +303,7 @@ async function insertCategory(ctx: RepoContext, slug: string, name: { sv: string
 }
 
 /** Rename a category; a stale form is a conflict. The slug stays, so links keep working. */
-export async function renameCategory(
-  ctx: RepoContext,
-  id: string,
-  expectedRowVersion: number,
-  name: { sv: string; en: string },
-): Promise<WriteResult> {
+export async function renameCategory(ctx: RepoContext, id: string, expectedRowVersion: number, name: { sv: string; en: string }): Promise<WriteResult> {
   const checked = categoryName.safeParse(name);
   if (!checked.success) return { ok: false, error: "invalid", issues: issuesOf(checked.error) };
   const before = await ctx.db.prepare("SELECT name_sv FROM menu_categories WHERE site_id = ? AND id = ?").bind(ctx.siteId, id).first<string>("name_sv");

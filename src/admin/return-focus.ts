@@ -52,9 +52,5 @@ export function runNowAndAfterLoad(run: () => void, win: Win, loaded: boolean): 
 }
 
 if (typeof document !== "undefined") {
-  runNowAndAfterLoad(
-    () => returnFocus(document.querySelector<HTMLElement>("[autofocus]"), document.activeElement, window.innerHeight),
-    window,
-    document.readyState === "complete",
-  );
+  runNowAndAfterLoad(() => returnFocus(document.querySelector<HTMLElement>("[autofocus]"), document.activeElement, window.innerHeight), window, document.readyState === "complete");
 }

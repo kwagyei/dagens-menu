@@ -32,12 +32,22 @@ const siteName = localized(Astro.locals.content.settings.name, locale);
         data-failed={t(locale, "admin.error.failed")}
         data-already={t(locale, "admin.invite.alreadyHere")}
         data-signin="invite-sign-in"
-      >{t(locale, "admin.invite.button")}</button>
+      >
+        {t(locale, "admin.invite.button")}
+      </button>
     </div>
-    <p class="admin-message" data-invite-invalid hidden>{t(locale, "admin.invite.invalid")}</p>
-    <p class="admin-message" data-needs-js>{t(locale, "admin.noScript")}</p>
+    <p class="admin-message" data-invite-invalid hidden>
+      {t(locale, "admin.invite.invalid")}
+    </p>
+    <p class="admin-message" data-needs-js>
+      {t(locale, "admin.noScript")}
+    </p>
     <p id="status" role="status" aria-live="polite" data-failed={t(locale, "admin.error.failed")}></p>
-    <p id="invite-sign-in" hidden><a class="admin-button inline-flex" href={localePath(locale, "/admin/")}>{t(locale, "admin.invite.signInInstead")}</a></p>
+    <p id="invite-sign-in" hidden>
+      <a class="admin-button inline-flex" href={localePath(locale, "/admin/")}>
+        {t(locale, "admin.invite.signInInstead")}
+      </a>
+    </p>
   </section>
 </AdminLayout>
 

@@ -39,7 +39,10 @@ function asReleaseBeforeM6(statements: Statement[]): Statement[] {
     if (s.sql.startsWith("INSERT INTO gallery_images ")) {
       const [site, id, imageId, position] = s.params;
       const alt = alts.get(imageId as string)!;
-      return { sql: "INSERT INTO gallery_images (site_id, id, image_id, alt_sv, alt_en, position) VALUES (?, ?, ?, ?, ?, ?)", params: [site, id, imageId, alt.sv, alt.en, position] };
+      return {
+        sql: "INSERT INTO gallery_images (site_id, id, image_id, alt_sv, alt_en, position) VALUES (?, ?, ?, ?, ?, ?)",
+        params: [site, id, imageId, alt.sv, alt.en, position],
+      };
     }
     return s;
   });
@@ -48,7 +51,11 @@ function asReleaseBeforeM6(statements: Statement[]): Statement[] {
 const migration = (name: string) => env.TEST_MIGRATIONS.find((m) => m.name.startsWith(name))!;
 const apply = (name: string) => db.batch(migration(name).queries.map((q) => db.prepare(q)));
 const columns = async (table: string) => (await db.prepare(`SELECT name FROM pragma_table_info('${table}')`).all<{ name: string }>()).results.map((r) => r.name);
-const count = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<{ n: number }>())!.n;
+const count = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<{ n: number }>())!.n;
 const version = () => db.prepare("SELECT content_version AS v FROM sites WHERE id = ?").bind(SITE).first<number>("v");
 
 /** What the operator's re-seed did between the two migrations: every image gets its alt. */
@@ -64,7 +71,9 @@ beforeAll(async () => {
     hashes.set(ref, Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join(""));
   }
   // Back to an empty database (children before parents: newest table first), then the release before M6.
-  const tables = await db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY rowid DESC").all<{ name: string }>();
+  const tables = await db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' ORDER BY rowid DESC")
+    .all<{ name: string }>();
   await db.batch([db.prepare("PRAGMA defer_foreign_keys = true"), ...tables.results.map((t) => db.prepare(`DROP TABLE "${t.name}"`))]);
   for (const name of ["0001", "0002", "0003", "0004"]) await apply(name);
 
@@ -101,7 +110,10 @@ describe("0006 before the re-seed", () => {
 
   it("also aborts when only one image, of one language, is missing", async () => {
     await reseedAlts();
-    await db.prepare("UPDATE images SET alt_en = NULL WHERE site_id = ? AND id = ?").bind(SITE, hashes.get(content.images.at(-1)!.ref)).run();
+    await db
+      .prepare("UPDATE images SET alt_en = NULL WHERE site_id = ? AND id = ?")
+      .bind(SITE, hashes.get(content.images.at(-1)!.ref))
+      .run();
     await expect(apply("0006")).rejects.toThrow(/alt text in Swedish and English/);
     expect(await columns("gallery_images")).toContain("alt_sv");
   });
@@ -147,10 +159,7 @@ describe("0006 after the re-seed", () => {
 
   it("refuses an image without alt, on insert and on update", async () => {
     const insert = (alt_sv: string | null, alt_en: string | null) =>
-      db
-        .prepare("INSERT INTO images (site_id, id, kind, mime, alt_sv, alt_en) VALUES (?, ?, 'upload', 'image/webp', ?, ?)")
-        .bind(SITE, "e".repeat(64), alt_sv, alt_en)
-        .run();
+      db.prepare("INSERT INTO images (site_id, id, kind, mime, alt_sv, alt_en) VALUES (?, ?, 'upload', 'image/webp', ?, ?)").bind(SITE, "e".repeat(64), alt_sv, alt_en).run();
     await expect(insert(null, null)).rejects.toThrow(/alt text in Swedish and English/);
     await expect(insert("Foto", null)).rejects.toThrow(/alt text in Swedish and English/);
     const id = hashes.get(content.images[0].ref)!;

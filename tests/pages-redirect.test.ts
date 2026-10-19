@@ -16,10 +16,10 @@ describe.each(SITES)("pages-redirect/%s", (site) => {
   });
 
   it("redirects every path, permanently, to this site's Worker", () => {
-    const worker = JSON.parse(
-      readFileSync(`wrangler.${site}.jsonc`, "utf8").replace(/^\s*\/\/.*$/gm, ""),
-    ) as { name: string };
-    const lines = readFileSync(`${dir}/_redirects`, "utf8").split("\n").filter((l) => l.trim());
+    const worker = JSON.parse(readFileSync(`wrangler.${site}.jsonc`, "utf8").replace(/^\s*\/\/.*$/gm, "")) as { name: string };
+    const lines = readFileSync(`${dir}/_redirects`, "utf8")
+      .split("\n")
+      .filter((l) => l.trim());
     expect(lines).toEqual([`/* https://${worker.name}.kwabenasasuboakye.workers.dev/:splat 301`]);
   });
 });

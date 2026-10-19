@@ -13,7 +13,8 @@ test.describe.configure({ timeout: 90_000 });
 
 const BASE = "http://localhost:8790";
 const GALLERY = "/admin/gallery/";
-const rows = () => d1<{ id: string; image_id: string; position: number; site_id: string }>("SELECT site_id, id, image_id, position FROM gallery_images ORDER BY site_id, position, id");
+const rows = () =>
+  d1<{ id: string; image_id: string; position: number; site_id: string }>("SELECT site_id, id, image_id, position FROM gallery_images ORDER BY site_id, position, id");
 const version = () => d1<{ v: number }>("SELECT content_version AS v FROM sites WHERE id = 'bistro'")[0].v;
 const csrf = (page: Page) => page.locator("input[name=csrf]").first().inputValue();
 const post = (page: Page, form: Record<string, string>, headers: Record<string, string> = { Origin: BASE }, path = GALLERY) =>
@@ -30,17 +31,27 @@ test("public gallery shows exactly the admin's order after add, move and remove,
   await page.goto(GALLERY);
   const baseline = rows().filter((r) => r.site_id === "bistro").length;
   const v0 = version();
-  for (const p of [a, b]) await addable(page, p.id).getByRole("button", { name: `Lägg till i galleriet: ${p.sv}` }).click();
+  for (const p of [a, b])
+    await addable(page, p.id)
+      .getByRole("button", { name: `Lägg till i galleriet: ${p.sv}` })
+      .click();
   expect(version()).toBeGreaterThan(v0);
   // Move b up twice and a to the end side: final admin order is what the public page must show.
-  await entry(page, b.id).getByRole("button", { name: `Flytta tidigare: ${b.sv}` }).click();
-  await entry(page, b.id).getByRole("button", { name: `Flytta tidigare: ${b.sv}` }).click();
+  await entry(page, b.id)
+    .getByRole("button", { name: `Flytta tidigare: ${b.sv}` })
+    .click();
+  await entry(page, b.id)
+    .getByRole("button", { name: `Flytta tidigare: ${b.sv}` })
+    .click();
   const admin = await adminAlts(page);
   expect(admin).toHaveLength(baseline + 2);
   await page.goto("/gallery/");
   expect(await publicAlts(page)).toEqual(admin);
   // First and fourth tiles are the wide ones (on a desktop-sized, non-mobile context).
-  const wide = await page.context().browser()!.newContext({ viewport: { width: 1280, height: 900 }, isMobile: false, hasTouch: false });
+  const wide = await page
+    .context()
+    .browser()!
+    .newContext({ viewport: { width: 1280, height: 900 }, isMobile: false, hasTouch: false });
   const wp = await wide.newPage();
   await wp.goto(`${BASE}/gallery/`);
   const spans = await wp.locator(".gallery-magazine > li").evaluateAll((lis) => lis.slice(0, 5).map((li) => getComputedStyle(li).gridColumnStart));
@@ -54,11 +65,15 @@ test("public gallery shows exactly the admin's order after add, move and remove,
   expect(adminEn[baseline - 1]).toBe(b.en);
   // Removing the moved photo leaves the rest in the same relative order.
   await page.goto(GALLERY);
-  await entry(page, b.id).getByRole("button", { name: `Ta bort från galleriet: ${b.sv}` }).click();
+  await entry(page, b.id)
+    .getByRole("button", { name: `Ta bort från galleriet: ${b.sv}` })
+    .click();
   await page.goto("/gallery/");
   expect(await publicAlts(page)).toEqual(admin.filter((x) => x !== b.sv));
   await page.goto(GALLERY);
-  await entry(page, a.id).getByRole("button", { name: `Ta bort från galleriet: ${a.sv}` }).click();
+  await entry(page, a.id)
+    .getByRole("button", { name: `Ta bort från galleriet: ${a.sv}` })
+    .click();
   expect(rows().filter((r) => r.site_id === "bistro")).toHaveLength(baseline);
 });
 
@@ -128,7 +143,10 @@ test("another site's rows and photos, malformed ids, bad CSRF, wrong Origin and 
     // The other site's photo is not offered here.
     await expect(page.locator(`#addable-${theirImg.slice(0, 12)}`)).toHaveCount(0);
     // A signed-out client can't post.
-    const anon = await page.context().browser()!.newContext({ extraHTTPHeaders: { "CF-Connecting-IP": freshIp() } });
+    const anon = await page
+      .context()
+      .browser()!
+      .newContext({ extraHTTPHeaders: { "CF-Connecting-IP": freshIp() } });
     const res = await anon.request.post(`${BASE}${GALLERY}`, { form: { csrf: token, action: "remove", id: ownId }, maxRedirects: 0, headers: { Origin: BASE } });
     expect([303, 401, 403]).toContain(res.status());
     await anon.close();
@@ -145,13 +163,23 @@ test("targets are 44 px, focus follows at the top and bottom ends, and the libra
   const a = await uploadPhoto(page);
   const b = await uploadPhoto(page);
   await page.goto(GALLERY);
-  for (const p of [a, b]) await addable(page, p.id).getByRole("button", { name: `Lägg till i galleriet: ${p.sv}` }).click();
+  for (const p of [a, b])
+    await addable(page, p.id)
+      .getByRole("button", { name: `Lägg till i galleriet: ${p.sv}` })
+      .click();
   const small = await page.locator("#gallery button:not([disabled]), #gallery-addable button:not([disabled])").evaluateAll((bs) =>
-    bs.map((b) => { const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; }).filter(([w, h]) => w < 44 || h < 44),
+    bs
+      .map((b) => {
+        const r = b.getBoundingClientRect();
+        return [Math.round(r.width), Math.round(r.height)];
+      })
+      .filter(([w, h]) => w < 44 || h < 44),
   );
   expect(small).toEqual([]);
   // Bottom end: b is last; move a down -> a is last, its down is disabled, focus goes to its up.
-  await entry(page, a.id).getByRole("button", { name: `Flytta senare: ${a.sv}` }).click();
+  await entry(page, a.id)
+    .getByRole("button", { name: `Flytta senare: ${a.sv}` })
+    .click();
   await expect(entry(page, a.id).getByRole("button", { name: `Flytta senare: ${a.sv}` })).toBeDisabled();
   await expect(entry(page, a.id).getByRole("button", { name: `Flytta tidigare: ${a.sv}` })).toBeFocused();
   // Library numbering matches the order.
@@ -176,7 +204,10 @@ test("targets are 44 px, focus follows at the top and bottom ends, and the libra
   const res = await post(page, { csrf: await csrf(page), action: "move", id: first, direction: "up" });
   expect(res.headers().location).toBe(`${GALLERY}?changed=${first}%3Aup`);
   expect(version()).toBe(v);
-  for (const p of [a, b]) await entry(page, p.id).getByRole("button", { name: `Ta bort från galleriet: ${p.sv}` }).click();
+  for (const p of [a, b])
+    await entry(page, p.id)
+      .getByRole("button", { name: `Ta bort från galleriet: ${p.sv}` })
+      .click();
 });
 
 test("a full gallery: add buttons are disabled with a stated reason, and a crafted add is refused", async ({ page }) => {
@@ -210,11 +241,15 @@ test("JS off, English: add, move at the end, remove, and refusal messages", asyn
   const noJs = await browser.newContext({ javaScriptEnabled: false, storageState: await page.context().storageState(), extraHTTPHeaders: { "CF-Connecting-IP": freshIp() } });
   const plain = await noJs.newPage();
   await plain.goto(`${BASE}/en${GALLERY}`);
-  await addable(plain, photo.id).getByRole("button", { name: `Add to the gallery: ${photo.en}` }).click();
+  await addable(plain, photo.id)
+    .getByRole("button", { name: `Add to the gallery: ${photo.en}` })
+    .click();
   await expect(plain.getByRole("status")).toHaveText("The photo is added to the gallery.");
   // Down at the bottom is disabled; up works and the page reloads in English.
   await expect(entry(plain, photo.id).getByRole("button", { name: `Move later: ${photo.en}` })).toBeDisabled();
-  await entry(plain, photo.id).getByRole("button", { name: `Move earlier: ${photo.en}` }).click();
+  await entry(plain, photo.id)
+    .getByRole("button", { name: `Move earlier: ${photo.en}` })
+    .click();
   expect(plain.url()).toContain("/en/admin/gallery/");
   for (const [done, text] of [
     ["already", "That photo is already in the gallery."],
@@ -228,7 +263,9 @@ test("JS off, English: add, move at the end, remove, and refusal messages", asyn
   }
   await plain.goto(`${BASE}/en${GALLERY}?done=bogus`);
   await expect(plain.getByRole("alert")).toHaveCount(0);
-  await entry(plain, photo.id).getByRole("button", { name: `Remove from the gallery: ${photo.en}` }).click();
+  await entry(plain, photo.id)
+    .getByRole("button", { name: `Remove from the gallery: ${photo.en}` })
+    .click();
   await expect(plain.getByRole("status")).toHaveText("The photo is removed from the gallery. It's still in your photos.");
   await noJs.close();
 });

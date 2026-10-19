@@ -14,9 +14,7 @@ export function buildSitemap(origin: string): string {
   const urls = PAGE_PATHS.flatMap((path) => {
     const links = pageLinks(new URL(path, origin), "sv");
     return [links.sv, links.en].map((loc) => {
-      const alternates = (["sv", "en"] as const)
-        .map((lang) => `    <xhtml:link rel="alternate" hreflang="${lang}" href="${escapeXml(links[lang])}"/>`)
-        .join("\n");
+      const alternates = (["sv", "en"] as const).map((lang) => `    <xhtml:link rel="alternate" hreflang="${lang}" href="${escapeXml(links[lang])}"/>`).join("\n");
       return `  <url>\n    <loc>${escapeXml(loc)}</loc>\n${alternates}\n  </url>`;
     });
   });

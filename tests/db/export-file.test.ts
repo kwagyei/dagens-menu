@@ -37,10 +37,7 @@ const content = {
 beforeEach(async () => {
   await db.batch([db.prepare("DELETE FROM sites"), db.prepare("DELETE FROM users")]);
   await db.batch(prepare(db, seedStatements("bistro", content, images)));
-  await db.batch([
-    db.prepare("INSERT INTO sites (id) VALUES ('westafrican')"),
-    db.prepare("INSERT INTO users (id, email) VALUES (?, 'owner@bistro.se')").bind(USER),
-  ]);
+  await db.batch([db.prepare("INSERT INTO sites (id) VALUES ('westafrican')"), db.prepare("INSERT INTO users (id, email) VALUES (?, 'owner@bistro.se')").bind(USER)]);
 });
 
 async function ownerEdits() {
@@ -148,7 +145,9 @@ describe("recentChanges", () => {
   });
 
   it("returns at most the limit", async () => {
-    await db.batch(Array.from({ length: 60 }, (_, n) => db.prepare("INSERT INTO audit_log (site_id, entity, action, summary) VALUES ('bistro', 'menu_item', 'update', ?)").bind(`change ${n}`)));
+    await db.batch(
+      Array.from({ length: 60 }, (_, n) => db.prepare("INSERT INTO audit_log (site_id, entity, action, summary) VALUES ('bistro', 'menu_item', 'update', ?)").bind(`change ${n}`)),
+    );
     expect(await recentChanges(bistro)).toHaveLength(50);
     expect(await recentChanges(bistro, 5)).toHaveLength(5);
   });

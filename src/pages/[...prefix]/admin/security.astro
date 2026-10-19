@@ -40,9 +40,7 @@ if (Astro.request.method === "POST") {
   return Astro.redirect(here, 303);
 }
 
-const { results: passkeys } = await env.DB.prepare(
-  "SELECT id, created_at, last_used_at FROM passkeys WHERE user_id = ? AND site_id = ? ORDER BY created_at",
-)
+const { results: passkeys } = await env.DB.prepare("SELECT id, created_at, last_used_at FROM passkeys WHERE user_id = ? AND site_id = ? ORDER BY created_at")
   .bind(session.userId, session.siteId)
   .all<{ id: string; created_at: string; last_used_at: string | null }>();
 const csrf = await formToken(secret, session.tokenHash);
@@ -65,9 +63,15 @@ const when = (iso: string) =>
   <section class="space-y-8">
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-3xl font-bold">{t(locale, "admin.security.heading")}</h1>
-      <a class="underline admin-target" href={localePath(locale, "/admin/")}>{t(locale, "admin.back")}</a>
+      <a class="underline admin-target" href={localePath(locale, "/admin/")}>
+        {t(locale, "admin.back")}
+      </a>
     </div>
-    {message && <p class="admin-message" role="status">{message}</p>}
+    {message && (
+      <p class="admin-message" role="status">
+        {message}
+      </p>
+    )}
 
     <div class="space-y-3">
       <h2 class="text-xl font-semibold">{t(locale, "admin.security.passkeys")}</h2>
@@ -89,7 +93,9 @@ const when = (iso: string) =>
                 <input type="hidden" name="csrf" value={csrf} />
                 <input type="hidden" name="action" value="remove" />
                 <input type="hidden" name="id" value={p.id} />
-                <button class="admin-button admin-button-quiet" type="submit">{t(locale, "admin.security.remove")}</button>
+                <button class="admin-button admin-button-quiet" type="submit">
+                  {t(locale, "admin.security.remove")}
+                </button>
               </form>
             )}
           </li>
@@ -115,9 +121,15 @@ const when = (iso: string) =>
         data-working={t(locale, "admin.working")}
         data-cancelled={t(locale, "admin.error.cancelled")}
         data-failed={t(locale, "admin.error.failed")}
-      >{t(locale, "admin.security.addDevice")}</button>
-      <button class="admin-button" type="button" id="add-create" hidden>{t(locale, "admin.security.addCreate")}</button>
-      <p class="admin-message" data-needs-js>{t(locale, "admin.noScript")}</p>
+      >
+        {t(locale, "admin.security.addDevice")}
+      </button>
+      <button class="admin-button" type="button" id="add-create" hidden>
+        {t(locale, "admin.security.addCreate")}
+      </button>
+      <p class="admin-message" data-needs-js>
+        {t(locale, "admin.noScript")}
+      </p>
       <p id="add-status" role="status" aria-live="polite"></p>
     </div>
 
@@ -127,7 +139,9 @@ const when = (iso: string) =>
       <form method="post">
         <input type="hidden" name="csrf" value={csrf} />
         <input type="hidden" name="action" value="sign-out-everywhere" />
-        <button class="admin-button admin-button-quiet" type="submit">{t(locale, "admin.security.signOutEverywhere")}</button>
+        <button class="admin-button admin-button-quiet" type="submit">
+          {t(locale, "admin.security.signOutEverywhere")}
+        </button>
       </form>
     </div>
   </section>

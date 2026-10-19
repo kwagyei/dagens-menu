@@ -42,14 +42,22 @@ const hidden = PAGE_SLOTS.filter((slot) => !shown.includes(slot) && chosen?.[slo
               <p class="font-medium">{upperFirst(slotName(slot))}</p>
               <p class="text-sm admin-muted">{t(locale, "admin.pagePhotos.current").replace("{photo}", name)}</p>
             </div>
-            <a class="admin-small-button inline-flex items-center" href={page.path(`/page-photos/${slot}/`)} aria-label={`${t(locale, "admin.pagePhotos.change")}: ${slotName(slot)}`}>{t(locale, "admin.pagePhotos.change")}</a>
+            <a
+              class="admin-small-button inline-flex items-center"
+              href={page.path(`/page-photos/${slot}/`)}
+              aria-label={`${t(locale, "admin.pagePhotos.change")}: ${slotName(slot)}`}
+            >
+              {t(locale, "admin.pagePhotos.change")}
+            </a>
           </li>
         );
       })}
     </ul>
     {hidden.length > 0 && (
       <section class="space-y-3" aria-labelledby="hidden-heading">
-        <h2 class="text-xl font-semibold" id="hidden-heading">{t(locale, "admin.pagePhotos.hiddenHeading")}</h2>
+        <h2 class="text-xl font-semibold" id="hidden-heading">
+          {t(locale, "admin.pagePhotos.hiddenHeading")}
+        </h2>
         <p class="admin-muted">{t(locale, "admin.pagePhotos.hiddenLead")}</p>
         <ul class="space-y-3" id="page-photos-hidden">
           {hidden.map((slot) => {
@@ -61,7 +69,13 @@ const hidden = PAGE_SLOTS.filter((slot) => !shown.includes(slot) && chosen?.[slo
                   <p class="font-medium">{upperFirst(slotName(slot))}</p>
                   <p class="text-sm admin-muted">{t(locale, "admin.pagePhotos.current").replace("{photo}", name)}</p>
                 </div>
-                <a class="admin-small-button inline-flex items-center" href={page.path(`/page-photos/${slot}/`)} aria-label={`${t(locale, "admin.pagePhotos.clear")}: ${slotName(slot)}`}>{t(locale, "admin.pagePhotos.clear")}</a>
+                <a
+                  class="admin-small-button inline-flex items-center"
+                  href={page.path(`/page-photos/${slot}/`)}
+                  aria-label={`${t(locale, "admin.pagePhotos.clear")}: ${slotName(slot)}`}
+                >
+                  {t(locale, "admin.pagePhotos.clear")}
+                </a>
               </li>
             );
           })}

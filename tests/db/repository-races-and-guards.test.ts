@@ -17,16 +17,7 @@ import waHours from "../../sites/westafrican/content/hours.json";
 import waMenu from "../../sites/westafrican/content/menu.json";
 import waPages from "../../sites/westafrican/content/pages.json";
 import waSettings from "../../sites/westafrican/content/settings.json";
-import {
-  commitIf,
-  deleteMenuItem,
-  getMenuItem,
-  type MenuItemEdit,
-  type MenuItemRecord,
-  type RepoContext,
-  setSoldOut,
-  updateMenuItem,
-} from "../../src/db/repository";
+import { commitIf, deleteMenuItem, getMenuItem, type MenuItemEdit, type MenuItemRecord, type RepoContext, setSoldOut, updateMenuItem } from "../../src/db/repository";
 import { formatPrice } from "../../src/content/load";
 import { seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare, stmt } from "../../src/db/sql";
@@ -158,11 +149,10 @@ describe("commitIf", () => {
 
   it("bumps the version and audits when the guard matches several rows (e.g. a reorder)", async () => {
     const v0 = await version("bistro");
-    const matched = await commitIf(
-      bistro,
-      stmt("UPDATE menu_items SET position = position + 100 WHERE site_id = ? AND id IN (?, ?)", "bistro", ITEM, ITEM2),
-      { ...entry, action: "reorder" },
-    );
+    const matched = await commitIf(bistro, stmt("UPDATE menu_items SET position = position + 100 WHERE site_id = ? AND id IN (?, ?)", "bistro", ITEM, ITEM2), {
+      ...entry,
+      action: "reorder",
+    });
     expect(matched).toBe(true);
     // The data did change...
     expect(await db.prepare("SELECT count(*) AS n FROM menu_items WHERE position >= 100").first("n")).toBe(2);

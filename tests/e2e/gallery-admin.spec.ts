@@ -21,7 +21,9 @@ test("a library photo is added to the gallery, shown on the public gallery, then
   const photo = await uploadPhoto(page);
 
   await page.goto(GALLERY);
-  await addable(page, photo.id).getByRole("button", { name: `Lägg till i galleriet: ${photo.sv}` }).click();
+  await addable(page, photo.id)
+    .getByRole("button", { name: `Lägg till i galleriet: ${photo.sv}` })
+    .click();
   await expect(page.getByRole("status")).toHaveText("Fotot är tillagt i galleriet.");
   await expect(inGallery(page, photo.id)).toContainText(photo.sv);
   await expect(addable(page, photo.id)).toHaveCount(0);
@@ -37,7 +39,9 @@ test("a library photo is added to the gallery, shown on the public gallery, then
   await expect(page.locator("#photo-uses a")).toHaveAttribute("href", GALLERY);
 
   await page.goto(GALLERY);
-  await inGallery(page, photo.id).getByRole("button", { name: `Ta bort från galleriet: ${photo.sv}` }).click();
+  await inGallery(page, photo.id)
+    .getByRole("button", { name: `Ta bort från galleriet: ${photo.sv}` })
+    .click();
   await expect(page.getByRole("status")).toHaveText("Fotot är borttaget från galleriet. Det finns kvar bland dina foton.");
   await expect(inGallery(page, photo.id)).toHaveCount(0);
   await expect(addable(page, photo.id)).toHaveCount(1);
@@ -51,20 +55,28 @@ test("moving a photo swaps it with its neighbour and keeps focus on the button u
   const a = await uploadPhoto(page);
   const b = await uploadPhoto(page);
   await page.goto(GALLERY);
-  for (const p of [a, b]) await addable(page, p.id).getByRole("button", { name: `Lägg till i galleriet: ${p.sv}` }).click();
+  for (const p of [a, b])
+    await addable(page, p.id)
+      .getByRole("button", { name: `Lägg till i galleriet: ${p.sv}` })
+      .click();
 
   const ids = async () => page.locator("#gallery li img").evaluateAll((imgs) => imgs.map((i) => (i as HTMLImageElement).getAttribute("src") ?? ""));
   const indexOf = async (id: string) => (await ids()).findIndex((src) => src.includes(id));
   const before = await indexOf(b.id);
   expect(before).toBe((await indexOf(a.id)) + 1);
 
-  await inGallery(page, b.id).getByRole("button", { name: `Flytta tidigare: ${b.sv}` }).click();
+  await inGallery(page, b.id)
+    .getByRole("button", { name: `Flytta tidigare: ${b.sv}` })
+    .click();
   expect(await indexOf(b.id)).toBe(before - 1);
   expect(await indexOf(a.id)).toBe(before);
   await expect(inGallery(page, b.id).getByRole("button", { name: `Flytta tidigare: ${b.sv}` })).toBeFocused();
 
   // Clean up: both out of the gallery again.
-  for (const p of [a, b]) await inGallery(page, p.id).getByRole("button", { name: `Ta bort från galleriet: ${p.sv}` }).click();
+  for (const p of [a, b])
+    await inGallery(page, p.id)
+      .getByRole("button", { name: `Ta bort från galleriet: ${p.sv}` })
+      .click();
 });
 
 test("refusals: a photo already in the gallery, and a photo deleted meanwhile, are said plainly and focused", async ({ page }) => {
@@ -90,11 +102,17 @@ test("without JavaScript, in English: add, move and remove", async ({ page, brow
   const noJs = await browser.newContext({ javaScriptEnabled: false, storageState: await page.context().storageState(), extraHTTPHeaders: { "CF-Connecting-IP": freshIp() } });
   const plain = await noJs.newPage();
   await plain.goto(`${BASE}/en${GALLERY}`);
-  await addable(plain, photo.id).getByRole("button", { name: `Add to the gallery: ${photo.en}` }).click();
+  await addable(plain, photo.id)
+    .getByRole("button", { name: `Add to the gallery: ${photo.en}` })
+    .click();
   await expect(plain.getByRole("status")).toHaveText("The photo is added to the gallery.");
-  await inGallery(plain, photo.id).getByRole("button", { name: `Move earlier: ${photo.en}` }).click();
+  await inGallery(plain, photo.id)
+    .getByRole("button", { name: `Move earlier: ${photo.en}` })
+    .click();
   await expect(inGallery(plain, photo.id)).toHaveCount(1);
-  await inGallery(plain, photo.id).getByRole("button", { name: `Remove from the gallery: ${photo.en}` }).click();
+  await inGallery(plain, photo.id)
+    .getByRole("button", { name: `Remove from the gallery: ${photo.en}` })
+    .click();
   await expect(plain.getByRole("status")).toHaveText("The photo is removed from the gallery. It's still in your photos.");
   await noJs.close();
 });

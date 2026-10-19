@@ -7,8 +7,7 @@ import { describe, expect, it } from "vitest";
 
 const BUILD_INPUTS = ["src", "sites", "public"];
 
-const markdownUnder = (dir: string): string[] =>
-  (readdirSync(dir, { recursive: true }) as string[]).filter((f) => f.endsWith(".md")).map((f) => `${dir}/${f}`);
+const markdownUnder = (dir: string): string[] => (readdirSync(dir, { recursive: true }) as string[]).filter((f) => f.endsWith(".md")).map((f) => `${dir}/${f}`);
 
 describe("deploy skip for Markdown-only merges", () => {
   it("has no Markdown in the folders the build reads", () => {

@@ -12,7 +12,10 @@ const enc = new TextEncoder();
 const concat = (...parts: Uint8Array[]) => {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let o = 0;
-  for (const p of parts) (out.set(p, o), (o += p.length));
+  for (const p of parts) {
+    out.set(p, o);
+    o += p.length;
+  }
   return out;
 };
 function cborHead(major: number, n: number): Uint8Array {
@@ -109,9 +112,7 @@ export class SoftAuthenticator {
     else if (this.counter > 0) this.counter++;
     const authData = concat(await sha256(enc.encode(rpID)), Uint8Array.of(this.verified ? 0x05 : 0x01), u32(this.counter)); // UP, UV (if verified)
     const clientData = enc.encode(JSON.stringify({ type: "webauthn.get", challenge, origin, crossOrigin: false }));
-    const raw = new Uint8Array(
-      await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, this.keys.privateKey, concat(authData, await sha256(clientData))),
-    );
+    const raw = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, this.keys.privateKey, concat(authData, await sha256(clientData))));
     return {
       id: this.id,
       rawId: this.id,

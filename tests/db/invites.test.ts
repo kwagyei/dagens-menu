@@ -10,11 +10,7 @@ const now = new Date("2026-10-16T10:00:00Z");
 const later = (ms: number) => new Date(now.getTime() + ms);
 
 beforeEach(async () => {
-  await db.batch([
-    db.prepare("DELETE FROM sites"),
-    db.prepare("DELETE FROM users"),
-    db.prepare("INSERT INTO sites (id) VALUES ('bistro'), ('westafrican')"),
-  ]);
+  await db.batch([db.prepare("DELETE FROM sites"), db.prepare("DELETE FROM users"), db.prepare("INSERT INTO sites (id) VALUES ('bistro'), ('westafrican')")]);
 });
 
 async function invite(site = "bistro", email = "Owner@Bistro.se", at = now) {

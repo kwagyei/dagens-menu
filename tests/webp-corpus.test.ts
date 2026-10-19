@@ -40,7 +40,7 @@ const WEBP_CHUNKS = new Set(["VP8 ", "VP8L", "VP8X", "ALPH", "ICCP", "ANIM", "AN
 function withoutForeignChunks(file: Uint8Array): Uint8Array {
   const view = new DataView(file.buffer, file.byteOffset, file.byteLength);
   const kept: Uint8Array[] = [];
-  for (let at = 12; at + 8 <= file.length; ) {
+  for (let at = 12; at + 8 <= file.length;) {
     const size = view.getUint32(at + 4, true);
     const end = at + 8 + size + (size % 2);
     if (WEBP_CHUNKS.has(new TextDecoder().decode(file.subarray(at, at + 4)))) kept.push(file.subarray(at, end));

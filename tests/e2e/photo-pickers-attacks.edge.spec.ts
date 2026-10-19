@@ -13,9 +13,14 @@ test.describe.configure({ timeout: 90_000 });
 
 const BASE = "http://localhost:8790";
 const version = () => d1<{ v: number }>("SELECT content_version AS v FROM sites WHERE id = 'bistro'")[0].v;
-const slots = () => d1<Record<string, string | null>>("SELECT hero_image_id, cta_image_id, menu_hero_image_id, story_image_id, kitchen_image_id FROM page_content WHERE site_id = 'bistro'")[0];
+const slots = () =>
+  d1<Record<string, string | null>>("SELECT hero_image_id, cta_image_id, menu_hero_image_id, story_image_id, kitchen_image_id FROM page_content WHERE site_id = 'bistro'")[0];
 const restoreSlots = (b: Record<string, string | null>) =>
-  d1(`UPDATE page_content SET ${Object.entries(b).map(([k, v]) => `${k} = ${v ? `'${v}'` : "NULL"}`).join(", ")} WHERE site_id = 'bistro'`);
+  d1(
+    `UPDATE page_content SET ${Object.entries(b)
+      .map(([k, v]) => `${k} = ${v ? `'${v}'` : "NULL"}`)
+      .join(", ")} WHERE site_id = 'bistro'`,
+  );
 const csrf = (page: Page) => page.locator("input[name=csrf]").first().inputValue();
 const post = (page: Page, path: string, form: Record<string, string>, headers: Record<string, string> = { Origin: BASE }) =>
   page.request.post(path, { form, maxRedirects: 0, headers });
@@ -31,7 +36,6 @@ test("each slot the classic design draws shows on its page; hero stays decorativ
   await signedInOwner(page);
   const photo = await uploadPhoto(page);
   const before = slots();
-  const media = new RegExp(`/media/${photo.id}`);
   try {
     const v0 = version();
     for (const slot of ["hero", "story", "kitchen"]) await pick(page, `/admin/page-photos/${slot}/`, photo.sv);
@@ -49,7 +53,10 @@ test("each slot the classic design draws shows on its page; hero stays decorativ
     await expect(page.locator("#page-photos li")).toHaveCount(3);
     // hero: decorative, so alt="" and never the library alt
     await page.goto("/");
-    const hero = page.locator("img[srcset], img[src]").filter({ has: page.locator("xpath=self::*") }).locator(`xpath=self::*[contains(@src,"${photo.id}") or contains(@srcset,"${photo.id}")]`);
+    const hero = page
+      .locator("img[srcset], img[src]")
+      .filter({ has: page.locator("xpath=self::*") })
+      .locator(`xpath=self::*[contains(@src,"${photo.id}") or contains(@srcset,"${photo.id}")]`);
     expect(await hero.count(), "hero img on /").toBeGreaterThan(0);
     for (const alt of await hero.evaluateAll((els) => els.map((e) => e.getAttribute("alt")))) expect(alt).toBe("");
     await expect(page.locator(`img[alt="${photo.sv}"]`)).toHaveCount(0);
@@ -70,7 +77,7 @@ test("each slot the classic design draws shows on its page; hero stays decorativ
   }
 });
 
-test("dish form saved after a photo choice keeps the photo; texts form opened before still saves", async ({ page, browser }) => {
+test("dish form saved after a photo choice keeps the photo; texts form opened before still saves", async ({ page }) => {
   await signedInOwner(page);
   const photo = await uploadPhoto(page);
   const [dish] = d1<{ id: string; image_id: string | null; name_sv: string }>("SELECT id, image_id, name_sv FROM menu_items WHERE site_id = 'bistro' ORDER BY id LIMIT 1");
@@ -144,7 +151,15 @@ test("hostile requests change nothing: cross-site, malformed, CSRF, Origin, odd 
     const plain = await page.request.post(paths[0], { data: "image=", headers: { "Content-Type": "text/plain", Origin: BASE }, maxRedirects: 0 });
     expect(plain.status()).toBeLessThan(500);
     // slot / dish path tricks
-    for (const p of ["/admin/page-photos/HERO/", "/admin/page-photos/hero%2f..%2fcta/", "/admin/page-photos/hero_image_id/", "/admin/page-photos/__proto__/", "/admin/page-photos/constructor/", "/admin/page-photos/hero;x/", "/xx/admin/page-photos/hero/"]) {
+    for (const p of [
+      "/admin/page-photos/HERO/",
+      "/admin/page-photos/hero%2f..%2fcta/",
+      "/admin/page-photos/hero_image_id/",
+      "/admin/page-photos/__proto__/",
+      "/admin/page-photos/constructor/",
+      "/admin/page-photos/hero;x/",
+      "/xx/admin/page-photos/hero/",
+    ]) {
       const r = await page.request.get(p, { maxRedirects: 0 });
       expect([404, 308, 301], p).toContain(r.status());
     }

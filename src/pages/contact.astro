@@ -18,24 +18,36 @@ const directions = `https://www.google.com/maps/search/?api=1&query=${encodeURIC
     <dl>
       <div>
         <dt>{t(locale, "contact.phone")}</dt>
-        <dd><a href={`tel:${settings.phone.replace(/[\s-]/g, "")}`}>{settings.phone}</a></dd>
+        <dd>
+          <a href={`tel:${settings.phone.replace(/[\s-]/g, "")}`}>{settings.phone}</a>
+        </dd>
       </div>
       <div>
         <dt>{t(locale, "contact.email")}</dt>
-        <dd><a href={`mailto:${settings.email}`}>{settings.email}</a></dd>
+        <dd>
+          <a href={`mailto:${settings.email}`}>{settings.email}</a>
+        </dd>
       </div>
       <div>
         <dt>{t(locale, "contact.address")}</dt>
-        <dd><span>{settings.address}</span></dd>
+        <dd>
+          <span>{settings.address}</span>
+        </dd>
         {/* A plain link: nothing loads from Google until the visitor follows it. */}
         {!settings.mapEmbed && (
-          <dd><a class="link-plain" href={directions} rel="noopener">{t(locale, "contact.directions")}</a></dd>
+          <dd>
+            <a class="link-plain" href={directions} rel="noopener">
+              {t(locale, "contact.directions")}
+            </a>
+          </dd>
         )}
       </div>
     </dl>
 
     <section class="card-lifted" aria-labelledby="hours-title">
-      <h2 class="section-title" id="hours-title">{t(locale, "contact.hours")}</h2>
+      <h2 class="section-title" id="hours-title">
+        {t(locale, "contact.hours")}
+      </h2>
       <HoursTable hours={hours} />
     </section>
   </div>

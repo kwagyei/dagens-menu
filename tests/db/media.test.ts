@@ -90,7 +90,14 @@ describe("/media", () => {
   });
 
   it("404 (no-store) for another site's photo, an unknown width or id, and a malformed name", async () => {
-    for (const path of [`/media/${id}-1200.webp`, `/media/${"0".repeat(64)}-800.webp`, `/media/${id}-800.jpg`, `/media/${id.toUpperCase()}-800.webp`, "/media/", `/media/${id}-800.webp/x`]) {
+    for (const path of [
+      `/media/${id}-1200.webp`,
+      `/media/${"0".repeat(64)}-800.webp`,
+      `/media/${id}-800.jpg`,
+      `/media/${id.toUpperCase()}-800.webp`,
+      "/media/",
+      `/media/${id}-800.webp/x`,
+    ]) {
       const res = await get(path);
       expect(res.status, path).toBe(404);
       expect(res.headers.get("cache-control"), path).toBe("no-store");

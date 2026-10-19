@@ -37,7 +37,15 @@ export const BLOB_CHUNK_BYTES = 45_000;
 
 function variantStatements(site: string, id: string, width: number, bytes: Uint8Array): Statement[] {
   // As hex through blob-hex.ts, like every other write of photo bytes (ADR-012 Amendment 1).
-  const out = [stmt("INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES (?, ?, ?, 'image/webp', unhex(?))", site, id, width, bytesParam(bytes.subarray(0, BLOB_CHUNK_BYTES)))];
+  const out = [
+    stmt(
+      "INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES (?, ?, ?, 'image/webp', unhex(?))",
+      site,
+      id,
+      width,
+      bytesParam(bytes.subarray(0, BLOB_CHUNK_BYTES)),
+    ),
+  ];
   for (let at = BLOB_CHUNK_BYTES; at < bytes.length; at += BLOB_CHUNK_BYTES) {
     out.push(
       stmt(
@@ -210,21 +218,12 @@ export function seedStatements(
   });
 
   content.pages.home.highlights.forEach((itemId, position) => {
-    out.push(
-      stmt(
-        "INSERT INTO home_highlights (site_id, item_id, position) VALUES (?, ?, ?)",
-        site,
-        itemId,
-        position,
-      ),
-    );
+    out.push(stmt("INSERT INTO home_highlights (site_id, item_id, position) VALUES (?, ?, ?)", site, itemId, position));
   });
 
   WEEKDAYS.forEach((day, weekday) => {
     const hours = content.hours.weekly[day];
-    out.push(
-      stmt("INSERT INTO weekly_hours (site_id, weekday, opens, closes) VALUES (?, ?, ?, ?)", site, weekday, hours?.open ?? null, hours?.close ?? null),
-    );
+    out.push(stmt("INSERT INTO weekly_hours (site_id, weekday, opens, closes) VALUES (?, ?, ?, ?)", site, weekday, hours?.open ?? null, hours?.close ?? null));
   });
   for (const e of content.hours.exceptions) {
     out.push(

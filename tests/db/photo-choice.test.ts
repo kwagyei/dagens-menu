@@ -32,7 +32,13 @@ const DISH = menu.categories[0].items[0].id;
 let counter = 0;
 async function uploaded(site = "bistro"): Promise<string> {
   const id = (++counter).toString(16).padStart(64, "c");
-  expect(await addUpload(ctx(site), { id, variants: [{ width: 400, height: 300, bytes: crypto.getRandomValues(new Uint8Array(300)) }], alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` } })).toMatchObject({ ok: true });
+  expect(
+    await addUpload(ctx(site), {
+      id,
+      variants: [{ width: 400, height: 300, bytes: crypto.getRandomValues(new Uint8Array(300)) }],
+      alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` },
+    }),
+  ).toMatchObject({ ok: true });
   return id;
 }
 const audits = () => db.prepare("SELECT count(*) AS n FROM audit_log WHERE action = 'update'").first<number>("n");

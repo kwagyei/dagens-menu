@@ -1,5 +1,4 @@
 ---
-
 import { MAP_SANDBOX } from "../booking/embed";
 import { getLocale, t } from "../i18n";
 
@@ -11,22 +10,23 @@ const mapUrl = settings.mapEmbed;
 {mapUrl && (
   <div>
     <div id="map-placeholder">
-      <button
-        id="load-map"
-        class="btn btn-primary btn-sm"
-      >
+      <button id="load-map" class="btn btn-primary btn-sm">
         {t(locale, "contact.map.load")}
       </button>
     </div>
-    <div
-      id="map-container"
-      class="hidden mt-4 aspect-video w-full overflow-hidden"
-      style={`border-radius: var(--radius);`}
-    >
-    </div>
+    <div id="map-container" class="hidden mt-4 aspect-video w-full overflow-hidden" style={`border-radius: var(--radius);`}></div>
     <!-- Inert until consent: the consent check ignores <template>, and nothing in it loads. -->
     <template id="map-embed">
-      <iframe src={mapUrl} class="w-full h-full" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map" sandbox={MAP_SANDBOX}></iframe>
+      <iframe
+        src={mapUrl}
+        class="w-full h-full"
+        style="border:0;"
+        allowfullscreen
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="Map"
+        sandbox={MAP_SANDBOX}
+      ></iframe>
     </template>
   </div>
 )}

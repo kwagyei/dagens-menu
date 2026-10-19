@@ -30,7 +30,11 @@ const ctx = (challengeCookie?: string, site = "bistro"): CeremonyContext => ({
 });
 const cookieValue = (setCookie: string) => setCookie.split(";")[0].split("=").slice(1).join("=");
 const sessionToken = (cookies: string[]) => cookieValue(cookies.find((c) => c.startsWith("__Host-dm_admin="))!);
-const count = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<number>("n"))!;
+const count = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<number>("n"))!;
 
 async function invite(site = "bistro", email = "owner@bistro.se") {
   const issued = await issueInvite(site, email, now);
@@ -79,7 +83,16 @@ describe("checkInvite edge cases (review L8)", () => {
 
   it("answers 410 for near-miss tokens: whitespace, case, a suffix, very long, empty", async () => {
     const token = await invite();
-    for (const bad of [` ${token}`, `${token} `, token.toUpperCase() === token ? token.toLowerCase() : token.toUpperCase(), `${token}x`, token.slice(1), "", "x".repeat(100_000), encodeURIComponent(`#${token}`)]) {
+    for (const bad of [
+      ` ${token}`,
+      `${token} `,
+      token.toUpperCase() === token ? token.toLowerCase() : token.toUpperCase(),
+      `${token}x`,
+      token.slice(1),
+      "",
+      "x".repeat(100_000),
+      encodeURIComponent(`#${token}`),
+    ]) {
       const result = await checkInvite(ctx(), bad);
       expect(result.status, JSON.stringify(bad.slice(0, 60))).toBe(410);
       expect(result.body).toEqual({ error: "invite-invalid" });
@@ -112,7 +125,10 @@ describe("checkBatchGuard (review M2)", () => {
     sites: await count("SELECT count(*) AS n FROM sites WHERE id != ?", CHECK_SITE),
   });
   const leftovers = () =>
-    count("SELECT (SELECT count(*) FROM sites WHERE id = ?1) + (SELECT count(*) FROM audit_log WHERE site_id = ?1) + (SELECT count(*) FROM menu_categories WHERE site_id = ?1) AS n", CHECK_SITE);
+    count(
+      "SELECT (SELECT count(*) FROM sites WHERE id = ?1) + (SELECT count(*) FROM audit_log WHERE site_id = ?1) + (SELECT count(*) FROM menu_categories WHERE site_id = ?1) AS n",
+      CHECK_SITE,
+    );
 
   it("leaves real sites' content, versions and audit history exactly as they were", async () => {
     const before = await bistroWithContent();

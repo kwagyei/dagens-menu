@@ -23,8 +23,7 @@ export default {
   "booking.fallback.phone": "Ring oss",
   "booking.fallback.email": "Mejla oss",
   "consent.title": "Cookies",
-  "consent.message":
-    "Den här webbplatsen använder cookies från tredjepartstjänster för bokning och kartor.",
+  "consent.message": "Den här webbplatsen använder cookies från tredjepartstjänster för bokning och kartor.",
   "consent.accept": "Acceptera",
   "consent.decline": "Avböj",
   "consent.change": "Ändra cookieinställningar",
@@ -96,7 +95,8 @@ export default {
   "admin.security.addConfirmed": "Bekräftat. Skapa nu passkeyn på den nya enheten.",
   "admin.security.addCreate": "Skapa den nya passkeyn",
   "admin.security.addAlreadyHere": "Den här enheten har redan din passkey. Skapa den nya på en annan telefon eller dator, eller välj den i passkey-fönstret.",
-  "admin.security.addStartAgain": "Den nya passkeyn kunde inte sparas. Börja om och bekräfta med din nuvarande passkey. Om den nya enheten ändå sparade en passkey kan du ta bort den i enhetens lösenordshanterare.",
+  "admin.security.addStartAgain":
+    "Den nya passkeyn kunde inte sparas. Börja om och bekräfta med din nuvarande passkey. Om den nya enheten ändå sparade en passkey kan du ta bort den i enhetens lösenordshanterare.",
   "admin.security.signOutEverywhere": "Logga ut överallt",
   "admin.security.signOutEverywhereLead": "Avslutar alla inloggningar, även på andra enheter.",
   "admin.security.removed": "Passkeyn är borttagen, och inloggningarna som gjordes med den är avslutade.",
@@ -307,7 +307,8 @@ export default {
   "admin.photos.usage": "{count} av {limit} foton, {mb} MB av {limitMb} MB.",
   "admin.photos.added": "Fotot är uppladdat.",
   "admin.photos.duplicate": "Det fotot finns redan bland dina foton.",
-  "admin.photos.needsScript": "För att ladda upp ett foto behövs JavaScript, eftersom telefonen krymper fotot innan det skickas. Allt annat i administrationen, som att välja, beskriva och ta bort foton, fungerar utan.",
+  "admin.photos.needsScript":
+    "För att ladda upp ett foto behövs JavaScript, eftersom telefonen krymper fotot innan det skickas. Allt annat i administrationen, som att välja, beskriva och ta bort foton, fungerar utan.",
   "admin.photos.notPhoto": "Fotot kunde inte tas emot. Välj det igen, eller välj ett annat foto.",
   "admin.photos.cantOpen": "Det här fotot går inte att öppna i den här webbläsaren. Spara det som JPEG och försök igen.",
   "admin.photos.tooLarge": "Fotot är för stort, även efter att det krympts. Välj ett annat foto.",

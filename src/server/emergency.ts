@@ -5,8 +5,7 @@
  */
 import type { SiteSettings } from "../content/schema";
 
-const escape = (s: string) =>
-  s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+const escape = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 export function emergencyPage(settings: SiteSettings, locale: "sv" | "en"): string {
   const name = escape(settings.name[locale]);

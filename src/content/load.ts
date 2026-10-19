@@ -21,11 +21,7 @@ export type Theme = DeepReadonly<Schema.Theme>;
  * unavailable items and dishes sold out today are skipped, so a deleted or sold-out dish quietly drops off the home
  * page instead of breaking it. Each result keeps its id, for looking up its image.
  */
-export function resolveHighlights(
-  menu: Menu,
-  ids: readonly string[],
-  soldOutToday: readonly string[] = [],
-): Array<{ id: string; item: MenuItem }> {
+export function resolveHighlights(menu: Menu, ids: readonly string[], soldOutToday: readonly string[] = []): Array<{ id: string; item: MenuItem }> {
   const byId = new Map(menu.categories.flatMap((c) => c.items.map((item) => [item.id, item] as const)));
   return ids.flatMap((id) => {
     const item = byId.get(id);

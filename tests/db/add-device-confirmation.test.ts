@@ -30,7 +30,11 @@ const ctx = (site: SiteId = "bistro", challengeCookie?: string, at = now): Cerem
   now: at,
   challengeCookie,
 });
-const count = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<number>("n"))!;
+const count = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<number>("n"))!;
 
 /** A person enrolled on `site` with their own software passkey; their session and authenticator. */
 async function enrolled(email: string, site: SiteId = "bistro"): Promise<{ session: Session; auth: SoftAuthenticator }> {

@@ -18,7 +18,10 @@ const BASE = "http://localhost:8790";
 const NEW = "/admin/photos/new/";
 const sha = (b: Uint8Array) => createHash("sha256").update(b).digest("hex");
 const seed = (...args: string[]) => {
-  const r = spawnSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--allow-host", "localhost:8790", "--allow-host", "127.0.0.1:9", ...args], { encoding: "utf-8", timeout: 90_000 });
+  const r = spawnSync("npm", ["run", "-s", "seed", "--", "--site", "bistro", "--allow-host", "localhost:8790", "--allow-host", "127.0.0.1:9", ...args], {
+    encoding: "utf-8",
+    timeout: 90_000,
+  });
   return { status: r.status, out: `${r.stdout}${r.stderr}` };
 };
 
@@ -95,7 +98,8 @@ test("several uploads: Your photos page, hostile files change nothing, restore b
     return p;
   };
   const good = write("good.json", exported);
-  for (const id of ids) expect(exported.content.images.find((i: { ref: string }) => i.ref === id)?.master).toBe(`${BASE}/media/${id}-${({ [idA]: 800, [idB]: 400, [idC]: 1600 })[id]}.webp`);
+  for (const id of ids)
+    expect(exported.content.images.find((i: { ref: string }) => i.ref === id)?.master).toBe(`${BASE}/media/${id}-${{ [idA]: 800, [idB]: 400, [idC]: 1600 }[id]}.webp`);
 
   const before = JSON.stringify((await (await page.request.get("/admin/export")).json()).content);
   const unchanged = async (why: string) => {

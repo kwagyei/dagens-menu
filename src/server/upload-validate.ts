@@ -125,7 +125,7 @@ export function inspectWebp(bytes: Uint8Array): WebpCheck {
 
   // Walk every chunk. Each is a FourCC, a 32-bit size and the payload, padded to even length.
   const chunks: Chunk[] = [];
-  for (let at = 12; at < bytes.length; ) {
+  for (let at = 12; at < bytes.length;) {
     if (at + 8 > bytes.length) return refuse({ reason: "truncated" });
     const id = fourcc(bytes, at);
     const size = u32(bytes, at + 4);
@@ -210,9 +210,7 @@ function imageInfo(chunk: Chunk): WebpCheck {
     return size ? { ok: true, ...size, hasAlpha: false, lossless: false } : refuse({ reason: "bad-header", chunk: "VP8 " });
   }
   const size = vp8lSize(chunk.payload);
-  return size
-    ? { ok: true, width: size.width, height: size.height, hasAlpha: size.alpha, lossless: true }
-    : refuse({ reason: "bad-header", chunk: "VP8L" });
+  return size ? { ok: true, width: size.width, height: size.height, hasAlpha: size.alpha, lossless: true } : refuse({ reason: "bad-header", chunk: "VP8L" });
 }
 
 /** The width steps below the master (ADR-012 §2); the master is the widest variant. */

@@ -40,7 +40,10 @@ describe("sandbox can't be set or loosened by pasted code", () => {
     ["in a div", `<div class="booking">${FRAME}</div>`],
     ["deep in wrappers", `<div><p><span>${FRAME}</span></p></div>`],
     ["two frames of one provider", `${FRAME}<div>${FRAME}</div>`],
-    ["with every allowed iframe attribute", `<iframe src="${SRC}" width="100%" height="800" allow="payment *" allowfullscreen loading="lazy" referrerpolicy="no-referrer" frameborder="0" scrolling="no" title="t"></iframe>`],
+    [
+      "with every allowed iframe attribute",
+      `<iframe src="${SRC}" width="100%" height="800" allow="payment *" allowfullscreen loading="lazy" referrerpolicy="no-referrer" frameborder="0" scrolling="no" title="t"></iframe>`,
+    ],
   ])("gives every frame exactly the page's sandbox: %s", (_name, code) => {
     const sandboxes = sandboxesIn(html(code));
     expect(sandboxes.length).toBeGreaterThan(0);

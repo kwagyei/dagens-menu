@@ -53,7 +53,6 @@ async function exported(request: APIRequestContext) {
 const audit = (summary: string, entity = "menu_item", site = "bistro", user = "NULL") =>
   `INSERT INTO audit_log (site_id, user_id, entity, action, summary) VALUES ('${site}', ${user}, '${entity}', 'update', '${summary.replaceAll("'", "''")}')`;
 
-
 test.describe("export endpoint", () => {
   test("headers: attachment, JSON, no-store, nosniff, no CORS even for a foreign Origin", async ({ page }) => {
     await signedInOwner(page);
@@ -172,10 +171,9 @@ test.describe("history page", () => {
   test("shows exactly 50 entries, newest first, and never another site's", async ({ page }) => {
     await signedInOwner(page);
     const stamp = Date.now().toString(36);
-    const sql = [
-      ...Array.from({ length: 55 }, (_, n) => audit(`limit-${stamp}-${String(n).padStart(2, "0")}`)),
-      audit(`other-site-${stamp}`, "menu_item", "westafrican"),
-    ].join(";\n");
+    const sql = [...Array.from({ length: 55 }, (_, n) => audit(`limit-${stamp}-${String(n).padStart(2, "0")}`)), audit(`other-site-${stamp}`, "menu_item", "westafrican")].join(
+      ";\n",
+    );
     d1(sql);
     await page.goto("/admin/history/");
     const items = page.locator("ol > li");

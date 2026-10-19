@@ -73,11 +73,17 @@ test("after a move, the dish's button has focus and is on screen, and the admin'
   await last.getByRole("button", { name: /^Flytta upp/ }).click();
   await page.waitForURL(/[?&]changed=/);
   // The same direction's button, or the other one if the dish reached the top (then "up" is disabled).
-  const moved = page.locator(`#${id}`).getByRole("button", { name: /^Flytta (upp|ned)/ }).and(page.locator(":focus"));
+  const moved = page
+    .locator(`#${id}`)
+    .getByRole("button", { name: /^Flytta (upp|ned)/ })
+    .and(page.locator(":focus"));
   await expect(moved).toHaveCount(1);
   await expect(moved).toBeInViewport();
   expect(await page.evaluate(() => [...document.scripts].some((s) => /AdminLayout/.test(s.src)))).toBe(true);
-  await page.locator(`#${id}`).getByRole("button", { name: /^Flytta ned/ }).click(); // undo
+  await page
+    .locator(`#${id}`)
+    .getByRole("button", { name: /^Flytta ned/ })
+    .click(); // undo
   await page.waitForURL(/[?&]changed=/);
   expect(blocked).toEqual([]);
 });
@@ -87,4 +93,3 @@ test("the page photos have their own link in the admin menu", async ({ page }) =
   await page.getByRole("navigation").getByRole("link", { name: "Sidornas foton" }).click();
   await expect(page.getByRole("heading", { name: "Sidornas foton" })).toBeVisible();
 });
-

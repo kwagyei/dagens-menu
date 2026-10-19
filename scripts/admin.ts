@@ -109,6 +109,8 @@ if (command === "purge") {
     execute("admin", target, purgeStatements(site, now));
     // Counted again rather than assumed, so the message says what the batch actually did.
     const left = Object.values(count()).reduce((a, b) => a + b, 0);
-    console.log(`admin: deleted ${total - left} row(s)${left > 0 ? `; ${left} still match (added since the count)` : ""}.${counts.audit_log > 0 ? " The history notes how many old entries were removed." : ""}`);
+    console.log(
+      `admin: deleted ${total - left} row(s)${left > 0 ? `; ${left} still match (added since the count)` : ""}.${counts.audit_log > 0 ? " The history notes how many old entries were removed." : ""}`,
+    );
   }
 }

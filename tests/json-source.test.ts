@@ -12,8 +12,7 @@ const setFirstPrice = (price: number) => {
   menu.categories[0].items[0].price = price;
   writeFileSync(menuPath(), JSON.stringify(menu));
 };
-const firstPrice = async (source: JsonContentSource) =>
-  (await source.load({ now })).content.menu.categories[0].items[0].price;
+const firstPrice = async (source: JsonContentSource) => (await source.load({ now })).content.menu.categories[0].items[0].price;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "dagens-menu-"));

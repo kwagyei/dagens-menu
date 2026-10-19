@@ -42,7 +42,12 @@ async function current() {
 
 beforeEach(async () => {
   await db.batch([db.prepare("DELETE FROM sites"), db.prepare("DELETE FROM users")]);
-  await db.batch(prepare(db, seedStatements("bistro", content, () => ({ id: "0".repeat(64), mime: "image/jpeg" }))));
+  await db.batch(
+    prepare(
+      db,
+      seedStatements("bistro", content, () => ({ id: "0".repeat(64), mime: "image/jpeg" })),
+    ),
+  );
   await db.prepare("INSERT INTO sites (id) VALUES ('westafrican')").run();
 });
 
@@ -103,7 +108,12 @@ describe("settings", () => {
 describe("page texts", () => {
   it("reads the seeded texts", async () => {
     const { pages: p } = await current();
-    expect(p).toEqual({ homeTagline: pages.home.tagline, pullQuote: { sv: "Enkelt och gott.", en: "Simple and good." }, aboutStory: pages.about.story, aboutChef: pages.about.chef });
+    expect(p).toEqual({
+      homeTagline: pages.home.tagline,
+      pullQuote: { sv: "Enkelt och gott.", en: "Simple and good." },
+      aboutStory: pages.about.story,
+      aboutChef: pages.about.chef,
+    });
   });
 
   it("saves, and removing the pull quote removes it from the site", async () => {

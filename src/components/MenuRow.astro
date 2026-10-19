@@ -20,15 +20,22 @@ const onSale = item.available && !soldOutToday;
 
 <li class:list={["menu-row menu-item-row", { "is-out": !onSale }]}>
   <h3>{localized(item.name, locale)}</h3>
-  <span class="price">{!onSale && <span class="vh">{t(locale, "menu.regularPrice")} </span>}{formatPrice(item.price)}</span>
+  <span class="price">
+    {!onSale && <span class="vh">{t(locale, "menu.regularPrice")} </span>}
+    {formatPrice(item.price)}
+  </span>
   {!onSale && <p class="out">{t(locale, item.available ? "menu.soldOutToday" : "menu.unavailable")}</p>}
   <p class="desc">{localized(item.description, locale)}</p>
   {!brief && item.tags.length > 0 && (
     <ul class="chips">
-      {item.tags.map((tag) => <li class="chip">{t(locale, `menu.tag.${tag}` as Parameters<typeof t>[1])}</li>)}
+      {item.tags.map((tag) => (
+        <li class="chip">{t(locale, `menu.tag.${tag}` as Parameters<typeof t>[1])}</li>
+      ))}
     </ul>
   )}
   {!brief && item.allergens.length > 0 && (
-    <p class="meta">{t(locale, "menu.allergens")}: {item.allergens.map((a) => t(locale, `allergen.${a}` as Parameters<typeof t>[1])).join(", ")}</p>
+    <p class="meta">
+      {t(locale, "menu.allergens")}: {item.allergens.map((a) => t(locale, `allergen.${a}` as Parameters<typeof t>[1])).join(", ")}
+    </p>
   )}
 </li>

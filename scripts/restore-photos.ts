@@ -139,7 +139,10 @@ export async function loadUploads(
         bytes = new Uint8Array(await sharp(master).resize({ width }).webp({ quality: 75, effort: 4 }).toBuffer());
       } catch (error) {
         // Upload only checks headers (ADR-013), so a stored photo can fail to decode.
-        return refuse(id, `its image data can't be decoded (${(error as Error).message.split("\n")[0]}); remove it from the file's images and wherever it is used, then restore again`);
+        return refuse(
+          id,
+          `its image data can't be decoded (${(error as Error).message.split("\n")[0]}); remove it from the file's images and wherever it is used, then restore again`,
+        );
       }
       const made = inspectWebp(bytes);
       if (!made.ok || bytes.length > MAX_VARIANT_BYTES) refuse(id, `couldn't make the ${width} px size`);

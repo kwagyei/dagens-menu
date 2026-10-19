@@ -77,9 +77,19 @@ async function sharpCorpus(write: (name: string, bytes: Uint8Array) => void) {
   write("sharp-16383x1-lossless", await raw({ name: "", width: 16383, height: 1 }).webp({ lossless: true }).toBuffer());
   write("sharp-400x300-icc", await raw(mid).webp({ quality: 75 }).withIccProfile("srgb").toBuffer());
   // Files the validator must refuse; sharp's metadata says why.
-  write("sharp-refuse-exif", await raw(mid).webp({ quality: 75 }).withExif({ IFD0: { Copyright: "dagens-menu test" } }).toBuffer());
+  write(
+    "sharp-refuse-exif",
+    await raw(mid)
+      .webp({ quality: 75 })
+      .withExif({ IFD0: { Copyright: "dagens-menu test" } })
+      .toBuffer(),
+  );
   write("sharp-refuse-xmp", await raw(mid).webp({ quality: 75 }).withXmp('<x:xmpmeta xmlns:x="adobe:ns:meta/"></x:xmpmeta>').toBuffer());
-  const frame = (shift: number) => raw({ name: "", width: 32, height: 32 }).png().toBuffer().then((png) => sharp(png).modulate({ hue: shift }).png().toBuffer());
+  const frame = (shift: number) =>
+    raw({ name: "", width: 32, height: 32 })
+      .png()
+      .toBuffer()
+      .then((png) => sharp(png).modulate({ hue: shift }).png().toBuffer());
   write(
     "sharp-refuse-animated",
     await sharp([await frame(0), await frame(120), await frame(240)], { join: { animated: true } })

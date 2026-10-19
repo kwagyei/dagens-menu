@@ -38,7 +38,11 @@ async function uploaded(site = "bistro"): Promise<string> {
   expect(await addUpload(ctx(site), u)).toMatchObject({ ok: true });
   return u.id;
 }
-const count = async (sql: string, ...params: unknown[]) => (await db.prepare(sql).bind(...params).first<{ n: number }>())!.n;
+const count = async (sql: string, ...params: unknown[]) =>
+  (await db
+    .prepare(sql)
+    .bind(...params)
+    .first<{ n: number }>())!.n;
 const version = () => db.prepare("SELECT content_version AS v FROM sites WHERE id = 'bistro'").first<number>("v");
 
 beforeAll(async () => {
@@ -190,7 +194,9 @@ describe("deleteUnusedImages", () => {
     expect(await count("SELECT count(*) AS n FROM images WHERE id = ?", used)).toBe(1);
     expect(await count("SELECT count(*) AS n FROM images WHERE id = ?", theirs)).toBe(1);
     expect(await count("SELECT count(*) AS n FROM images WHERE site_id = 'bistro' AND kind = 'static'")).toBe(builtIn);
-    expect(await count("SELECT count(*) AS n FROM audit_log WHERE entity = 'image' AND action = 'delete' AND summary = 'Deleted 2 unused photo(s)' AND user_id = 'owner1'")).toBe(1);
+    expect(await count("SELECT count(*) AS n FROM audit_log WHERE entity = 'image' AND action = 'delete' AND summary = 'Deleted 2 unused photo(s)' AND user_id = 'owner1'")).toBe(
+      1,
+    );
   });
 
   it("with nothing unused: deletes nothing and writes no audit row", async () => {

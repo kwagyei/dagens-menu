@@ -51,7 +51,10 @@ test("a special day shows on the contact page in both languages, and can be remo
   await expect(page.locator("main li", { has: page.locator(`time[datetime="${date}"]`) })).toContainText("Staff party");
 
   await page.goto("/admin/hours/");
-  await page.locator("#exceptions li", { hasText: "Personalfest" }).getByRole("button", { name: /Ta bort/ }).click();
+  await page
+    .locator("#exceptions li", { hasText: "Personalfest" })
+    .getByRole("button", { name: /Ta bort/ })
+    .click();
   await expect(page.getByRole("status")).toHaveText("Borttaget.");
   await page.goto("/contact/");
   await expect(page.locator("main")).not.toContainText("Personalfest");
@@ -106,7 +109,12 @@ test("two people editing the hours: the second is told, and can overwrite knowin
 test("saving the hours without changing anything says so, in both languages, and adds no history", async ({ page }) => {
   await signedInOwner(page);
   await page.goto("/admin/history/");
-  const newest = () => page.locator("main ol li").first().textContent({ timeout: 1000 }).catch(() => null);
+  const newest = () =>
+    page
+      .locator("main ol li")
+      .first()
+      .textContent({ timeout: 1000 })
+      .catch(() => null);
   const before = await newest();
   await page.goto("/admin/hours/");
   await page.getByRole("button", { name: "Spara öppettiderna" }).click();

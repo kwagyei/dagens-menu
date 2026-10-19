@@ -12,9 +12,7 @@ import menu from "../../sites/bistro/content/menu.json";
 import pages from "../../sites/bistro/content/pages.json";
 import settings from "../../sites/bistro/content/settings.json";
 import theme from "../../sites/bistro/theme.json";
-import { siteContentSchema, type Theme } from "../../src/content/schema";
-import { D1ContentSource } from "../../src/content/d1-source";
-import { getLibraryImage } from "../../src/db/library";
+import { siteContentSchema } from "../../src/content/schema";
 import { dishPhoto, pagePhotos, setDishPhoto, setPagePhoto } from "../../src/db/photo-choice";
 import { addUpload } from "../../src/db/photos";
 import { getMenuItem, type RepoContext } from "../../src/db/repository";
@@ -23,7 +21,6 @@ import { prepare } from "../../src/db/sql";
 import { deleteImage } from "../../src/db/library";
 import { updateMenuItem } from "../../src/db/repository";
 import { adminTexts, updatePageTexts } from "../../src/db/texts";
-
 
 const db = env.DB;
 const ctx = (siteId: string): RepoContext => ({ db, siteId, userId: "owner1", now: new Date("2026-10-18T10:00:00Z") });
@@ -36,7 +33,13 @@ const DISH = menu.categories[0].items[0].id;
 let counter = 0;
 async function uploaded(site = "bistro"): Promise<string> {
   const id = (++counter).toString(16).padStart(64, "c");
-  expect(await addUpload(ctx(site), { id, variants: [{ width: 400, height: 300, bytes: crypto.getRandomValues(new Uint8Array(300)) }], alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` } })).toMatchObject({ ok: true });
+  expect(
+    await addUpload(ctx(site), {
+      id,
+      variants: [{ width: 400, height: 300, bytes: crypto.getRandomValues(new Uint8Array(300)) }],
+      alt: { sv: `Foto ${counter}`, en: `Photo ${counter}` },
+    }),
+  ).toMatchObject({ ok: true });
   return id;
 }
 const audits = () => db.prepare("SELECT count(*) AS n FROM audit_log WHERE action = 'update'").first<number>("n");
@@ -54,7 +57,6 @@ beforeEach(async () => {
   await db.batch(prepare(db, seedStatements("bistro", content as StoredContent, images)));
   await db.prepare("INSERT OR IGNORE INTO sites (id) VALUES ('westafrican')").run();
 });
-
 
 const editOf = async () => {
   const d = (await getMenuItem(bistro, DISH))!;
@@ -119,7 +121,7 @@ describe("tester M6.10c: interactions", () => {
 
   it("odd ids: uppercase, 63 chars, whitespace, unicode and the empty string change nothing", async () => {
     const before = await pagePhotos(bistro);
-    for (const bad of ["", " ", "a".repeat(63), "a".repeat(65), ("a".repeat(63) + "\n"), "é".repeat(64), "%00"]) {
+    for (const bad of ["", " ", "a".repeat(63), "a".repeat(65), "a".repeat(63) + "\n", "é".repeat(64), "%00"]) {
       const r = await setPagePhoto(bistro, "hero", bad);
       expect(r.ok, JSON.stringify(bad)).toBe(false);
     }

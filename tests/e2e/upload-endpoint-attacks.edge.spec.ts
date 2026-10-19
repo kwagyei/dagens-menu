@@ -47,7 +47,10 @@ function raw(head: string, body: Buffer | string = "", { endAfter = true, wait =
     const timer = setTimeout(done, wait);
     socket.on("data", (d) => {
       data += d.toString("latin1");
-      if (/\r\n\r\n/.test(data)) (clearTimeout(timer), done());
+      if (/\r\n\r\n/.test(data)) {
+        clearTimeout(timer);
+        done();
+      }
     });
     socket.on("error", () => (clearTimeout(timer), done()));
     socket.on("close", () => (clearTimeout(timer), done()));
@@ -79,7 +82,11 @@ test.describe("auth, CSRF and origin", () => {
     await signedInOwner(other);
     const otherToken = await csrfOf(other);
     await page.goto(NEW);
-    const res = await page.request.post(NEW, { multipart: multipart({ csrf: otherToken, alt_sv: "a", alt_en: "a" }, [await webp(400)]), maxRedirects: 0, headers: { Origin: BASE } });
+    const res = await page.request.post(NEW, {
+      multipart: multipart({ csrf: otherToken, alt_sv: "a", alt_en: "a" }, [await webp(400)]),
+      maxRedirects: 0,
+      headers: { Origin: BASE },
+    });
     expect(res.status()).toBe(303);
     expect(res.headers().location).toBe(`${NEW}?done=expired`);
     const none = await page.request.post(NEW, { multipart: multipart({ alt_sv: "a", alt_en: "a" }, [await webp(400)]), maxRedirects: 0, headers: { Origin: BASE } });
@@ -114,8 +121,13 @@ test.describe("path spellings get the admin guard and the upload CSP", () => {
       // Whatever the router does with it, an admin page must never get the public CSP.
       if (status === 200) expect(csp).toContain("'wasm-unsafe-eval'");
       if (status === 200) expect(res.headers()["cache-control"]).toBe("no-store");
-      test.info().annotations.push({ type: "result", description: `${path} → ${status}, ${res.headers().location ?? ""} ${csp.includes("wasm") ? "upload CSP" : csp.includes("'unsafe-inline'") && csp.includes("script-src 'self' 'unsafe-inline'") ? "PUBLIC CSP" : "admin CSP"}` });
-      console.log(`tester path: ${path} → ${status} ${res.headers().location ?? ""} ${csp.includes("wasm") ? "upload CSP" : csp.includes("script-src 'self' 'unsafe-inline'") ? "PUBLIC CSP" : "admin CSP"}`);
+      test.info().annotations.push({
+        type: "result",
+        description: `${path} → ${status}, ${res.headers().location ?? ""} ${csp.includes("wasm") ? "upload CSP" : csp.includes("'unsafe-inline'") && csp.includes("script-src 'self' 'unsafe-inline'") ? "PUBLIC CSP" : "admin CSP"}`,
+      });
+      console.log(
+        `tester path: ${path} → ${status} ${res.headers().location ?? ""} ${csp.includes("wasm") ? "upload CSP" : csp.includes("script-src 'self' 'unsafe-inline'") ? "PUBLIC CSP" : "admin CSP"}`,
+      );
     });
   }
   test("a cross-origin POST to odd spellings is still 403 or 404/405, never handled", async ({ page }) => {
@@ -132,7 +144,7 @@ test.describe("body handling", () => {
   test("chunked transfer (no Content-Length) is 411, nothing read", async ({ page }) => {
     await signedInOwner(page);
     const cookie = await cookieHeader(page);
-    const body = "--b\r\nContent-Disposition: form-data; name=\"alt_sv\"\r\n\r\na\r\n--b--\r\n";
+    const body = '--b\r\nContent-Disposition: form-data; name="alt_sv"\r\n\r\na\r\n--b--\r\n';
     const chunked = `${body.length.toString(16)}\r\n${body}\r\n0\r\n\r\n`;
     const status = await raw(
       `POST ${NEW} HTTP/1.1\r\nHost: localhost:8790\r\nOrigin: ${BASE}\r\nCookie: ${cookie}\r\nContent-Type: multipart/form-data; boundary=b\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n`,
@@ -147,7 +159,7 @@ test.describe("body handling", () => {
     const cookie = await cookieHeader(page);
     const status = await raw(
       `POST ${NEW} HTTP/1.1\r\nHost: localhost:8790\r\nOrigin: ${BASE}\r\nCookie: ${cookie}\r\nContent-Type: multipart/form-data; boundary=b\r\nContent-Length: 5000\r\n\r\n`,
-      "--b\r\nContent-Disposition: form-data; name=\"alt_sv\"\r\n\r\na",
+      '--b\r\nContent-Disposition: form-data; name="alt_sv"\r\n\r\na',
       { endAfter: true, wait: 5000 },
     );
     // Locally this is wrangler dev's proxy reporting "Network connection lost" (500): the client
@@ -210,7 +222,13 @@ test.describe("body handling", () => {
     const ct = encoded.headers.get("content-type")!;
     const atBytes = new Uint8Array(await encoded.arrayBuffer());
     const cookie = await cookieHeader(page);
-    const send = (body: Uint8Array) => fetch(BASE + NEW, { method: "POST", body: body as Uint8Array<ArrayBuffer>, redirect: "manual", headers: { Origin: BASE, Cookie: cookie, "Content-Type": ct, "CF-Connecting-IP": freshIp() } });
+    const send = (body: Uint8Array) =>
+      fetch(BASE + NEW, {
+        method: "POST",
+        body: body as Uint8Array<ArrayBuffer>,
+        redirect: "manual",
+        headers: { Origin: BASE, Cookie: cookie, "Content-Type": ct, "CF-Connecting-IP": freshIp() },
+      });
     const ok = await send(atBytes.subarray(0, MAX_UPLOAD_BODY));
     const okText = await ok.text();
     console.log(`tester body at cap (${Math.min(atBytes.length, MAX_UPLOAD_BODY)} bytes) → ${ok.status}`);

@@ -93,7 +93,10 @@ const isSignedIn = async (request: APIRequestContext, cookie: string, base = BAS
  * same second, and the tie-break on the random id made the choice a coin toss.
  */
 async function removeOtherPasskey(page: Page) {
-  const others = page.locator("main li").filter({ has: page.locator('input[name="action"][value="remove"]') }).filter({ hasNotText: "du är inloggad med den här" });
+  const others = page
+    .locator("main li")
+    .filter({ has: page.locator('input[name="action"][value="remove"]') })
+    .filter({ hasNotText: "du är inloggad med den här" });
   await expect(others).toHaveCount(1);
   await others.getByRole("button").click();
 }
@@ -492,7 +495,9 @@ test.describe("without SESSION_SECRET", () => {
     for (let i = 0; i < 60; i++) {
       try {
         if ((await fetch(`http://localhost:${PORT}/`)).ok) return;
-      } catch {}
+      } catch {
+        // Not listening yet; try again in a second.
+      }
       await new Promise((r) => setTimeout(r, 1000));
     }
     throw new Error("wrangler dev without a secret did not start");

@@ -77,22 +77,32 @@ const focusMove = (id: string, index: number, dir: Direction) => {
   <section class="space-y-6">
     <div class="space-y-2">
       <h1 class="text-3xl font-bold">{t(locale, "admin.gallery.heading")}</h1>
-      {done && message[done] && (problem ? (
-        <p class="admin-message" role="alert" tabindex="-1" autofocus id="gallery-message">{message[done]}</p>
-      ) : (
-        <p class="admin-message" role="status" id="gallery-message">{message[done]}</p>
-      ))}
+      {done &&
+        message[done] &&
+        (problem ? (
+          <p class="admin-message" role="alert" tabindex="-1" autofocus id="gallery-message">
+            {message[done]}
+          </p>
+        ) : (
+          <p class="admin-message" role="status" id="gallery-message">
+            {message[done]}
+          </p>
+        ))}
       <p class="admin-muted">{t(locale, "admin.gallery.lead")}</p>
     </div>
 
     {gallery.length === 0 ? (
-      <p class="admin-muted" id="gallery">{t(locale, "admin.gallery.empty")}</p>
+      <p class="admin-muted" id="gallery">
+        {t(locale, "admin.gallery.empty")}
+      </p>
     ) : (
       <ol class="space-y-3" id="gallery">
         {gallery.map((entry, index) => {
           const thumb = thumbnail(entry);
           const alt = localized(entry.alt, locale);
-          const position = t(locale, "admin.gallery.position").replace("{n}", String(index + 1)).replace("{total}", String(gallery.length));
+          const position = t(locale, "admin.gallery.position")
+            .replace("{n}", String(index + 1))
+            .replace("{total}", String(gallery.length));
           return (
             <li class="admin-card p-3 flex flex-wrap gap-3 items-center" id={`gallery-${entry.id}`}>
               {thumb ? (
@@ -117,14 +127,18 @@ const focusMove = (id: string, index: number, dir: Direction) => {
                       disabled={isDisabled(index, dir)}
                       autofocus={focusMove(entry.id, index, dir)}
                       aria-label={`${t(locale, dir === "up" ? "admin.gallery.up" : "admin.gallery.down")}: ${alt}`}
-                    >{dir === "up" ? "↑" : "↓"}</button>
+                    >
+                      {dir === "up" ? "↑" : "↓"}
+                    </button>
                   </form>
                 ))}
                 <form method="post">
                   <input type="hidden" name="csrf" value={page.csrf} />
                   <input type="hidden" name="action" value="remove" />
                   <input type="hidden" name="id" value={entry.id} />
-                  <button class="admin-small-button" type="submit" aria-label={`${t(locale, "admin.gallery.remove")}: ${alt}`}>{t(locale, "admin.gallery.remove")}</button>
+                  <button class="admin-small-button" type="submit" aria-label={`${t(locale, "admin.gallery.remove")}: ${alt}`}>
+                    {t(locale, "admin.gallery.remove")}
+                  </button>
                 </form>
               </div>
             </li>
@@ -134,10 +148,19 @@ const focusMove = (id: string, index: number, dir: Direction) => {
     )}
 
     <section class="space-y-3" aria-labelledby="gallery-add-heading">
-      <h2 class="text-xl font-semibold" id="gallery-add-heading">{t(locale, "admin.gallery.addHeading")}</h2>
-      <p class="admin-muted">{t(locale, "admin.gallery.addLead")} <a class="underline" href={page.path("/photos/new/")}>{t(locale, "admin.photos.heading")}</a></p>
+      <h2 class="text-xl font-semibold" id="gallery-add-heading">
+        {t(locale, "admin.gallery.addHeading")}
+      </h2>
+      <p class="admin-muted">
+        {t(locale, "admin.gallery.addLead")}{" "}
+        <a class="underline" href={page.path("/photos/new/")}>
+          {t(locale, "admin.photos.heading")}
+        </a>
+      </p>
       {gallery.length >= GALLERY_LIMIT && addable.length > 0 && (
-        <p class="admin-message" role="status" id="gallery-full">{message.full}</p>
+        <p class="admin-message" role="status" id="gallery-full">
+          {message.full}
+        </p>
       )}
       {addable.length === 0 ? (
         <p class="admin-muted">{t(locale, "admin.gallery.noneToAdd")}</p>
@@ -158,7 +181,9 @@ const focusMove = (id: string, index: number, dir: Direction) => {
                   <input type="hidden" name="csrf" value={page.csrf} />
                   <input type="hidden" name="action" value="add" />
                   <input type="hidden" name="id" value={image.id} />
-                  <button class="admin-small-button" type="submit" disabled={gallery.length >= GALLERY_LIMIT} aria-label={`${t(locale, "admin.gallery.add")}: ${alt}`}>{t(locale, "admin.gallery.add")}</button>
+                  <button class="admin-small-button" type="submit" disabled={gallery.length >= GALLERY_LIMIT} aria-label={`${t(locale, "admin.gallery.add")}: ${alt}`}>
+                    {t(locale, "admin.gallery.add")}
+                  </button>
                 </form>
               </li>
             );

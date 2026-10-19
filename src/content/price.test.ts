@@ -68,10 +68,7 @@ describe("parseKronor rejects rather than guesses", () => {
 });
 
 describe("parseKronor and formatPrice", () => {
-  it.each([0, 1, 99, 100, 14500, 14550, 14505, 99999, 125050, 1234500, MAX_PRICE_ORE])(
-    "round-trips %i öre",
-    (ore) => {
-      expect(parseKronor(formatPrice(ore))).toEqual({ ok: true, ore });
-    },
-  );
+  it.each([0, 1, 99, 100, 14500, 14550, 14505, 99999, 125050, 1234500, MAX_PRICE_ORE])("round-trips %i öre", (ore) => {
+    expect(parseKronor(formatPrice(ore))).toEqual({ ok: true, ore });
+  });
 });

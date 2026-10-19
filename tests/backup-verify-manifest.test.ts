@@ -12,7 +12,9 @@ import { afterAll, describe, expect, it } from "vitest";
 import { CONTENT_TABLES } from "../scripts/backup-tables";
 
 const root = resolve(import.meta.dirname, "..");
-const known = readdirSync(join(root, "migrations")).filter((f) => f.endsWith(".sql")).sort();
+const known = readdirSync(join(root, "migrations"))
+  .filter((f) => f.endsWith(".sql"))
+  .sort();
 const dirs: string[] = [];
 afterAll(() => dirs.forEach((d) => rmSync(d, { recursive: true, force: true })));
 

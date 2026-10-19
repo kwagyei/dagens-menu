@@ -35,11 +35,7 @@ export interface HandlerDeps {
   log?: (message: string) => void;
 }
 
-export async function handlePage(
-  request: Request,
-  deps: HandlerDeps,
-  render: (state: PageState) => Promise<Response>,
-): Promise<Response> {
+export async function handlePage(request: Request, deps: HandlerDeps, render: (state: PageState) => Promise<Response>): Promise<Response> {
   const url = new URL(request.url);
   const route = routeClass(url.pathname);
   const headers = securityHeaders(route);

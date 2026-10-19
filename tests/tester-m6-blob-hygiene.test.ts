@@ -24,8 +24,8 @@ const flagged = (src: string) => blobViolations(src).length > 0;
 
 describe("tester: the extracted scanner is the real one", () => {
   it("still flags and passes the author's own examples", () => {
-    expect(flagged('db.prepare(sql).bind(id, new Uint8Array(4))')).toBe(true);
-    expect(flagged('db.prepare(sql).bind(id, bytesParam(bytes))')).toBe(false);
+    expect(flagged("db.prepare(sql).bind(id, new Uint8Array(4))")).toBe(true);
+    expect(flagged("db.prepare(sql).bind(id, bytesParam(bytes))")).toBe(false);
   });
 });
 
@@ -34,7 +34,10 @@ describe("tester: the scanner flags slips it is meant to catch", () => {
     ["a spread of an inline array", "db.prepare(sql).bind(...[id, new Uint8Array(buf)])"],
     ["a template literal SQL reading bytes", "const s = `SELECT width, bytes FROM image_variants WHERE id = ${'?'}`;"],
     // TESTER FINDING (Low): any unhex(?) in the SQL satisfies the write check, wherever it is.
-    ["an UPSERT setting bytes from a raw parameter", 'const s = "INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES (?, ?, ?, ?, unhex(?)) ON CONFLICT DO UPDATE SET bytes = ?";'],
+    [
+      "an UPSERT setting bytes from a raw parameter",
+      'const s = "INSERT INTO image_variants (site_id, image_id, width, mime, bytes) VALUES (?, ?, ?, ?, unhex(?)) ON CONFLICT DO UPDATE SET bytes = ?";',
+    ],
     ["a quoted column name", 'const s = `SELECT "bytes" FROM image_variants`;'],
     ["an aliased raw read", 'const s = "SELECT v.bytes FROM image_variants v JOIN images i ON i.id = v.image_id";'],
     ["a request body bound directly", "db.prepare(sql).bind(id, await request.arrayBuffer() as ArrayBuffer)"],

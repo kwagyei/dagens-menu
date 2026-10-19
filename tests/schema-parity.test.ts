@@ -78,12 +78,7 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ["12-hour time", (c) => (c.hours.weekly.monday = { open: "11am", close: "22:00" }), "hours.weekly.monday.open", "HH:MM"],
   ["open equals close", (c) => (c.hours.weekly.monday = { open: "11:00", close: "11:00" }), "hours.weekly.monday", "same minute"],
   // Exceptions: real dates in range, at most once, hours checked too
-  [
-    "impossible date",
-    (c) => (c.hours.exceptions = [{ date: "2026-02-30", note: { sv: "Stängt", en: "Closed" }, hours: null }]),
-    "hours.exceptions.0.date",
-    "real date",
-  ],
+  ["impossible date", (c) => (c.hours.exceptions = [{ date: "2026-02-30", note: { sv: "Stängt", en: "Closed" }, hours: null }]), "hours.exceptions.0.date", "real date"],
   [
     "date far in the future",
     (c) => (c.hours.exceptions = [{ date: "9999-12-31", note: { sv: "Stängt", en: "Closed" }, hours: null }]),
@@ -101,8 +96,7 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ],
   [
     "exception with blank hours",
-    (c) =>
-      (c.hours.exceptions = [{ date: "2026-12-31", note: { sv: "Nyår", en: "New Year" }, hours: { open: "", close: "" } }]),
+    (c) => (c.hours.exceptions = [{ date: "2026-12-31", note: { sv: "Nyår", en: "New Year" }, hours: { open: "", close: "" } }]),
     "hours.exceptions.0.hours.open",
     "HH:MM",
   ],
@@ -134,7 +128,12 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
   ["email without a domain", (c) => (c.settings.email = "hej@"), "settings.email", "email address"],
   ["phone with letters", (c) => (c.settings.phone = "ring oss"), "settings.phone", "phone number"],
   ["phone with too few digits", (c) => (c.settings.phone = "-------"), "settings.phone", "7 digits"],
-  ["more than 3 home highlights", (c) => (c.pages.home.highlights = c.menu.categories.flatMap((cat: { items: Array<{ id: string }> }) => cat.items.map((i) => i.id)).slice(0, 4)), "pages.home.highlights", "at most 3"],
+  [
+    "more than 3 home highlights",
+    (c) => (c.pages.home.highlights = c.menu.categories.flatMap((cat: { items: Array<{ id: string }> }) => cat.items.map((i) => i.id)).slice(0, 4)),
+    "pages.home.highlights",
+    "at most 3",
+  ],
   ["phone over 40 characters", (c) => (c.settings.phone = "1".repeat(41)), "settings.phone", "at most 40"],
   ["email with a bidi override", (c) => (c.settings.email = "a\u202e@b.se"), "settings.email", "email address"],
   ["email over 254 characters", (c) => (c.settings.email = `${"a".repeat(250)}@b.se`), "settings.email", "at most 254"],
@@ -159,6 +158,9 @@ const cases: Array<[rule: string, mutate: (c: Content) => void, path: string, me
 describe("the schema rejects", () => {
   it.each(cases)("%s", (_rule, mutate, path, message) => {
     const issues = issuesAfter(mutate);
-    expect(issues.some((i) => i.path === path && i.message.includes(message)), JSON.stringify(issues)).toBe(true);
+    expect(
+      issues.some((i) => i.path === path && i.message.includes(message)),
+      JSON.stringify(issues),
+    ).toBe(true);
   });
 });
