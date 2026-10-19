@@ -33,15 +33,16 @@ export function routeClass(pathname: string): RouteClass {
   return /^\/(en\/)?admin(\/|$)/.test(path) ? "admin" : "public";
 }
 
-// Pages load nothing from another origin on load (the consent check enforces it); the inline
-// scripts Astro emits need 'unsafe-inline'. After consent, a page may frame the site's chosen
+// Pages load nothing from another origin on load (the consent check enforces it), and no
+// inline script: Astro emits every component script as a file (astro.config.mjs), so
+// script-src is 'self' alone. JSON-LD is data, which script-src doesn't govern. After consent, a page may frame the site's chosen
 // booking provider and map (src/booking/embed.ts), so only those origins are added, and only
 // to frame-src: no third party ever runs script on the site's (and the admin's) origin.
 function publicCsp({ booking, map }: ThirdPartyOrigins = { booking: [], map: [] }): string {
   const plus = (base: string, origins: string[]) => [base, ...origins].join(" ");
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data:",
     plus("frame-src 'self'", [...booking, ...map]),

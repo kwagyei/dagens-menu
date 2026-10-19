@@ -58,7 +58,9 @@ async function restore(page: Page, snap: { settings: Fields; pages: Fields }) {
 }
 const jsonLd = async (page: Page, path: string) => {
   await page.goto(path);
-  return JSON.parse((await page.locator('script[type="application/ld+json"]').first().textContent()) ?? "{}");
+  const ld = JSON.parse((await page.locator('script[type="application/ld+json"]').first().textContent()) ?? "{}");
+  // The menu page carries the restaurant and its menu as one graph: read the restaurant.
+  return ld["@graph"] ? ld["@graph"].find((node: { "@type": string }) => node["@type"] === "Restaurant") : ld;
 };
 const meta = (page: Page, property: string) => page.locator(`meta[property="${property}"]`).getAttribute("content");
 

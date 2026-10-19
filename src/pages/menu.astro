@@ -4,7 +4,7 @@ import BookingCta from "../components/BookingCta.astro";
 import MenuList from "../components/MenuList.astro";
 import PageHero from "../components/PageHero.astro";
 import { localized } from "../content/load";
-import { getLocale, t } from "../i18n";
+import { getLocale, localePath, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
 const menu = Astro.locals.content.menu;
@@ -16,6 +16,9 @@ const soldOutToday = new Set(Astro.locals.today.soldOut);
 const menuJsonLd = {
   "@context": "https://schema.org",
   "@type": "Menu",
+  // The id the restaurant's hasMenu points to (Base.astro).
+  "@id": `${Astro.url.origin}${localePath(locale, "/menu/")}#menu`,
+  url: `${Astro.url.origin}${localePath(locale, "/menu/")}`,
   name: `${siteName} ${menuTitle}`,
   hasMenuSection: menu.categories
     .filter((cat) => cat.items.some((item) => item.available))

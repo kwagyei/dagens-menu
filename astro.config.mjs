@@ -33,10 +33,11 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     build: {
-      // Astro inlines a small script that imports nothing. The admin's CSP allows no inline
-      // script (script-src 'self'), so the admin layout's script must stay a file, or the
-      // browser blocks it. Everything else keeps Vite's default (undefined = 4 kB).
-      assetsInlineLimit: (file) => (/AdminLayout\.astro_astro_type_script/.test(file) ? false : undefined),
+      // Astro inlines a small script that imports nothing. No page's CSP allows an inline
+      // script (script-src 'self', public pages included since 19 Oct), so every component
+      // script stays a file, or the browser blocks it. Other assets keep Vite's default
+      // (undefined = 4 kB).
+      assetsInlineLimit: (file) => (/\.astro_astro_type_script/.test(file) ? false : undefined),
     },
     // The site the build was made for; the Worker refuses to serve another (src/content/site-id.ts).
     // __BUILD_ID__ goes into every page's ETag, so a deploy that changes templates but not

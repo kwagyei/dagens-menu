@@ -123,10 +123,10 @@ test.describe("path spellings get the admin guard and the upload CSP", () => {
       if (status === 200) expect(res.headers()["cache-control"]).toBe("no-store");
       test.info().annotations.push({
         type: "result",
-        description: `${path} → ${status}, ${res.headers().location ?? ""} ${csp.includes("wasm") ? "upload CSP" : csp.includes("'unsafe-inline'") && csp.includes("script-src 'self' 'unsafe-inline'") ? "PUBLIC CSP" : "admin CSP"}`,
+        description: `${path} → ${status}, ${res.headers().location ?? ""} ${csp.includes("wasm") ? "upload CSP" : csp.includes("frame-src 'self'") ? "PUBLIC CSP" : "admin CSP"}`,
       });
       console.log(
-        `tester path: ${path} → ${status} ${res.headers().location ?? ""} ${csp.includes("wasm") ? "upload CSP" : csp.includes("script-src 'self' 'unsafe-inline'") ? "PUBLIC CSP" : "admin CSP"}`,
+        `tester path: ${path} → ${status} ${res.headers().location ?? ""} ${csp.includes("wasm") ? "upload CSP" : csp.includes("frame-src 'self'") ? "PUBLIC CSP" : "admin CSP"}`,
       );
     });
   }

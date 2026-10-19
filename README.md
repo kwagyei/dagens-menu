@@ -140,7 +140,8 @@ is the seed data the demos are loaded from.
   (`scripts/check-no-third-party.mjs`).
 - **Strict headers on every page, scoped per route and per site.** The Worker sets the CSP
   and security headers itself, because `public/_headers` only reaches static files.
-  - Public pages allow their own origin and `'unsafe-inline'` for the scripts Astro inlines.
+  - Public pages allow scripts from their own origin only: Astro emits every component
+    script as a file, and CI fails if any page carries an inline one.
     A site with a booking embed or a map adds only that provider's origin and the map's,
     both as frames only, loaded after consent. A booking provider runs only in a sandboxed,
     cross-origin `<iframe>`, never as a script on the site: the admin shares the site's

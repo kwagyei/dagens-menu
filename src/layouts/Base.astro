@@ -10,7 +10,7 @@ import { localized } from "../content/load";
 import { serializeJsonLd } from "../server/json-ld";
 import { ogImage } from "../server/og-image";
 import { pageLinks } from "../server/page-links";
-import { getLocale, t } from "../i18n";
+import { getLocale, localePath, t } from "../i18n";
 
 interface Props {
   title?: string;
@@ -54,9 +54,15 @@ for (const [day, h] of Object.entries(hours.weekly)) {
 
 const specialDays = upcomingExceptions(hours, Astro.locals.today.date);
 
+// The restaurant has one id on every page and in both languages, and names its menu, so search
+// engines tie the menu page's Menu to this Restaurant (hasMenu).
+const origin = Astro.url.origin;
 const restaurantJsonLd = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
+  "@id": `${origin}/#restaurant`,
+  url: `${origin}/`, // one restaurant, one url, in both languages
+  hasMenu: { "@id": `${origin}${localePath(locale, "/menu/")}#menu` },
   name: siteName,
   description,
   address: {
@@ -80,7 +86,9 @@ const restaurantJsonLd = {
   servesCuisine: localized(settings.cuisine, locale),
 };
 
-const effectiveJsonLd = jsonLd || restaurantJsonLd;
+// A page with its own structured data (the menu) carries it beside the restaurant, as one graph.
+const withoutContext = ({ "@context": _, ...node }: Record<string, unknown>) => node;
+const effectiveJsonLd = jsonLd ? { "@context": "https://schema.org", "@graph": [withoutContext(restaurantJsonLd), withoutContext(jsonLd)] } : restaurantJsonLd;
 ---
 
 <!doctype html>
