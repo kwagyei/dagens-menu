@@ -110,7 +110,7 @@ test("adding a dish puts it on the public menu; deleting it takes it off", async
   await page.getByRole("link", { name: "Ta bort rätten" }).click();
   await expect(page.getByText(/Testsoppa försvinner från menyn/)).toBeVisible();
   await page.getByRole("button", { name: "Ja, ta bort" }).click();
-  await expect(page.getByRole("status")).toHaveText("Borttaget.");
+  await expect(page.getByRole("status")).toContainText("Borttaget.");
   await page.goto("/menu/");
   await expect(page.getByText("Testsoppa")).toHaveCount(0);
 });

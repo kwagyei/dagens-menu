@@ -1,6 +1,7 @@
 ---
 // History (plan M5.6): the latest changes to the site and who made them, plus the owner's
-// "Export my content" download. Read-only: nothing on this page changes the site.
+// "Export my content" download. Nothing on this page changes the site itself; a deleted dish's
+// entry carries an "Ångra" form that posts to the restore route (ADR-018).
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { adminPage } from "../../../admin/page";
 import { RESTAURANT_TIME_ZONE } from "../../../content/hours";
@@ -60,6 +61,15 @@ const heading = (entity: string, action: string) =>
             <p class="text-sm admin-muted">
               <time datetime={c.at}>{when.format(new Date(c.at))}</time> · {c.by ?? t(locale, "admin.history.system")}
             </p>
+            {c.undoable && (
+              <form method="post" action={page.path("/menu/restore/")} class="pt-1">
+                <input type="hidden" name="csrf" value={page.csrf} />
+                <input type="hidden" name="entry" value={c.id} />
+                <button class="admin-button admin-button-quiet" type="submit" aria-label={`${t(locale, "admin.menu.undo")}: ${localizedSummary(c.summary, c.entity, locale)}`}>
+                  {t(locale, "admin.menu.undo")}
+                </button>
+              </form>
+            )}
           </li>
         ))}
       </ol>

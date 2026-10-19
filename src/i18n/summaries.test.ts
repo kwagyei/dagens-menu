@@ -33,6 +33,7 @@ describe("history summaries in Swedish (tester M5.6 D2 / M5.7 D6)", () => {
     ["Lunch: deleted with 1 dish", "Lunch: borttagen med 1 rätt"],
     ["Lunch: deleted with 3 dishes", "Lunch: borttagen med 3 rätter"],
     ["Pannbiff: deleted", "Pannbiff: borttagen"],
+    ["Pannbiff: restored", "Pannbiff: återställd"],
     ["Dagens soppa: sold out 2026-10-18", "Dagens soppa: slutsåld 2026-10-18"],
     ["Dagens soppa: back on sale", "Dagens soppa: finns igen"],
     ["Köttbullar: photo changed", "Köttbullar: foto bytt"],

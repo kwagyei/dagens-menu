@@ -170,7 +170,7 @@ describe("setSoldOut", () => {
 describe("deleteMenuItem", () => {
   it("removes the dish and its home-page highlight, in one write that moves the version on", async () => {
     const v0 = await version("bistro");
-    expect(await deleteMenuItem(bistro, HIGHLIGHTED)).toEqual({ ok: true });
+    expect(await deleteMenuItem(bistro, HIGHLIGHTED)).toMatchObject({ ok: true });
     expect(await getMenuItem(bistro, HIGHLIGHTED)).toBeNull();
     expect(await db.prepare("SELECT count(*) AS n FROM home_highlights WHERE item_id = ?").bind(HIGHLIGHTED).first("n")).toBe(0);
     expect(await version("bistro")).toBeGreaterThan(v0!);

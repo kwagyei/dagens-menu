@@ -165,7 +165,7 @@ describe("round trip: export → restore → export is identical", () => {
     ).toBe(true);
     const third = menu[2];
     expect(await deleteCategory(bistro, third.id)).toEqual({ ok: true });
-    expect(await deleteMenuItem(bistro, first.items.at(-1)!.id)).toEqual({ ok: true });
+    expect(await deleteMenuItem(bistro, first.items.at(-1)!.id)).toMatchObject({ ok: true });
 
     // Hours: a week closing after midnight, a closed day, a special day added and one removed.
     const weekly = (await exportSite(db, "bistro"))!.content.hours.weekly;

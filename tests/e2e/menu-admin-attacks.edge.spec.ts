@@ -164,7 +164,7 @@ test("deleting a featured dish removes it from the home page and the site keeps 
   await featuredRow.getByRole("link", { name: "Ändra" }).click();
   await page.getByRole("link", { name: "Ta bort rätten" }).click();
   await page.getByRole("button", { name: "Ja, ta bort" }).click();
-  await expect(page.getByRole("status")).toHaveText("Borttaget.");
+  await expect(page.getByRole("status")).toContainText("Borttaget.");
   for (const path of ["/", "/en/", "/menu/", "/en/menu/", "/contact/"]) {
     const res = await request.get(path);
     expect(res.status(), path).toBe(200);
@@ -179,7 +179,7 @@ test("deleting a whole category of dishes keeps every public page up", async ({ 
   await target.getByRole("link", { name: "Ändra kategori" }).click();
   await page.getByRole("link", { name: "Ta bort kategorin" }).click();
   await page.getByRole("button", { name: /Ja, ta bort kategorin/ }).click();
-  await expect(page.getByRole("status")).toHaveText("Borttaget.");
+  await expect(page.getByRole("status")).toContainText("Borttaget.");
   for (const path of ["/", "/en/", "/menu/", "/en/menu/", "/contact/", "/about/"]) {
     expect((await request.get(path)).status(), path).toBe(200);
   }

@@ -9,8 +9,9 @@
  */
 import { formatPrice } from "../content/load";
 import { restaurantDay } from "../content/hours";
-import { menuItemSchema } from "../content/schema";
+import { MAX_HIGHLIGHTS, menuItemSchema } from "../content/schema";
 import { type Statement, prepare, stmt } from "./sql";
+import { categoryFor, ENTRY_ID, parseSnapshot, undoableEntry } from "./undo";
 import type { D1Database } from "./types";
 
 export interface RepoContext {
@@ -204,15 +205,164 @@ export async function setSoldOut(ctx: RepoContext, id: string, soldOut: boolean)
   return changed || (await getMenuItem(ctx, id))?.soldOutOn === value ? { ok: true } : { ok: false, error: "not-found" };
 }
 
-/** Delete a dish; its home-page highlight goes with it (foreign key cascade). */
-export async function deleteMenuItem(ctx: RepoContext, id: string): Promise<WriteResult> {
-  const item = await getMenuItem(ctx, id);
-  if (!item) return { ok: false, error: "not-found" };
-  const changed = await commitIf(ctx, stmt("DELETE FROM menu_items WHERE site_id = ? AND id = ?", ctx.siteId, id), {
-    entity: "menu_item",
-    entityId: id,
-    action: "delete",
-    summary: `${item.name.sv}: deleted`,
-  });
-  return changed ? { ok: true } : { ok: false, error: "not-found" };
+/**
+ * Delete a dish; its home-page highlight goes with it (foreign key cascade). The audit row is
+ * written first, from the row itself, with a JSON snapshot of the dish (ADR-018): what the
+ * category, position, photo and highlight were, so the owner can put it back. Both statements
+ * run in one transaction, so a dish is never deleted without its snapshot. The entry's id
+ * comes back for the "Ångra" link on the next page.
+ */
+export async function deleteMenuItem(ctx: RepoContext, id: string): Promise<WriteResult & { entryId?: number }> {
+  const snapshot = stmt(
+    `INSERT INTO audit_log (${AUDIT_COLUMNS}, payload)
+     SELECT ?, ?, ?, 'menu_item', m.id, 'delete', m.name_sv || ': deleted',
+       json_object(
+         'v', 1,
+         'item', json_object(
+           'id', m.id,
+           'name', json_object('sv', m.name_sv, 'en', m.name_en),
+           'description', json_object('sv', m.description_sv, 'en', m.description_en),
+           'price', m.price_ore,
+           'tags', json(m.tags),
+           'allergens', json(m.allergens),
+           'available', json(CASE WHEN m.available = 1 THEN 'true' ELSE 'false' END)),
+         'categoryId', m.category_id,
+         'categorySlug', c.slug,
+         'position', m.position,
+         'soldOutOn', m.sold_out_on,
+         'imageId', m.image_id,
+         'rowVersion', m.row_version,
+         'highlight', h.position)
+     FROM menu_items m
+       JOIN menu_categories c ON c.site_id = m.site_id AND c.id = m.category_id
+       LEFT JOIN home_highlights h ON h.site_id = m.site_id AND h.item_id = m.id
+     WHERE m.site_id = ? AND m.id = ?`,
+    ctx.siteId,
+    ctx.userId,
+    isoSeconds(ctx.now),
+    ctx.siteId,
+    id,
+  );
+  const [, deleted, entry] = await ctx.db.batch(
+    prepare(ctx.db, [
+      snapshot,
+      stmt("DELETE FROM menu_items WHERE site_id = ? AND id = ?", ctx.siteId, id),
+      stmt("SELECT id FROM audit_log WHERE site_id = ? AND entity = 'menu_item' AND entity_id = ? AND action = 'delete' ORDER BY id DESC LIMIT 1", ctx.siteId, id),
+    ]),
+  );
+  if (deleted.meta.changes === 0) return { ok: false, error: "not-found" };
+  const entryId = (entry.results as Array<{ id: number }>)[0]?.id;
+  return { ok: true, entryId };
+}
+
+export type RestoreResult =
+  | {
+      ok: true;
+      /** The dish had a photo that has since been deleted, so it came back without one. */
+      photoLost: boolean;
+      /** Back on the home page (true), not because it's full (false), or never was one (null). */
+      featured: boolean | null;
+    }
+  | { ok: false; error: "not-found" | "invalid" | "needs-category" | "already-back" };
+
+/** This site's dish delete, whose dish is on the menu now: a replay, a double click or a re-seed. */
+async function alreadyBack(ctx: RepoContext, entryId: string): Promise<boolean> {
+  if (!ENTRY_ID.test(entryId)) return false;
+  const row = await ctx.db
+    .prepare(
+      `SELECT 1 AS x FROM audit_log a WHERE a.id = ? AND a.site_id = ? AND a.entity = 'menu_item' AND a.action = 'delete'
+         AND EXISTS (SELECT 1 FROM menu_items m WHERE m.site_id = a.site_id AND m.id = a.entity_id)`,
+    )
+    .bind(Number(entryId), ctx.siteId)
+    .first("x");
+  return row !== null;
+}
+
+/**
+ * Put a deleted dish back from its history entry (ADR-018): the same id, in its original
+ * place (later dishes shift down one), with its photo if that still exists and its home-page
+ * highlight if there is room. Its category comes from categoryFor(); with none,
+ * "needs-category" and nothing is written.
+ *
+ * One transaction, every statement guarded by the same condition: no dish with this id, and
+ * no audit row for it later than the entry. The restore's own audit row is such a later row,
+ * so a replay, a double click or two restores at once write exactly one dish and one row;
+ * the loser reads as "already-back". The snapshot is re-checked against today's schema first.
+ */
+export async function restoreMenuItem(ctx: RepoContext, entryId: string, categoryId?: string): Promise<RestoreResult> {
+  const entry = await undoableEntry(ctx, entryId);
+  if (!entry) return { ok: false, error: (await alreadyBack(ctx, entryId)) ? "already-back" : "not-found" };
+  const snapshot = parseSnapshot(entry.payload, ctx.siteId, entry.entityId);
+  if (!snapshot) return { ok: false, error: "invalid" };
+  const category = await categoryFor(ctx, snapshot, categoryId);
+  if (!category) return { ok: false, error: "needs-category" };
+  const { item } = snapshot;
+  const stillUndoable = `NOT EXISTS (SELECT 1 FROM audit_log b WHERE b.site_id = ?1 AND b.entity = 'menu_item' AND b.entity_id = ?2 AND b.id > ?3)`;
+  const absent = `NOT EXISTS (SELECT 1 FROM menu_items WHERE site_id = ?1 AND id = ?2)`;
+  const present = `EXISTS (SELECT 1 FROM menu_items WHERE site_id = ?1 AND id = ?2)`;
+  // The original position, or the end of the category if it is shorter now. Positions keep
+  // gaps (a delete never renumbers), so "the end" is the highest position + 1, not the count.
+  const place = `min(?5, (SELECT coalesce(max(position) + 1, 0) FROM menu_items WHERE site_id = ?1 AND category_id = ?4))`;
+  // Everything at or after that place moves down one, so the dish lands exactly there, also in
+  // a category the owner chose. (Two dishes at one position, which only hand-written rows have,
+  // can swap: accepted, ADR-018 limits.)
+  const after = `position >= ${place}`;
+  const guard = [ctx.siteId, item.id, entry.id] as const;
+  const statements: Statement[] = [
+    stmt(
+      `UPDATE menu_items SET position = position + 1 WHERE site_id = ?1 AND category_id = ?4 AND ${after} AND ${absent} AND ${stillUndoable}`,
+      ...guard,
+      category,
+      snapshot.position,
+    ),
+    stmt(
+      `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, tags, allergens,
+         available, sold_out_on, image_id, position, row_version, updated_at, updated_by)
+       SELECT ?1, ?2, ?4, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
+         (SELECT id FROM images WHERE site_id = ?1 AND id = ?15), ${place}, ?16, ?17, ?18
+       WHERE ${absent} AND ${stillUndoable}`,
+      ...guard,
+      category,
+      snapshot.position,
+      item.name.sv,
+      item.name.en,
+      item.description.sv,
+      item.description.en,
+      item.price,
+      JSON.stringify(item.tags),
+      JSON.stringify(item.allergens),
+      item.available ? 1 : 0,
+      snapshot.soldOutOn,
+      snapshot.imageId,
+      snapshot.rowVersion + 1,
+      isoSeconds(ctx.now),
+      ctx.userId,
+    ),
+  ];
+  if (snapshot.highlight !== null) {
+    statements.push(
+      stmt(
+        `INSERT INTO home_highlights (site_id, item_id, position)
+         SELECT ?1, ?2, (SELECT coalesce(max(position) + 1, 0) FROM home_highlights WHERE site_id = ?1)
+         WHERE (SELECT count(*) FROM home_highlights WHERE site_id = ?1) < ?4 AND ${present} AND ${stillUndoable}`,
+        ...guard,
+        MAX_HIGHLIGHTS,
+      ),
+    );
+  }
+  statements.push(
+    stmt(
+      `INSERT INTO audit_log (${AUDIT_COLUMNS}) SELECT ?1, ?4, ?5, 'menu_item', ?2, 'create', ?6 WHERE ${present} AND ${stillUndoable}`,
+      ...guard,
+      ctx.userId,
+      isoSeconds(ctx.now),
+      `${item.name.sv}: restored`,
+    ),
+    // The photo as stored: looked up inside the insert, so a photo deleted meanwhile is simply absent.
+    stmt("SELECT image_id FROM menu_items WHERE site_id = ?1 AND id = ?2", ctx.siteId, item.id),
+  );
+  const results = await ctx.db.batch(prepare(ctx.db, statements));
+  if (results[1].meta.changes === 0) return { ok: false, error: "already-back" };
+  const stored = (results.at(-1)!.results as Array<{ image_id: string | null }>)[0]?.image_id ?? null;
+  return { ok: true, photoLost: snapshot.imageId !== null && stored === null, featured: snapshot.highlight === null ? null : results[2].meta.changes > 0 };
 }

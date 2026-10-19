@@ -91,8 +91,10 @@ npx wrangler d1 time-travel restore dagens-menu --bookmark <bookmark> --config w
 **Migrations and Time Travel:** a restore to a moment before a migration also undoes the
 migration, while the Workers keep running the newer code. After an expand-only migration the code
 usually copes; after a **contract** migration (first line `-- CONTRACT`, the first is 0006) it
-doesn't: today's code can't add to the gallery on the older schema. Either way, re-apply the
-migrations straight away, before anything else
+doesn't: today's code can't add to the gallery on the older schema. A restore to before
+`0007_audit_payload.sql` makes every dish delete fail, because the code writes the snapshot
+column that migration added. Either way, re-apply the migrations straight away, before
+anything else
 (`npx wrangler d1 migrations apply dagens-menu --remote --config wrangler.bistro.jsonc`).
 
 ### Rehearsed

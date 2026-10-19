@@ -1,0 +1,87 @@
+---
+// Put a deleted dish back from its history entry (ADR-018). POST restores: the "Ångra" forms
+// on the menu page and the history page land here, with the entry's id. GET, with ?entry=,
+// is the one page the owner sees in between: which category to put the dish in, when the one
+// it was in no longer exists. Nothing on GET changes the site.
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import { adminPage } from "../../../../admin/page";
+import { adminMenu } from "../../../../db/menu";
+import { restoreMenuItem } from "../../../../db/repository";
+import { categoryFor, parseSnapshot, undoableEntry } from "../../../../db/undo";
+import { t } from "../../../../i18n";
+
+// Serves /admin/... and /en/admin/...; any other prefix is not a page.
+if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
+
+const page = await adminPage(Astro);
+if (page instanceof Response) return page;
+const { locale, repo } = page;
+const home = page.path("/");
+
+if (Astro.request.method === "POST") {
+  const form = await page.postedForm();
+  if (!form) return Astro.redirect(`${home}?done=expired`, 303);
+  const entry = String(form.get("entry") ?? "");
+  const category = form.get("category");
+  const result = await restoreMenuItem(repo, entry, typeof category === "string" ? category : undefined);
+  if (result.ok) {
+    const done =
+      result.featured === false && result.photoLost
+        ? "restored-not-featured-no-photo"
+        : result.featured === false
+          ? "restored-not-featured"
+          : result.photoLost
+            ? "restored-no-photo"
+            : "restored";
+    return Astro.redirect(`${home}?done=${done}`, 303);
+  }
+  if (result.error === "needs-category") return Astro.redirect(`${page.path("/menu/restore/")}?entry=${entry}`, 303);
+  return Astro.redirect(`${home}?done=${result.error === "invalid" ? "cant-restore" : result.error}`, 303);
+}
+
+const entryId = Astro.url.searchParams.get("entry") ?? "";
+const entry = await undoableEntry(repo, entryId);
+if (!entry) return Astro.redirect(`${home}?done=not-found`, 303);
+const snapshot = parseSnapshot(entry.payload, repo.siteId, entry.entityId);
+if (!snapshot) return Astro.redirect(`${home}?done=cant-restore`, 303);
+// The picker is for a dish whose category is gone; otherwise there is nothing to choose.
+if (await categoryFor(repo, snapshot)) return Astro.redirect(home, 303);
+const categories = await adminMenu(repo);
+---
+
+<AdminLayout title={t(locale, "admin.restore.heading")} csrf={page.csrf}>
+  <section class="space-y-6">
+    <h1 class="text-3xl font-bold">{t(locale, "admin.restore.heading")}</h1>
+    {categories.length === 0 ? (
+      <>
+        <p>{t(locale, "admin.restore.noCategories")}</p>
+        <a class="admin-button admin-button-quiet" href={home}>
+          {t(locale, "admin.item.cancel")}
+        </a>
+      </>
+    ) : (
+      <form method="post" class="space-y-4">
+        <p>{t(locale, "admin.restore.lead").replace("{name}", snapshot.item.name[locale])}</p>
+        <input type="hidden" name="csrf" value={page.csrf} />
+        <input type="hidden" name="entry" value={entry.id} />
+        <fieldset class="space-y-2">
+          <legend class="vh">{t(locale, "admin.restore.heading")}</legend>
+          {categories.map((category, index) => (
+            <label class="flex items-center gap-3 min-h-11">
+              <input type="radio" name="category" value={category.id} required checked={index === 0} />
+              <span>{category.name[locale]}</span>
+            </label>
+          ))}
+        </fieldset>
+        <div class="flex flex-wrap gap-3">
+          <button class="admin-button" type="submit">
+            {t(locale, "admin.restore.confirm")}
+          </button>
+          <a class="admin-button admin-button-quiet" href={home}>
+            {t(locale, "admin.item.cancel")}
+          </a>
+        </div>
+      </form>
+    )}
+  </section>
+</AdminLayout>
