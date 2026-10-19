@@ -8,7 +8,10 @@
  *
  * Runs from the Astro config before each build and dev server; `--check` lists what's missing.
  *
- *   npm run image-variants -- --site bistro [--check]
+ *   npm run image-variants -- --site bistro [--check] [--root <dir>]
+ *
+ * --root (default: this repository) points at another tree with the same sites/ and public/ layout;
+ * the tests use it so their throwaway site never appears in the real sites/ folder.
  */
 import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -16,7 +19,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { curatedName, curatedSizes, curatedVariantUrl } from "../src/content/images";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 interface Plan {
   ref: string;
@@ -24,7 +27,7 @@ interface Plan {
   outputs: Array<{ width: number; file: string }>;
 }
 
-async function plans(site: string): Promise<Plan[]> {
+async function plans(site: string, root: string): Promise<Plan[]> {
   const library = JSON.parse(readFileSync(join(root, "sites", site, "content", "images.json"), "utf-8")) as Array<{ ref: string }>;
   const out: Plan[] = [];
   const named = new Map<string, string>();
@@ -45,9 +48,9 @@ async function plans(site: string): Promise<Plan[]> {
 }
 
 /** Make every missing or outdated size; returns how many were written. */
-export async function buildImageVariants(site: string, log: (m: string) => void = () => {}): Promise<number> {
+export async function buildImageVariants(site: string, log: (m: string) => void = () => {}, root = REPO_ROOT): Promise<number> {
   let written = 0;
-  for (const plan of await plans(site)) {
+  for (const plan of await plans(site, root)) {
     const sourceTime = statSync(plan.source).mtimeMs;
     for (const { width, file } of plan.outputs) {
       if (existsSync(file) && statSync(file).mtimeMs >= sourceTime) continue;
@@ -61,8 +64,8 @@ export async function buildImageVariants(site: string, log: (m: string) => void 
 }
 
 /** Each listed curated photo's sizes that aren't on disk. */
-export async function missingImageVariants(site: string): Promise<string[]> {
-  return (await plans(site)).flatMap((p) => p.outputs.filter((o) => !existsSync(o.file)).map((o) => `${p.ref} → ${o.width} px`));
+export async function missingImageVariants(site: string, root = REPO_ROOT): Promise<string[]> {
+  return (await plans(site, root)).flatMap((p) => p.outputs.filter((o) => !existsSync(o.file)).map((o) => `${p.ref} → ${o.width} px`));
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
@@ -72,14 +75,20 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     console.error("image-variants: --site <id> is required");
     process.exit(2);
   }
+  const rootAt = process.argv.indexOf("--root");
+  const root = rootAt > 0 ? process.argv[rootAt + 1] : REPO_ROOT;
+  if (!root) {
+    console.error("image-variants: --root needs a directory");
+    process.exit(2);
+  }
   if (process.argv.includes("--check")) {
-    const missing = await missingImageVariants(site);
+    const missing = await missingImageVariants(site, root);
     if (missing.length > 0) {
       console.error(`image-variants: ${site}: ${missing.length} size(s) missing:\n  ${missing.join("\n  ")}`);
       process.exit(1);
     }
     console.log(`image-variants: ${site}: every listed curated photo has all its sizes`);
   } else {
-    await buildImageVariants(site, console.log);
+    await buildImageVariants(site, console.log, root);
   }
 }
