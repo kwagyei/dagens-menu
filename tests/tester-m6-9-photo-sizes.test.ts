@@ -1,5 +1,6 @@
 /** Tester M6.9: edge cases of curatedSizes / photoSources and the image-variants script. */
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import sharp from "sharp";
@@ -76,8 +77,11 @@ describe("photoSources / URLs", () => {
 });
 
 // ---- the build script, on a throwaway site ----
+// The site lives in a temporary tree, not in sites/: other test files list sites/ and read every
+// folder in it, and run in parallel with this one.
 const SITE = "zz-tester-m69";
-const root = join(__dirname, "..");
+const repo = join(__dirname, "..");
+const root = mkdtempSync(join(tmpdir(), "image-variants-"));
 const siteDir = join(root, "sites", SITE);
 const pubDir = join(root, "public", "images", SITE);
 const out = (name: string, w: number) => join(pubDir, "v", `${name}-${w}.webp`);
@@ -100,14 +104,11 @@ describe("image-variants", () => {
       JSON.stringify([{ ref: `/images/${SITE}/plain.jpg` }, { ref: `/images/${SITE}/rot.jpg` }, { ref: `/images/${SITE}/tiny.jpg` }, { ref: "a".repeat(64) }]),
     );
   });
-  afterAll(() => {
-    rmSync(siteDir, { recursive: true, force: true });
-    rmSync(pubDir, { recursive: true, force: true });
-  });
+  afterAll(() => rmSync(root, { recursive: true, force: true }));
 
   it("makes the sizes, is idempotent, and ignores uploads and too-small files", async () => {
-    expect(await buildImageVariants(SITE)).toBe(7); // plain 400/800/1000, rot 400/800/1200/1500
-    expect(await buildImageVariants(SITE)).toBe(0);
+    expect(await buildImageVariants(SITE, undefined, root)).toBe(7); // plain 400/800/1000, rot 400/800/1200/1500
+    expect(await buildImageVariants(SITE, undefined, root)).toBe(0);
     expect(existsSync(out("tiny", 200))).toBe(false);
   });
 
@@ -129,14 +130,14 @@ describe("image-variants", () => {
     const other = statSync(out("rot", 400)).mtimeMs;
     await new Promise((r) => setTimeout(r, 20));
     await jpeg("plain.jpg", 1000, 600); // rewritten: newer mtime
-    expect(await buildImageVariants(SITE)).toBe(3); // 400, 800, 1000
+    expect(await buildImageVariants(SITE, undefined, root)).toBe(3); // 400, 800, 1000
     expect(statSync(out("plain", 400)).mtimeMs).toBeGreaterThan(before);
     expect(statSync(out("rot", 400)).mtimeMs).toBe(other);
   });
 
   it("a source whose dimensions change gets the new plan; stale sizes are left behind", async () => {
     await jpeg("plain.jpg", 500, 300);
-    await buildImageVariants(SITE);
+    await buildImageVariants(SITE, undefined, root);
     // 1000 wide made 400, 800, 1000(snap?) earlier; now 400,500
     expect(existsSync(out("plain", 500))).toBe(true);
     const stale = [800, 1000].filter((w) => existsSync(out("plain", w)));
@@ -151,7 +152,7 @@ describe("image-variants", () => {
     utimesSync(src, old, old); // source "older" than output, content swapped
     await jpeg("plain.jpg", 500, 300, 6); // swapped content...
     utimesSync(src, old, old);
-    const n = await buildImageVariants(SITE);
+    const n = await buildImageVariants(SITE, undefined, root);
     // content changed (now rotated, displayed 300x500 -> too narrow) but mtime says nothing to do
     expect(n).toBe(0);
     expect(existsSync(f)).toBe(true);
@@ -159,12 +160,12 @@ describe("image-variants", () => {
 
   it("--check lists missing sizes and exits 1; exits 0 when complete", async () => {
     await jpeg("plain.jpg", 1000, 600);
-    await buildImageVariants(SITE);
-    expect(await missingImageVariants(SITE)).toEqual([]);
-    const run = () => spawnSync("npx", ["tsx", "scripts/image-variants.ts", "--site", SITE, "--check"], { cwd: root, encoding: "utf-8", timeout: 60_000 });
+    await buildImageVariants(SITE, undefined, root);
+    expect(await missingImageVariants(SITE, root)).toEqual([]);
+    const run = () => spawnSync("npx", ["tsx", "scripts/image-variants.ts", "--site", SITE, "--check", "--root", root], { cwd: repo, encoding: "utf-8", timeout: 60_000 });
     expect(run().status).toBe(0);
     rmSync(out("plain", 800));
-    expect(await missingImageVariants(SITE)).toEqual([`/images/${SITE}/plain.jpg → 800 px`]);
+    expect(await missingImageVariants(SITE, root)).toEqual([`/images/${SITE}/plain.jpg → 800 px`]);
     const r = run();
     expect(r.status).toBe(1);
     expect(r.stderr).toContain("800 px");
@@ -174,6 +175,6 @@ describe("image-variants", () => {
   it("refuses two curated photos that would make the same files (x.jpg and x.png)", async () => {
     await jpeg("plain.png", 1000, 600);
     writeFileSync(join(siteDir, "content", "images.json"), JSON.stringify([{ ref: `/images/${SITE}/plain.jpg` }, { ref: `/images/${SITE}/plain.png` }]));
-    await expect(buildImageVariants(SITE)).rejects.toThrow(/plain\.jpg and .*plain\.png would make the same files/);
+    await expect(buildImageVariants(SITE, undefined, root)).rejects.toThrow(/plain\.jpg and .*plain\.png would make the same files/);
   });
 });
