@@ -1,8 +1,5 @@
 Fonts in this folder
 
-CormorantGaramond-Medium.woff2, CormorantGaramond-SemiBold.woff2, CormorantGaramond-MediumItalic.woff2
-Copyright 2015 The Cormorant Project Authors (https://github.com/CatharsisFonts/Cormorant)
-
 Jost-Regular.woff2, Jost-Medium.woff2
 Copyright 2020 The Jost Project Authors (https://github.com/indestructible-type/Jost)
 
@@ -13,7 +10,7 @@ HedvigLettersSerif-24pt.woff2
 Copyright 2023 The Hedvig Letters Project Authors (https://github.com/KanonFoundry/HedvigLetters)
 A static instance of the variable font at opsz 24, from commit d05ac773fd28.
 
-All four are Latin subsets, licensed under the SIL Open Font License, Version 1.1.
+All three are Latin subsets, licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
 https://openfontlicense.org
 

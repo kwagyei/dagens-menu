@@ -15,9 +15,6 @@
    ================================================================ */
 
 /* --- Self-hosted fonts (SIL Open Font License, see public/fonts/OFL.txt) --- */
-@font-face { font-family: "Cormorant Garamond"; src: url("/fonts/CormorantGaramond-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cormorant Garamond"; src: url("/fonts/CormorantGaramond-SemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cormorant Garamond"; src: url("/fonts/CormorantGaramond-MediumItalic.woff2") format("woff2"); font-weight: 500; font-style: italic; font-display: swap; }
 @font-face { font-family: "Jost"; src: url("/fonts/Jost-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Jost"; src: url("/fonts/Jost-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
 /* One weight, no italic: font-synthesis keeps browsers from faking either (classic rules). */
