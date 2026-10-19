@@ -5,16 +5,18 @@ import { photoSources } from "../content/images";
  * Home. One booking button, in the hero, next to today's hours. The navigation sits on the hero
  * photo, so the layout leaves out the header (`bare`).
  *
- * Classic: full-bleed food photo, the name in spaced capitals under the arc, a swipe strip of the
- * highlighted dishes, the owner's own line, and the lunch list when the menu has one.
- * Modern: the name as one huge two-line word biting into a rounded photo, the orange oval, the
- * tagline beside it, pill slices of a dish photo on phones, and the highlights as cards.
+ * Classic: full-bleed photo, the town, then the name in the display serif under the arc, a
+ * swipe strip of the highlighted dishes, the owner's own line, and the lunch list when the menu has one.
+ * Modern: the name as one huge two-line word biting into a rounded photo on a wax-print cloth,
+ * the pepper-red oval, the tagline beside it, a strip-weave divider, pill slices of a dish photo on phones, and the highlights as cards.
  */
 import Base from "../layouts/Base.astro";
 import HomeStory from "../components/HomeStory.astro";
+import Horizon from "../components/Horizon.astro";
 import MenuRow from "../components/MenuRow.astro";
 import SiteNav from "../components/SiteNav.astro";
 import { formatPrice, localized, resolveHighlights } from "../content/load";
+import { localityOf } from "../content/locality";
 import { getLocale, localePath, t } from "../i18n";
 
 const locale = getLocale(Astro.url);
@@ -24,6 +26,8 @@ const siteName = localized(settings.name, locale);
 const tagline = localized(pages.home.tagline, locale);
 const voice = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
 const highlights = resolveHighlights(menu, pages.home.highlights, today.soldOut);
+// The town above the classic hero's name, from the address ("Stockholm").
+const locality = localityOf(settings.address);
 const todayText = `${t(locale, "hours.today")}: ${today.hours ? `${today.hours.open}–${today.hours.close}` : t(locale, "hours.closed")}`;
 
 // The hero photo sits behind the name and the booking button: decorative (alt="", ADR-015 §4).
@@ -71,6 +75,7 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
           <path d="M8 112 Q180 -22 352 112" fill="none" stroke="currentColor" stroke-width="1.5" />
           <circle cx="70" cy="72" r="7" fill="currentColor" />
         </svg>
+        {locality && <p class="hero-ljus__eyebrow">{locality}</p>}
         <h1 id="page-title">{siteName}</h1>
         <p class="hero-ljus__tagline">{tagline}</p>
         <a class="btn btn-light" href={localePath(locale, "/book/")}>
@@ -114,19 +119,18 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
       <HomeStory />
 
       {lunch && lunchItems.length > 0 && (
-        <section class="home-lunch" aria-labelledby="lunch-title">
-          <svg class="arc" viewBox="0 0 360 70" aria-hidden="true" focusable="false">
-            <path d="M8 66 Q180 -14 352 66" fill="none" stroke="currentColor" stroke-width="1.5" />
-            <circle cx="290" cy="40" r="7" fill="currentColor" />
-          </svg>
-          <h2 class="section-title" id="lunch-title">
-            {localized(lunch.name, locale)}
-          </h2>
-          <ul class="plain home-lunch__list">
-            {lunchItems.map((item) => (
-              <MenuRow item={item} brief />
-            ))}
-          </ul>
+        <section class="home-lunch wood" aria-labelledby="lunch-title">
+          <div class="home-lunch__card linen">
+            <Horizon />
+            <h2 class="section-title" id="lunch-title">
+              {localized(lunch.name, locale)}
+            </h2>
+            <ul class="plain home-lunch__list">
+              {lunchItems.map((item) => (
+                <MenuRow item={item} brief />
+              ))}
+            </ul>
+          </div>
         </section>
       )}
     </>
@@ -160,14 +164,13 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
           {t(locale, "home.book")}
         </a>
         <div class="hero-dag__side">
-          <svg class="squiggle" viewBox="0 0 84 20" aria-hidden="true" focusable="false">
-            <path d="M3 12 q 6.5 -9 13 0 t 13 0 t 13 0 t 13 0 t 13 0 t 13 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-          </svg>
+          <span class="wax-strip wax-strip--short" aria-hidden="true"></span>
           <p class="big">{tagline}</p>
           {voice && <p>{voice}</p>}
           <p class="hours-badge">{todayText}</p>
         </div>
       </section>
+      <div class="wax-strip" aria-hidden="true"></div>
 
       {pages.home.ctaImage && (
         <div class="slices-band narrow-only">

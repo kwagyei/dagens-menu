@@ -1,10 +1,11 @@
 ---
+import Horizon from "./Horizon.astro";
 import Photo from "./Photo.astro";
 /**
  * The menu: a category bar on one row that stays at the top while scrolling, then every
  * category in order. With JavaScript the bar also fades at the edge that has more categories
- * and marks the category being read (owner feedback B4, 18 Oct); without it, it works as before. Classic sets it as a printed card, text only. Modern gives each dish
- * with a photo a round plate beside its description. Both use one price style and one left
+ * and marks the category being read (owner feedback B4, 18 Oct); without it, it works as before. Classic sets it as a printed card on an oak table, text only. Modern sets the list on a cream cloth and gives each dish
+ * with a photo a round plate on a print beside its description. Both use one price style and one left
  * edge, and keep sold-out and off-menu dishes in place with a label (UI review P2-5).
  */
 import MenuRow from "./MenuRow.astro";
@@ -30,18 +31,23 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
 </div>
 
 {theme.style === "classic" ? (
-  <div class="menu-card">
-    {categories.map((category) => (
-      <section class="menu-cat" id={`cat-${category.id}`} aria-labelledby={`cat-${category.id}-title`}>
-        <h2 id={`cat-${category.id}-title`}>{localized(category.name, locale)}</h2>
-        <ul class="plain">
-          {category.items.map((item) => (
-            <MenuRow item={item} />
-          ))}
-        </ul>
-      </section>
-    ))}
-    <p class="menu-note">{t(locale, "menu.vat")}</p>
+  <div class="menu-table wood">
+    <div class="menu-card linen">
+      {categories.map((category) => (
+        <section class="menu-cat" id={`cat-${category.id}`} aria-labelledby={`cat-${category.id}-title`}>
+          <h2 id={`cat-${category.id}-title`}>
+            <Horizon />
+            {localized(category.name, locale)}
+          </h2>
+          <ul class="plain">
+            {category.items.map((item) => (
+              <MenuRow item={item} />
+            ))}
+          </ul>
+        </section>
+      ))}
+      <p class="menu-note">{t(locale, "menu.vat")}</p>
+    </div>
   </div>
 ) : (
   <div class="menu-list">
@@ -49,9 +55,7 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
       <section class="menu-cat" id={`cat-${category.id}`} aria-labelledby={`cat-${category.id}-title`}>
         <h2 id={`cat-${category.id}-title`}>
           {localized(category.name, locale)}
-          <svg viewBox="0 0 84 20" aria-hidden="true" focusable="false">
-            <path d="M3 12 q 6.5 -9 13 0 t 13 0 t 13 0 t 13 0 t 13 0 t 13 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
-          </svg>
+          <span class="wax-swatch" aria-hidden="true"></span>
         </h2>
         {category.items.map((item) => (
           <article class:list={["menu-item menu-item-row", { "is-out": !onSale(item) }]} aria-labelledby={`dish-${item.id}`}>
@@ -69,7 +73,7 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
                 {item.tags.length > 0 && (
                   <ul class="chips">
                     {item.tags.map((tag) => (
-                      <li class="chip">{tagName(tag)}</li>
+                      <li class:list={["chip", { "chip--spicy": tag === "spicy" }]}>{tagName(tag)}</li>
                     ))}
                   </ul>
                 )}

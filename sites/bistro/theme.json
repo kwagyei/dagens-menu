@@ -1,22 +1,22 @@
 {
   "style": "classic",
   "colors": {
-    "primary": "#12394a",
-    "secondary": "#d9541e",
-    "accent": "#b8441a",
-    "background": "#fffdfb",
-    "surface": "#f9ece4",
-    "surfaceAlt": "#f3e1d6",
-    "text": "#12394a",
-    "textMuted": "#5b6870",
-    "border": "#e7dcd4",
-    "heroBg": "#12394a",
-    "heroText": "#fffdfb",
-    "heroMuted": "#d5e0e5"
+    "primary": "#1d3341",
+    "secondary": "#b08a5e",
+    "accent": "#9b2c2c",
+    "background": "#f5f3ee",
+    "surface": "#e4eaea",
+    "surfaceAlt": "#ede4d6",
+    "text": "#1d3341",
+    "textMuted": "#56636b",
+    "border": "#d6d9d3",
+    "heroBg": "#1d3341",
+    "heroText": "#f5f3ee",
+    "heroMuted": "#c5d0d4"
   },
   "fonts": {
-    "heading": "'Cormorant Garamond', Garamond, 'Times New Roman', serif",
-    "display": "'Cormorant Garamond', Garamond, 'Times New Roman', serif",
+    "heading": "'Hedvig Letters Serif', 'Iowan Old Style', Georgia, serif",
+    "display": "'Hedvig Letters Serif', 'Iowan Old Style', Georgia, serif",
     "body": "Jost, 'Century Gothic', system-ui, sans-serif"
   },
   "cornerRadius": "0"

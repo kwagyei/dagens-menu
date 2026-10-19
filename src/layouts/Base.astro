@@ -27,7 +27,7 @@ const locale = getLocale(Astro.url);
 const siteName = localized(settings.name, locale);
 const { title = siteName, description = localized(settings.tagline, locale), jsonLd, bare = false } = Astro.props;
 // The fonts each look shows above the fold, fetched early so the hero doesn't reflow.
-const preloadFonts = theme.style === "classic" ? ["/fonts/CormorantGaramond-SemiBold.woff2", "/fonts/Jost-Medium.woff2"] : ["/fonts/Anton-Regular.woff2"];
+const preloadFonts = theme.style === "classic" ? ["/fonts/HedvigLettersSerif-24pt.woff2"] : ["/fonts/Anton-Regular.woff2"];
 const pageTitle = title === siteName ? siteName : `${title} | ${siteName}`;
 const links = pageLinks(Astro.url, locale);
 // Every page previews with the home page's hero photo: one picture that says "this restaurant".
