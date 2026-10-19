@@ -22,7 +22,7 @@
           "tags": ["spicy", "gluten-free"],
           "allergens": ["peanuts"],
           "available": true,
-          "image": "/images/westafrican/gallery-suya-skewers.jpg"
+          "image": "/images/westafrican/suya-pepper-sauce.jpg"
         },
         {
           "id": "1og59rqyhq12",
@@ -31,7 +31,8 @@
           "price": 9500,
           "tags": ["vegan"],
           "allergens": [],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/akara-plated.jpg"
         }
       ]
     },
@@ -66,7 +67,8 @@
           "price": 19500,
           "tags": [],
           "allergens": ["fish"],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/thieboudienne.jpg"
         },
         {
           "id": "2ujtipq7v721",
@@ -85,7 +87,8 @@
           "price": 17500,
           "tags": [],
           "allergens": ["peanuts"],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/jordnotssoppa.jpg"
         }
       ]
     },
@@ -110,7 +113,8 @@
           "price": 8500,
           "tags": ["vegan", "gluten-free"],
           "allergens": [],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/mangosorbet.jpg"
         }
       ]
     },
@@ -125,7 +129,8 @@
           "price": 6500,
           "tags": ["vegan"],
           "allergens": [],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/sobolo.jpg"
         },
         {
           "id": "sgao2b7kmbr9",
@@ -134,7 +139,8 @@
           "price": 7500,
           "tags": ["vegan"],
           "allergens": [],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/chapman.jpg"
         },
         {
           "id": "o9i73wqpfu3d",
@@ -143,7 +149,8 @@
           "price": 4500,
           "tags": ["vegetarian"],
           "allergens": [],
-          "available": true
+          "available": true,
+          "image": "/images/westafrican/ingefarsshot.jpg"
         }
       ]
     }
