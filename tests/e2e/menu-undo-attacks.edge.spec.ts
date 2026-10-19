@@ -78,9 +78,10 @@ test("crafted entry values are not found, and GET restores nothing", async ({ pa
     expect(res.status(), query).toBe(303);
     expect(location(res), query).toMatch(/done=not-found$/);
   }
-  // A GET with the real entry shows the picker (the category still exists, but the page is harmless) and restores nothing.
+  // A GET with the real entry while the dish's category still exists has nothing to ask: back to the menu, nothing restored.
   const picker = await page.request.get(`${BASE}${RESTORE}?entry=${entry}`, { maxRedirects: 0 });
-  expect(picker.status()).toBe(200);
+  expect(picker.status()).toBe(303);
+  expect(location(picker)).toMatch(/\/admin\/$/);
   expect(dishes(name)).toBe(0);
   // A POST with a crafted category id is ignored when the dish's own category exists: it still restores there.
   const res = await post(page, { csrf: token, entry, category: "'; DROP TABLE menu_items; --" });
