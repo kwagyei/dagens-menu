@@ -44,7 +44,6 @@ const withAuth = async (page: Page) => {
     page.request.post(path, { form: withCsrf ? { csrf, ...form } : form, maxRedirects: 0, headers: { Origin: BASE } });
   return { csrf, post };
 };
-const exceptionsText = async (page: Page) => page.locator("#exceptions ul").innerText();
 /**
  * The week's version token from a freshly loaded hours page. Since M4 a weekly save without the
  * token the form was rendered with is a 409, so every raw weekly POST that should succeed sends it.

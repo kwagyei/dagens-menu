@@ -31,7 +31,6 @@ test("each slot the classic design draws shows on its page; hero stays decorativ
   await signedInOwner(page);
   const photo = await uploadPhoto(page);
   const before = slots();
-  const media = new RegExp(`/media/${photo.id}`);
   try {
     const v0 = version();
     for (const slot of ["hero", "story", "kitchen"]) await pick(page, `/admin/page-photos/${slot}/`, photo.sv);
@@ -70,7 +69,7 @@ test("each slot the classic design draws shows on its page; hero stays decorativ
   }
 });
 
-test("dish form saved after a photo choice keeps the photo; texts form opened before still saves", async ({ page, browser }) => {
+test("dish form saved after a photo choice keeps the photo; texts form opened before still saves", async ({ page }) => {
   await signedInOwner(page);
   const photo = await uploadPhoto(page);
   const [dish] = d1<{ id: string; image_id: string | null; name_sv: string }>("SELECT id, image_id, name_sv FROM menu_items WHERE site_id = 'bistro' ORDER BY id LIMIT 1");

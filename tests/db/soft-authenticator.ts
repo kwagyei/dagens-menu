@@ -12,7 +12,10 @@ const enc = new TextEncoder();
 const concat = (...parts: Uint8Array[]) => {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let o = 0;
-  for (const p of parts) (out.set(p, o), (o += p.length));
+  for (const p of parts) {
+    out.set(p, o);
+    o += p.length;
+  }
   return out;
 };
 function cborHead(major: number, n: number): Uint8Array {

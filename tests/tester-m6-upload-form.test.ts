@@ -14,7 +14,7 @@ const enc = new TextEncoder();
 const HTML = enc.encode("<html><script>alert(document.domain)</script></html>");
 const ALT = { sv: "Köttbullar med gräddsås", en: "Meatballs with cream sauce" };
 
-let plain: Record<number, Uint8Array> = {};
+const plain: Record<number, Uint8Array> = {};
 
 beforeAll(async () => {
   for (const width of [400, 800, 1200, 1600]) plain[width] = new Uint8Array(await sharp(PHOTO).resize({ width }).webp({ quality: 60 }).toBuffer());
@@ -31,7 +31,10 @@ const riff = (...chunks: Uint8Array[]) => {
   const out = new Uint8Array(12 + body);
   out.set([...enc.encode("RIFF"), ...u32(body + 4), ...enc.encode("WEBP")]);
   let at = 12;
-  for (const c of chunks) (out.set(c, at), (at += c.length));
+  for (const c of chunks) {
+    out.set(c, at);
+    at += c.length;
+  }
   return out;
 };
 /** The VP8 chunk of a simple sharp WebP, and its size from the frame header. */

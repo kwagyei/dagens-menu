@@ -10,7 +10,7 @@ import { bodySizeProblem, MAX_UPLOAD_BODY, readUploadForm } from "../src/admin/u
 import { t } from "../src/i18n";
 
 const PHOTO = "public/images/bistro/kottbullar-hero.jpg";
-let ladder: Record<number, Uint8Array> = {};
+const ladder: Record<number, Uint8Array> = {};
 let jpeg: Uint8Array;
 
 beforeAll(async () => {

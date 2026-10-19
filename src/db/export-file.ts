@@ -159,7 +159,7 @@ function takeUploads(content: Raw): { ok: true; content: Raw; uploads: ExportedU
     }
     const widths = Array.isArray(variants) && variants.length > 0 && variants.every((w) => Number.isInteger(w) && w >= 1 && w <= 1600) ? (variants as number[]) : null;
     if (!widths || widths.some((w, i) => i > 0 && w <= widths[i - 1])) return { ok: false, error: `images.${index}: an uploaded photo needs its widths, smallest first` };
-    let url: URL | null = null;
+    let url: URL | null;
     try {
       url = typeof master === "string" ? new URL(master) : null;
     } catch {

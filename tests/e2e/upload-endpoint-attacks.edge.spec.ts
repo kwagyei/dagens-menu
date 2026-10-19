@@ -47,7 +47,10 @@ function raw(head: string, body: Buffer | string = "", { endAfter = true, wait =
     const timer = setTimeout(done, wait);
     socket.on("data", (d) => {
       data += d.toString("latin1");
-      if (/\r\n\r\n/.test(data)) (clearTimeout(timer), done());
+      if (/\r\n\r\n/.test(data)) {
+        clearTimeout(timer);
+        done();
+      }
     });
     socket.on("error", () => (clearTimeout(timer), done()));
     socket.on("close", () => (clearTimeout(timer), done()));

@@ -492,7 +492,9 @@ test.describe("without SESSION_SECRET", () => {
     for (let i = 0; i < 60; i++) {
       try {
         if ((await fetch(`http://localhost:${PORT}/`)).ok) return;
-      } catch {}
+      } catch {
+        // Not listening yet; try again in a second.
+      }
       await new Promise((r) => setTimeout(r, 1000));
     }
     throw new Error("wrangler dev without a secret did not start");
