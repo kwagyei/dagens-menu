@@ -21,7 +21,10 @@ export const snapshotSchema = (site: string) =>
     categoryId: z.string().regex(ID),
     categorySlug: z.string().min(1),
     position: z.number().int().min(0),
-    soldOutOn: z.string().nullable(),
+    soldOutOn: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable(),
     imageId: z.string().regex(IMAGE_ID).nullable(),
     rowVersion: z.number().int().min(0),
     /** The dish's place among the home-page highlights, or null if it wasn't one. */
@@ -45,6 +48,22 @@ export function parseSnapshot(payload: string | null, site: string, entityId: st
   const checked = snapshotSchema(site).safeParse(json);
   if (!checked.success || checked.data.item.id !== entityId) return null;
   return checked.data;
+}
+
+/**
+ * Where a restored dish goes: its category by id, else by slug (an export restore or a re-seed
+ * gives categories new ids), else the owner's choice. Null means the owner must choose.
+ */
+export async function categoryFor(ctx: RepoContext, snapshot: Snapshot, chosen?: string): Promise<string | null> {
+  return (await ctx.db
+    .prepare(
+      `SELECT id FROM menu_categories WHERE site_id = ?1 AND id = ?2
+       UNION ALL SELECT id FROM menu_categories WHERE site_id = ?1 AND slug = ?3
+       UNION ALL SELECT id FROM menu_categories WHERE site_id = ?1 AND id = ?4
+       LIMIT 1`,
+    )
+    .bind(ctx.siteId, snapshot.categoryId, snapshot.categorySlug, chosen && ID.test(chosen) ? chosen : "")
+    .first<string>("id")) as string | null;
 }
 
 export interface UndoableEntry {

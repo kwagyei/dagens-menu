@@ -7,7 +7,7 @@ import AdminLayout from "../../../../layouts/AdminLayout.astro";
 import { adminPage } from "../../../../admin/page";
 import { adminMenu } from "../../../../db/menu";
 import { restoreMenuItem } from "../../../../db/repository";
-import { parseSnapshot, undoableEntry } from "../../../../db/undo";
+import { categoryFor, parseSnapshot, undoableEntry } from "../../../../db/undo";
 import { t } from "../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
@@ -25,7 +25,14 @@ if (Astro.request.method === "POST") {
   const category = form.get("category");
   const result = await restoreMenuItem(repo, entry, typeof category === "string" ? category : undefined);
   if (result.ok) {
-    const done = result.featured === false ? "restored-not-featured" : result.photoLost ? "restored-no-photo" : "restored";
+    const done =
+      result.featured === false && result.photoLost
+        ? "restored-not-featured-no-photo"
+        : result.featured === false
+          ? "restored-not-featured"
+          : result.photoLost
+            ? "restored-no-photo"
+            : "restored";
     return Astro.redirect(`${home}?done=${done}`, 303);
   }
   if (result.error === "needs-category") return Astro.redirect(`${page.path("/menu/restore/")}?entry=${entry}`, 303);
@@ -37,6 +44,8 @@ const entry = await undoableEntry(repo, entryId);
 if (!entry) return Astro.redirect(`${home}?done=not-found`, 303);
 const snapshot = parseSnapshot(entry.payload, repo.siteId, entry.entityId);
 if (!snapshot) return Astro.redirect(`${home}?done=cant-restore`, 303);
+// The picker is for a dish whose category is gone; otherwise there is nothing to choose.
+if (await categoryFor(repo, snapshot)) return Astro.redirect(home, 303);
 const categories = await adminMenu(repo);
 ---
 

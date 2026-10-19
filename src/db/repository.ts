@@ -11,7 +11,7 @@ import { formatPrice } from "../content/load";
 import { restaurantDay } from "../content/hours";
 import { MAX_HIGHLIGHTS, menuItemSchema } from "../content/schema";
 import { type Statement, prepare, stmt } from "./sql";
-import { ENTRY_ID, parseSnapshot, undoableEntry } from "./undo";
+import { categoryFor, ENTRY_ID, parseSnapshot, undoableEntry } from "./undo";
 import type { D1Database } from "./types";
 
 export interface RepoContext {
@@ -265,8 +265,6 @@ export type RestoreResult =
     }
   | { ok: false; error: "not-found" | "invalid" | "needs-category" | "already-back" };
 
-const CATEGORY_ID = /^[a-z0-9]{12}$/;
-
 /** This site's dish delete, whose dish is on the menu now: a replay, a double click or a re-seed. */
 async function alreadyBack(ctx: RepoContext, entryId: string): Promise<boolean> {
   if (!ENTRY_ID.test(entryId)) return false;
@@ -283,9 +281,8 @@ async function alreadyBack(ctx: RepoContext, entryId: string): Promise<boolean> 
 /**
  * Put a deleted dish back from its history entry (ADR-018): the same id, in its original
  * place (later dishes shift down one), with its photo if that still exists and its home-page
- * highlight if there is room. Its category is found by id, then by slug (an export restore or
- * a re-seed gives categories new ids), else the owner's choice in `categoryId`; with none of
- * those, "needs-category" and nothing is written.
+ * highlight if there is room. Its category comes from categoryFor(); with none,
+ * "needs-category" and nothing is written.
  *
  * One transaction, every statement guarded by the same condition: no dish with this id, and
  * no audit row for it later than the entry. The restore's own audit row is such a later row,
@@ -297,27 +294,23 @@ export async function restoreMenuItem(ctx: RepoContext, entryId: string, categor
   if (!entry) return { ok: false, error: (await alreadyBack(ctx, entryId)) ? "already-back" : "not-found" };
   const snapshot = parseSnapshot(entry.payload, ctx.siteId, entry.entityId);
   if (!snapshot) return { ok: false, error: "invalid" };
-  const category = (await ctx.db
-    .prepare(
-      `SELECT id FROM menu_categories WHERE site_id = ?1 AND id = ?2
-       UNION ALL SELECT id FROM menu_categories WHERE site_id = ?1 AND slug = ?3
-       UNION ALL SELECT id FROM menu_categories WHERE site_id = ?1 AND id = ?4
-       LIMIT 1`,
-    )
-    .bind(ctx.siteId, snapshot.categoryId, snapshot.categorySlug, categoryId && CATEGORY_ID.test(categoryId) ? categoryId : "")
-    .first<string>("id")) as string | null;
+  const category = await categoryFor(ctx, snapshot, categoryId);
   if (!category) return { ok: false, error: "needs-category" };
-  const photo = snapshot.imageId ? await ctx.db.prepare("SELECT id FROM images WHERE site_id = ? AND id = ?").bind(ctx.siteId, snapshot.imageId).first<string>("id") : null;
   const { item } = snapshot;
   const stillUndoable = `NOT EXISTS (SELECT 1 FROM audit_log b WHERE b.site_id = ?1 AND b.entity = 'menu_item' AND b.entity_id = ?2 AND b.id > ?3)`;
   const absent = `NOT EXISTS (SELECT 1 FROM menu_items WHERE site_id = ?1 AND id = ?2)`;
   const present = `EXISTS (SELECT 1 FROM menu_items WHERE site_id = ?1 AND id = ?2)`;
-  // The original position, clamped to the category's current length: the shift frees it.
-  const place = `min(?5, (SELECT count(*) FROM menu_items WHERE site_id = ?1 AND category_id = ?4))`;
+  // The original position, or the end of the category if it is shorter now. Positions keep
+  // gaps (a delete never renumbers), so "the end" is the highest position + 1, not the count.
+  const place = `min(?5, (SELECT coalesce(max(position) + 1, 0) FROM menu_items WHERE site_id = ?1 AND category_id = ?4))`;
+  // Everything at or after that place moves down one, so the dish lands exactly there, also in
+  // a category the owner chose. (Two dishes at one position, which only hand-written rows have,
+  // can swap: accepted, ADR-018 limits.)
+  const after = `position >= ${place}`;
   const guard = [ctx.siteId, item.id, entry.id] as const;
   const statements: Statement[] = [
     stmt(
-      `UPDATE menu_items SET position = position + 1 WHERE site_id = ?1 AND category_id = ?4 AND position >= ${place} AND ${absent} AND ${stillUndoable}`,
+      `UPDATE menu_items SET position = position + 1 WHERE site_id = ?1 AND category_id = ?4 AND ${after} AND ${absent} AND ${stillUndoable}`,
       ...guard,
       category,
       snapshot.position,
@@ -325,7 +318,8 @@ export async function restoreMenuItem(ctx: RepoContext, entryId: string, categor
     stmt(
       `INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, tags, allergens,
          available, sold_out_on, image_id, position, row_version, updated_at, updated_by)
-       SELECT ?1, ?2, ?4, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ${place}, ?16, ?17, ?18
+       SELECT ?1, ?2, ?4, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
+         (SELECT id FROM images WHERE site_id = ?1 AND id = ?15), ${place}, ?16, ?17, ?18
        WHERE ${absent} AND ${stillUndoable}`,
       ...guard,
       category,
@@ -339,7 +333,7 @@ export async function restoreMenuItem(ctx: RepoContext, entryId: string, categor
       JSON.stringify(item.allergens),
       item.available ? 1 : 0,
       snapshot.soldOutOn,
-      photo,
+      snapshot.imageId,
       snapshot.rowVersion + 1,
       isoSeconds(ctx.now),
       ctx.userId,
@@ -364,8 +358,11 @@ export async function restoreMenuItem(ctx: RepoContext, entryId: string, categor
       isoSeconds(ctx.now),
       `${item.name.sv}: restored`,
     ),
+    // The photo as stored: looked up inside the insert, so a photo deleted meanwhile is simply absent.
+    stmt("SELECT image_id FROM menu_items WHERE site_id = ?1 AND id = ?2", ctx.siteId, item.id),
   );
   const results = await ctx.db.batch(prepare(ctx.db, statements));
   if (results[1].meta.changes === 0) return { ok: false, error: "already-back" };
-  return { ok: true, photoLost: snapshot.imageId !== null && photo === null, featured: snapshot.highlight === null ? null : results[2].meta.changes > 0 };
+  const stored = (results.at(-1)!.results as Array<{ image_id: string | null }>)[0]?.image_id ?? null;
+  return { ok: true, photoLost: snapshot.imageId !== null && stored === null, featured: snapshot.highlight === null ? null : results[2].meta.changes > 0 };
 }

@@ -153,6 +153,8 @@ export default {
   "admin.menu.restored": "Rätten är tillbaka på menyn.",
   "admin.menu.restoredNoPhoto": "Rätten är tillbaka på menyn, men utan foto: fotot är borttaget sedan dess.",
   "admin.menu.restoredNotFeatured": "Rätten är tillbaka på menyn, men inte på startsidan: där visas redan tre rätter.",
+  "admin.menu.restoredNotFeaturedNoPhoto":
+    "Rätten är tillbaka på menyn, men utan foto och inte på startsidan: fotot är borttaget sedan dess, och startsidan visar redan tre rätter.",
   "admin.menu.alreadyBack": "Rätten är redan tillbaka på menyn.",
   "admin.menu.cantRestore": "Rätten kan inte läggas tillbaka automatiskt. Lägg till den igen.",
   "admin.restore.heading": "Vilken kategori?",

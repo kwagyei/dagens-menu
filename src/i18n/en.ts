@@ -154,6 +154,8 @@ export default {
   "admin.menu.restored": "The dish is back on the menu.",
   "admin.menu.restoredNoPhoto": "The dish is back on the menu, but without its photo: the photo has been deleted since.",
   "admin.menu.restoredNotFeatured": "The dish is back on the menu, but not on the home page: it already shows three dishes.",
+  "admin.menu.restoredNotFeaturedNoPhoto":
+    "The dish is back on the menu, but without its photo and not on the home page: the photo has been deleted since, and the home page already shows three dishes.",
   "admin.menu.alreadyBack": "The dish is already back on the menu.",
   "admin.menu.cantRestore": "The dish can't be put back automatically. Add it again.",
   "admin.restore.heading": "Which category?",
