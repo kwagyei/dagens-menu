@@ -8,12 +8,14 @@ describe("localityOf", () => {
     ["Storgatan 12, 11151 Stockholm", "Stockholm"],
     ["Storgatan 12, SE-111 51 Stockholm", "Stockholm"],
     ["Storgatan 12, 111 51 Upplands Väsby", "Upplands Väsby"],
-    ["Storgatan 12, Stockholm", "Stockholm"],
+    ["Storgatan 12, 111 51 Stockholm, Sverige", "Stockholm"],
+    ["Storgatan 12, 111 51 Stockholm,", "Stockholm"],
+    ["Storgatan 12\n111 51 Stockholm", "Stockholm"],
   ])("%s gives %s", (address, town) => {
     expect(localityOf(address)).toBe(town);
   });
 
-  it.each([[""], ["Storgatan 12"], ["Storgatan 12, 111 51"]])("finds no town in %j", (address) => {
+  it.each([[""], ["Storgatan 12"], ["Strandvägen"], ["Storgatan 12, Stockholm"], ["Storgatan 12, 111 51"], ["Karl Johans gate 1, 0150 Oslo"]])("finds no town in %j", (address) => {
     expect(localityOf(address)).toBeNull();
   });
 });
