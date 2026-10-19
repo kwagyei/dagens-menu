@@ -117,7 +117,7 @@ describe("the same item id on two sites", () => {
   });
 
   it("deletes only the calling site's dish", async () => {
-    expect(await deleteMenuItem(westafrican, ITEM)).toEqual({ ok: true });
+    expect(await deleteMenuItem(westafrican, ITEM)).toMatchObject({ ok: true });
     expect(await getMenuItem(westafrican, ITEM)).toBeNull();
     expect((await getMenuItem(bistro, ITEM))?.name.sv).toBe(bistroMenu.categories[0].items[0].name.sv);
   });

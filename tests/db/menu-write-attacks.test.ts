@@ -148,7 +148,7 @@ describe("deleting", () => {
   });
   it("deleting twice (double submit) is not-found, writes one audit row", async () => {
     const id = menu.categories[0].items[0].id;
-    expect(await deleteMenuItem(bistro, id)).toEqual({ ok: true });
+    expect(await deleteMenuItem(bistro, id)).toMatchObject({ ok: true });
     expect(await deleteMenuItem(bistro, id)).toEqual({ ok: false, error: "not-found" });
     const n = await db.prepare("SELECT count(*) AS n FROM audit_log WHERE action='delete'").first<number>("n");
     expect(n).toBe(1);

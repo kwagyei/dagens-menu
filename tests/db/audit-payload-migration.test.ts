@@ -50,9 +50,14 @@ beforeAll(async () => {
   await db.batch([db.prepare("PRAGMA defer_foreign_keys = true"), ...tables.results.map((t) => db.prepare(`DROP TABLE "${t.name}"`))]);
   for (const name of ["0001", "0002", "0003", "0004", "0005", "0006"]) await apply(name);
   await db.batch(prepare(db, seedStatements(SITE, content as StoredContent, fakeImages)));
-  // History as today's code writes it, before the column exists.
-  expect(await deleteMenuItem(ctx(), firstDish.id)).toEqual({ ok: true });
+  // History as the code before ADR-018 wrote it: a delete and its audit row, no snapshot.
   expect(await columns("audit_log")).not.toContain("payload");
+  await db.batch([
+    db
+      .prepare("INSERT INTO audit_log (site_id, user_id, at, entity, entity_id, action, summary) VALUES (?, NULL, ?, 'menu_item', ?, 'delete', ?)")
+      .bind(SITE, "2026-10-18T12:00:00Z", firstDish.id, `${firstDish.name.sv}: deleted`),
+    db.prepare("DELETE FROM menu_items WHERE site_id = ? AND id = ?").bind(SITE, firstDish.id),
+  ]);
   rowsBefore = await count("SELECT count(*) AS n FROM audit_log");
   await apply("0007");
 });
@@ -94,11 +99,19 @@ describe("migration 0007", () => {
     expect(await count("SELECT count(*) AS n FROM audit_log WHERE payload IS NOT NULL")).toBe(1);
   });
 
-  it("today's writes pass unchanged: a delete still lands its audit row, payload NULL", async () => {
+  it("a delete after the migration lands its audit row with a snapshot", async () => {
     const dish = content.menu.categories[0].items[1];
-    expect(await deleteMenuItem(ctx(), dish.id)).toEqual({ ok: true });
-    const row = await db.prepare("SELECT action, summary, payload FROM audit_log WHERE site_id = ? AND entity_id = ? ORDER BY id DESC LIMIT 1").bind(SITE, dish.id).first();
-    expect(row).toEqual({ action: "delete", summary: `${dish.name.sv}: deleted`, payload: null });
+    expect(await deleteMenuItem(ctx(), dish.id)).toMatchObject({ ok: true });
+    const row = await db
+      .prepare("SELECT action, summary, json_extract(payload, '$.item.id') AS snapshot_of FROM audit_log WHERE site_id = ? AND entity_id = ? ORDER BY id DESC LIMIT 1")
+      .bind(SITE, dish.id)
+      .first();
+    expect(row).toEqual({ action: "delete", summary: `${dish.name.sv}: deleted`, snapshot_of: dish.id });
+  });
+
+  it("the entry written before the migration has no snapshot, so it can't be undone", async () => {
+    const row = await db.prepare("SELECT payload FROM audit_log WHERE site_id = ? AND entity_id = ?").bind(SITE, firstDish.id).first();
+    expect(row).toEqual({ payload: null });
   });
 
   it("the undoable lookup uses the new index", async () => {

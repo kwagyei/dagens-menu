@@ -204,15 +204,52 @@ export async function setSoldOut(ctx: RepoContext, id: string, soldOut: boolean)
   return changed || (await getMenuItem(ctx, id))?.soldOutOn === value ? { ok: true } : { ok: false, error: "not-found" };
 }
 
-/** Delete a dish; its home-page highlight goes with it (foreign key cascade). */
-export async function deleteMenuItem(ctx: RepoContext, id: string): Promise<WriteResult> {
-  const item = await getMenuItem(ctx, id);
-  if (!item) return { ok: false, error: "not-found" };
-  const changed = await commitIf(ctx, stmt("DELETE FROM menu_items WHERE site_id = ? AND id = ?", ctx.siteId, id), {
-    entity: "menu_item",
-    entityId: id,
-    action: "delete",
-    summary: `${item.name.sv}: deleted`,
-  });
-  return changed ? { ok: true } : { ok: false, error: "not-found" };
+/**
+ * Delete a dish; its home-page highlight goes with it (foreign key cascade). The audit row is
+ * written first, from the row itself, with a JSON snapshot of the dish (ADR-018): what the
+ * category, position, photo and highlight were, so the owner can put it back. Both statements
+ * run in one transaction, so a dish is never deleted without its snapshot. The entry's id
+ * comes back for the "Ångra" link on the next page.
+ */
+export async function deleteMenuItem(ctx: RepoContext, id: string): Promise<WriteResult & { entryId?: number }> {
+  const snapshot = stmt(
+    `INSERT INTO audit_log (${AUDIT_COLUMNS}, payload)
+     SELECT ?, ?, ?, 'menu_item', m.id, 'delete', m.name_sv || ': deleted',
+       json_object(
+         'v', 1,
+         'item', json_object(
+           'id', m.id,
+           'name', json_object('sv', m.name_sv, 'en', m.name_en),
+           'description', json_object('sv', m.description_sv, 'en', m.description_en),
+           'price', m.price_ore,
+           'tags', json(m.tags),
+           'allergens', json(m.allergens),
+           'available', json(CASE WHEN m.available = 1 THEN 'true' ELSE 'false' END)),
+         'categoryId', m.category_id,
+         'categorySlug', c.slug,
+         'position', m.position,
+         'soldOutOn', m.sold_out_on,
+         'imageId', m.image_id,
+         'rowVersion', m.row_version,
+         'highlight', h.position)
+     FROM menu_items m
+       JOIN menu_categories c ON c.site_id = m.site_id AND c.id = m.category_id
+       LEFT JOIN home_highlights h ON h.site_id = m.site_id AND h.item_id = m.id
+     WHERE m.site_id = ? AND m.id = ?`,
+    ctx.siteId,
+    ctx.userId,
+    isoSeconds(ctx.now),
+    ctx.siteId,
+    id,
+  );
+  const [, deleted, entry] = await ctx.db.batch(
+    prepare(ctx.db, [
+      snapshot,
+      stmt("DELETE FROM menu_items WHERE site_id = ? AND id = ?", ctx.siteId, id),
+      stmt("SELECT id FROM audit_log WHERE site_id = ? AND entity = 'menu_item' AND entity_id = ? AND action = 'delete' ORDER BY id DESC LIMIT 1", ctx.siteId, id),
+    ]),
+  );
+  if (deleted.meta.changes === 0) return { ok: false, error: "not-found" };
+  const entryId = (entry.results as Array<{ id: number }>)[0]?.id;
+  return { ok: true, entryId };
 }
