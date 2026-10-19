@@ -123,7 +123,8 @@ test("public pages: JSON-LD, anchors and highlights follow edits", async ({ page
   await expect(page.getByRole("status")).toHaveText("Tillagt.");
   const ld = async (path: string) => {
     const html = await (await request.get(path)).text();
-    return [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+    // Every node, whether a block holds one or a @graph (the menu page carries Restaurant and Menu).
+    return [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1])).flatMap((j) => j["@graph"] ?? [j]);
   };
   let menuLd = (await ld("/menu/")).find((j) => j["@type"] === "Menu");
   const sec = menuLd.hasMenuSection.find((s: { name: string }) => s.name === "Ankare åäö");

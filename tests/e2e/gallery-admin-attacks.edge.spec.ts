@@ -93,10 +93,14 @@ test("another site's rows and photos, malformed ids, bad CSRF, wrong Origin and 
     // or removing in parallel (PR #74: the old snapshot of every bistro row failed that way).
     expect((await post(page, { csrf: token, action: "add", id: mine.id })).status()).toBe(303);
     const ownId = rows().find((r) => r.image_id === mine.id)!.id;
-    // Only the rows the attacks aim at: the other site's two and this test's own. Other tests
+    // Only the rows the attacks aim at: the other site's two, this test's own, and any row that
+    // wrongly took the other site's photo (the "add" attack). Other tests
     // edit bistro's gallery and content in parallel, so neither all of its rows nor its
     // content_version can be compared here.
-    const watched = () => JSON.stringify(d1(`SELECT site_id, id, image_id, position FROM gallery_images WHERE site_id = 'westafrican' OR id = '${ownId}' ORDER BY site_id, id`));
+    const watched = () =>
+      JSON.stringify(
+        d1(`SELECT site_id, id, image_id, position FROM gallery_images WHERE site_id = 'westafrican' OR id = '${ownId}' OR image_id = '${theirImg}' ORDER BY site_id, id`),
+      );
     const snapshot = watched();
     const bad: Record<string, string>[] = [
       { action: "add", id: theirImg },
@@ -203,7 +207,8 @@ test("targets are 44 px, focus follows at the top and bottom ends, and the libra
   await expect(entry(page, a.id).getByRole("button", { name: `Flytta tidigare: ${a.sv}` })).toBeDisabled();
   await expect(entry(page, a.id).getByRole("button", { name: `Flytta senare: ${a.sv}` })).toBeFocused();
   // A crafted "up" at the top is a silent no-op that still lands focus on the other button.
-  const first = d1<{ id: string }>("SELECT id FROM gallery_images WHERE site_id='bistro' ORDER BY position, id LIMIT 1")[0].id;
+  // a's own row, which the clicks above moved to the top: another test can't reorder it.
+  const first = d1<{ id: string }>(`SELECT id FROM gallery_images WHERE image_id = '${a.id}'`)[0].id;
   // The row itself, not content_version: other tests edit bistro's content in parallel.
   const position = () => d1<{ position: number }>(`SELECT position FROM gallery_images WHERE id = '${first}'`)[0].position;
   const before = position();

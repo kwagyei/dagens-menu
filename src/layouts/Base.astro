@@ -61,7 +61,7 @@ const restaurantJsonLd = {
   "@context": "https://schema.org",
   "@type": "Restaurant",
   "@id": `${origin}/#restaurant`,
-  url: `${origin}${localePath(locale, "/")}`,
+  url: `${origin}/`, // one restaurant, one url, in both languages
   hasMenu: { "@id": `${origin}${localePath(locale, "/menu/")}#menu` },
   name: siteName,
   description,
