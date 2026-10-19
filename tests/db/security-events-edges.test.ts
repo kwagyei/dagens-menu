@@ -186,7 +186,7 @@ describe("criterion 1: one audit row per event, only when it happened", () => {
     const first = await new SoftAuthenticator().register(options.body.options as never, SITES.bistro.origin, SITES.bistro.rpID);
     const second = await new SoftAuthenticator().register(options.body.options as never, SITES.bistro.origin, SITES.bistro.rpID);
     expect((await addPasskeyVerify(ctx("bistro", cookie), signedIn, first)).status).toBe(200);
-    expect((await addPasskeyVerify(ctx("bistro", cookie), signedIn, second)).status).toBe(409);
+    expect(await addPasskeyVerify(ctx("bistro", cookie), signedIn, second)).toMatchObject({ status: 401, body: { error: "challenge-used" } });
     expect((await auditRows()).filter((r) => r.entity === "passkey" && r.action === "create")).toHaveLength(1);
     expect(await db.prepare("SELECT count(*) AS n FROM passkeys").first<number>("n")).toBe(2);
   });

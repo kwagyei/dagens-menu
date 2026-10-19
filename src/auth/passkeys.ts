@@ -317,9 +317,18 @@ export async function addPasskeyConfirm(ctx: CeremonyContext, session: Session, 
   return registrationOptionsFor(ctx, session.userId, session.email, `add:${session.tokenHash}`);
 }
 
+/**
+ * Each refusal names its cause (review L3, 18 Oct): an expired or missing confirmation is
+ * challenge-expired, a replayed one challenge-used, and already-registered means only that
+ * this credential is already stored. The page starts again from step one on any of them.
+ */
 export async function addPasskeyVerify(ctx: CeremonyContext, session: Session, response: unknown): Promise<ApiResult> {
-  const verified = await verifiedRegistration(ctx, `add:${session.tokenHash}`, response);
+  const purpose = `add:${session.tokenHash}`;
+  if (!(await expectedChallenge(ctx, purpose))) return refuse(400, "challenge-expired");
+  const verified = await verifiedRegistration(ctx, purpose, response);
   if (!verified) return refuse(400, "verification-failed");
+  const stored = await ctx.db.prepare("SELECT 1 FROM passkeys WHERE id = ?").bind(verified.credential.id).first();
+  if (stored) return refuse(409, "already-registered");
   const audit = securityAudit(
     { site: ctx.site, actor: session.userId, subject: session.userId, now: ctx.now, event: { entity: "passkey", action: "create" } },
     `${session.email}: another device's passkey added`,
@@ -329,8 +338,8 @@ export async function addPasskeyVerify(ctx: CeremonyContext, session: Session, r
       prepare(ctx.db, [...redeemChallenge(ctx, verified.challenge), passkeyInsert(ctx, session.userId, verified.credential, false), audit]),
     );
   } catch (error) {
-    // A replayed challenge, or a passkey that is already registered.
-    if (isConstraintError(error)) return refuse(409, "already-registered");
+    // The credential was checked above, so this is a replayed challenge (or a race with one).
+    if (isConstraintError(error)) return refuse(401, "challenge-used");
     throw error;
   }
   return ok({ ok: true }, [clearChallenge]);

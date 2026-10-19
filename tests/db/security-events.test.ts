@@ -153,7 +153,7 @@ describe("M3: security events are audited", () => {
     // Registering the same credential again is refused, and not audited.
     const options = await confirmedAddOptions((c) => ctx(c), signedIn, BISTRO.origin, BISTRO.rpID);
     const again = await second.register(options.body.options as never, BISTRO.origin, BISTRO.rpID);
-    expect((await addPasskeyVerify(ctx(cookieValue(options.cookies[0])), signedIn, again)).status).toBe(409);
+    expect(await addPasskeyVerify(ctx(cookieValue(options.cookies[0])), signedIn, again)).toMatchObject({ status: 409, body: { error: "already-registered" } });
     const added = (await auditRows()).filter((r) => r.entity === "passkey" && r.action === "create");
     expect(added).toEqual([
       { user_id: await userId(), entity: "passkey", entity_id: await userId(), action: "create", summary: `${OWNER}: another device's passkey added` },

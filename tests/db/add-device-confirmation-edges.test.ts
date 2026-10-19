@@ -128,7 +128,7 @@ describe("the confirmation's writes", () => {
     const a = await new SoftAuthenticator().register(confirmed.body.options as never, origin, rpID);
     const b = await new SoftAuthenticator().register(confirmed.body.options as never, origin, rpID);
     expect((await addPasskeyVerify(ctx(addCookie), session, a)).status).toBe(200);
-    expect((await addPasskeyVerify(ctx(addCookie), session, b)).status).toBe(409);
+    expect(await addPasskeyVerify(ctx(addCookie), session, b)).toMatchObject({ status: 401, body: { error: "challenge-used" } });
     expect(await one<{ n: number }>("SELECT count(*) AS n FROM passkeys WHERE user_id = ?", session.userId)).toEqual({ n: 2 });
   });
 
