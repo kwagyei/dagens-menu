@@ -53,13 +53,12 @@ test("each slot the classic design draws shows on its page; hero stays decorativ
     await expect(page.locator("#page-photos li")).toHaveCount(3);
     // hero: decorative, so alt="" and never the library alt
     await page.goto("/");
-    const hero = page
-      .locator("img[srcset], img[src]")
-      .filter({ has: page.locator("xpath=self::*") })
-      .locator(`xpath=self::*[contains(@src,"${photo.id}") or contains(@srcset,"${photo.id}")]`);
+    const hero = page.locator(`img.hero-ljus__img[srcset*="${photo.id}"], img.hero-ljus__img[src*="${photo.id}"]`);
     expect(await hero.count(), "hero img on /").toBeGreaterThan(0);
     for (const alt of await hero.evaluateAll((els) => els.map((e) => e.getAttribute("alt")))) expect(alt).toBe("");
-    await expect(page.locator(`img[alt="${photo.sv}"]`)).toHaveCount(0);
+    // The home story teaser shows the story photo, with the library alt (identity pass).
+    await expect(page.locator(`.home-story img[alt="${photo.sv}"]`)).toHaveCount(1);
+    await expect(page.locator(`img[alt="${photo.sv}"]`)).toHaveCount(1);
     // story + kitchen: two images with the library alt
     await page.goto("/about/");
     await expect(page.locator(`img[alt="${photo.sv}"]`)).toHaveCount(2);
