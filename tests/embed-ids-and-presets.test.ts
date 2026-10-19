@@ -3,7 +3,7 @@
  * breaks no preset's embedPattern, and no other accepted attribute can name an element or a
  * window property that a public page's script looks up.
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { embedProvider } from "../src/booking/embed";
 import { listPresets } from "../src/booking/presets";
@@ -22,7 +22,8 @@ describe("every preset's own embed pattern still parses", () => {
 describe("the demo sites' embed code, if any, still parses", () => {
   it.each(
     readdirSync("sites", { withFileTypes: true })
-      .filter((d) => d.isDirectory())
+      // Only real sites: another test briefly makes a throwaway one with no settings.
+      .filter((d) => d.isDirectory() && existsSync(`sites/${d.name}/content/settings.json`))
       .map((d) => d.name),
   )("%s", (site) => {
     const settings = JSON.parse(readFileSync(`sites/${site}/content/settings.json`, "utf8"));
