@@ -7,15 +7,18 @@ import { photoSources } from "../content/images";
  *
  * Classic: full-bleed photo, the town, then the name in the display serif under the arc, a
  * swipe strip of the highlighted dishes, the owner's own line, and the lunch list when the menu has one.
- * Modern: the name as one huge two-line word biting into a rounded photo on a wax-print cloth,
- * the pepper-red oval, the tagline beside it, a strip-weave divider, pill slices of a dish photo on phones, and the highlights as cards.
+ * Modern (after inspiration/modern): the name as one huge word biting into a rounded photo, the
+ * orange oval under it, then the tagline as a headline with the dish in stacked slices between
+ * the week's hours and how to find the restaurant, then the highlights as cards.
  */
 import Base from "../layouts/Base.astro";
 import HomeStory from "../components/HomeStory.astro";
 import Horizon from "../components/Horizon.astro";
+import Squiggle from "../components/Squiggle.astro";
 import MenuRow from "../components/MenuRow.astro";
 import SiteNav from "../components/SiteNav.astro";
 import { formatPrice, localized, resolveHighlights } from "../content/load";
+import { weekRuns } from "../content/hours";
 import { localityOf } from "../content/locality";
 import { getLocale, localePath, t } from "../i18n";
 
@@ -26,6 +29,9 @@ const siteName = localized(settings.name, locale);
 const tagline = localized(pages.home.tagline, locale);
 const voice = pages.home.pullQuote ? localized(pages.home.pullQuote, locale) : null;
 const highlights = resolveHighlights(menu, pages.home.highlights, today.soldOut);
+// Modern: the week as runs of days with the same hours ("Tisdag–torsdag 12:00–22:00").
+const runs = weekRuns(Astro.locals.content.hours.weekly);
+const dayName = (day: string) => t(locale, `weekday.${day}` as Parameters<typeof t>[1]);
 // The town above the classic hero's name, from the address ("Stockholm").
 const locality = localityOf(settings.address);
 const todayText = `${t(locale, "hours.today")}: ${today.hours ? `${today.hours.open}–${today.hours.close}` : t(locale, "hours.closed")}`;
@@ -142,9 +148,6 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
           <div class="hero-dag__nav">
             <SiteNav variant="hero" />
           </div>
-          <a class="star wide-only" href={localePath(locale, "/menu/")}>
-            {t(locale, "home.seeMenu")}
-          </a>
         </div>
         <h1 class="hero-dag__word" id="page-title">
           <svg class="narrow-only" viewBox={`0 0 100 ${wordHeight}`} role="img" aria-label={siteName}>
@@ -163,27 +166,47 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
         <a class="btn btn-primary pill" href={localePath(locale, "/book/")}>
           {t(locale, "home.book")}
         </a>
-        <div class="hero-dag__side">
-          <span class="wax-strip wax-strip--short" aria-hidden="true"></span>
-          <p class="big">{tagline}</p>
-          {voice && <p>{voice}</p>}
-          <p class="hours-badge">{todayText}</p>
-        </div>
       </section>
-      <div class="wax-strip" aria-hidden="true"></div>
 
-      {pages.home.ctaImage && (
-        <div class="slices-band narrow-only">
-          <div class="slices">
-            <i style={`background-image: url("${ctaUrl}")`}></i>
-            <i style={`background-image: url("${ctaUrl}")`}></i>
-            <i style={`background-image: url("${ctaUrl}")`}></i>
-            <a class="star" href={localePath(locale, "/menu/")}>
-              {t(locale, "home.seeMenu")}
-            </a>
+      <section class="intro-dag" aria-labelledby="intro-title">
+        <Squiggle />
+        <h2 class="intro-dag__title" id="intro-title">
+          {tagline}
+        </h2>
+        {voice && <p class="intro-dag__voice">{voice}</p>}
+        <div class:list={["intro-dag__feature", { "intro-dag__feature--photo": pages.home.ctaImage }]}>
+          {pages.home.ctaImage && (
+            <div class="slices">
+              <i style={`background-image: url("${ctaUrl}")`}></i>
+              <i style={`background-image: url("${ctaUrl}")`}></i>
+              <i style={`background-image: url("${ctaUrl}")`}></i>
+              <a class="star" href={localePath(locale, "/menu/")}>
+                {t(locale, "home.seeMenu")}
+              </a>
+            </div>
+          )}
+          <div class="intro-dag__hours">
+            <h3>{t(locale, "home.hours")}</h3>
+            <dl>
+              {runs.map((run) => (
+                <div>
+                  <dt>{run.first === run.last ? dayName(run.first) : `${dayName(run.first)}–${dayName(run.last).toLowerCase()}`}</dt>
+                  <dd>{run.hours ? `${run.hours.open}–${run.hours.close}` : t(locale, "hours.closed")}</dd>
+                </div>
+              ))}
+            </dl>
+            <p class="hours-badge">{todayText}</p>
+          </div>
+          <div class="intro-dag__find">
+            <h3>{t(locale, "home.findUs")}</h3>
+            <address>
+              <span>{settings.address}</span>
+              <a href={`tel:${settings.phone.replace(/[\s-]/g, "")}`}>{settings.phone}</a>
+              <a href={`mailto:${settings.email}`}>{settings.email}</a>
+            </address>
           </div>
         </div>
-      )}
+      </section>
 
       {highlights.length > 0 && (
         <section class="home-dishes" aria-labelledby="dishes-title">

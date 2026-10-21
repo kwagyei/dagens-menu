@@ -93,13 +93,13 @@ test.describe("the modern look's sticker", () => {
     expect(await turning(page)).toBeGreaterThan(0);
   });
 
-  test("the sticker's text is marigold on indigo (6.8:1)", async ({ page }) => {
+  test("the sticker's text is the dark ink on orange (4.7:1)", async ({ page }) => {
     await page.goto("/");
-    // Chez Abena's theme background on its secondary (identity pass, 19 Oct).
+    // Chez Abena's theme secondary on its accent (makeover after inspiration/modern, 21 Oct).
     const sticker = await page.evaluate(() => {
       const style = getComputedStyle(document.querySelector("a.star")!);
       return [style.color, style.backgroundColor];
     });
-    expect(sticker).toEqual(["rgb(244, 182, 63)", "rgb(38, 48, 106)"]);
+    expect(sticker).toEqual(["rgb(19, 48, 29)", "rgb(240, 106, 59)"]);
   });
 });

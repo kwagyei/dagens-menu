@@ -1,0 +1,14 @@
+---
+/**
+ * The modern look's divider: a short hand-drawn wave, as in the reference (inspiration/modern).
+ * Decoration only; it takes the colour of the text around it.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<svg class:list={["squiggle", className]} viewBox="0 0 84 20" aria-hidden="true" focusable="false">
+  <path d="M3 12 q 6.5 -9 13 0 t 13 0 t 13 0 t 13 0 t 13 0 t 13 0" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+</svg>

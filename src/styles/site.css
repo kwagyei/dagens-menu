@@ -5,9 +5,9 @@
    - classic ("Ljus", Bistro Norden): a full-bleed photo, the name in a
      Nordic serif (Hedvig Letters, one weight, no italic) under a low sun,
      linen, oak and window light, a printed menu on a table.
-   - modern ("Dag", Chez Abena): one huge condensed word biting into a
-     rounded photo laid on a wax-print cloth, a pepper-red oval button,
-     wax-print rings, strip weave and saw-tooth edges, pill shapes.
+   - modern ("Dag", Chez Abena, after inspiration/modern): one huge
+     condensed word biting into a rounded photo, an orange oval button,
+     a dish in stacked slices with a starburst sticker, squiggles, pills.
 
    Colours and fonts come from theme.json (custom properties set in
    Base.astro), so a client recolours a look without touching CSS.
@@ -85,33 +85,8 @@
   background: #d9c6a8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='260'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0032 0.11' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.40  0 0 0 0 0.25  1.4 0 0 0 -0.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23D9C6A8'/%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.75'/%3E%3C/svg%3E") 0 0 / 900px 260px;
 }
 
-/* --- Modern wax-print motifs (identity pass, owner feedback C2) ------
-   Generic wax-print geometry, drawn in CSS from the theme's colours, so a
-   recolour carries through: concentric rings, a kente-like strip weave and
-   saw teeth where two colour bands meet. No Adinkra symbols: they carry
-   specific meanings. All decoration, aria-hidden, nothing animates. */
-.wax-rings, [data-style="modern"] .hero-dag__img, [data-style="modern"] .menu-cat > h2 .wax-swatch {
-  background-color: var(--color-secondary);
-  background-image:
-    radial-gradient(circle, var(--color-bg) 0 4px, transparent 4.5px 8px, var(--color-surface) 8.5px 10px, transparent 10.5px 14px, var(--color-bg) 14.5px 16px, transparent 16.5px),
-    radial-gradient(circle, var(--color-accent) 0 3px, transparent 3.5px);
-  background-size: 44px 44px;
-  background-position: 0 0, 22px 22px;
-}
-.wax-strip, [data-style="modern"] .menu-list::before {
-  height: 1.125rem;
-  background:
-    repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, var(--color-surface) 38%, transparent) 3px 5px),
-    repeating-linear-gradient(90deg, var(--color-text) 0 34px, var(--color-bg) 34px 38px, var(--color-accent) 38px 72px, var(--color-bg) 72px 76px, var(--color-secondary) 76px 110px, var(--color-bg) 110px 114px);
-}
-.wax-strip--short { width: 5.25rem; border-radius: 999px; }
-/* Teeth: set --above to the colour of the band above, on the band below. */
-.teeth, [data-style="modern"] .site-footer::before, [data-style="modern"] .home-story::before {
-  height: 14px;
-  background:
-    linear-gradient(135deg, var(--above) 50%, transparent 50%) 0 0 / 22px 14px,
-    linear-gradient(225deg, var(--above) 50%, transparent 50%) 0 0 / 22px 14px;
-}
+/* --- Modern divider (after inspiration/modern) --------------------- */
+.squiggle { display: block; width: 5.25rem; height: 1.25rem; color: currentColor; }
 
 /* --- Buttons ---------------------------------------------------- */
 .btn {
@@ -127,7 +102,7 @@
 [data-style="classic"] .btn-light:hover { background: var(--color-surface); }
 [data-style="classic"] .btn-secondary { background: transparent; color: var(--color-text); box-shadow: inset 0 0 0 1px currentColor; }
 [data-style="modern"] .btn { font: 400 1.125rem/1 var(--font-display); text-transform: uppercase; letter-spacing: 0.01em; border-radius: 999px; padding: 0 1.5rem; }
-[data-style="modern"] .btn-primary { background: var(--color-accent); color: var(--color-surface); }
+[data-style="modern"] .btn-primary { background: var(--color-accent); color: var(--color-secondary); }
 [data-style="modern"] .btn-primary:hover { filter: brightness(1.06); }
 [data-style="modern"] .btn-secondary { background: transparent; color: var(--color-text); box-shadow: inset 0 0 0 2px currentColor; }
 [data-style="modern"] .pill { width: 9.375rem; height: 3.875rem; padding: 0; border-radius: 50%; font-size: 1.25rem; }
@@ -198,9 +173,9 @@
 @media (min-width: 56.25rem) {
   [data-style="classic"] .page-hero { padding-top: 4rem; padding-bottom: 1.75rem; }
   [data-style="classic"] .page-hero h1 { font-size: min(5rem, 56rem / (var(--len) * 0.5)); }
-  [data-style="modern"] .page-hero { grid-template-columns: auto 1fr; align-items: end; column-gap: 3.5rem; padding-top: 1.75rem; padding-bottom: 1.375rem; }
+  [data-style="modern"] .page-hero { padding-top: 1.75rem; padding-bottom: 1.375rem; } /* the intro sits under the heading, as on a phone */
   [data-style="modern"] .page-hero h1 { font-size: min(11rem, 44rem / (var(--len) * 0.47)); }
-  [data-style="modern"] .page-hero p { font-size: 1.125rem; padding-bottom: 1.375rem; }
+  [data-style="modern"] .page-hero p { font-size: 1.125rem; }
 }
 
 /* --- Shared page blocks ----------------------------------------- */
@@ -318,18 +293,17 @@
 .home-story__img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
 [data-style="classic"] .home-story { border-top: 1px solid var(--color-border); }
 [data-style="classic"] .home-story p { font: 400 1.0625rem/1.65 var(--font-body); }
-/* Modern: an indigo band with a saw-tooth top, the portrait in a wax-print halo. */
-[data-style="modern"] .home-story { --above: var(--color-bg); position: relative; padding-top: calc(2.25rem + 14px); background: var(--color-secondary); color: var(--color-surface); justify-items: center; text-align: center; }
-[data-style="modern"] .home-story::before { content: ""; position: absolute; top: 0; left: 0; right: 0; }
+/* Modern: centred on the lime, the round photo above the text (on desktop beside it, close). */
+[data-style="modern"] .home-story { justify-items: center; text-align: center; }
 [data-style="modern"] .home-story__text { justify-items: center; }
-[data-style="modern"] .home-story .section-title, [data-style="modern"] .home-story .link-strong { color: var(--color-bg); }
-[data-style="modern"] .home-story__photo { width: 11rem; aspect-ratio: 1; padding: 0.625rem; border-radius: 50%; box-sizing: border-box; box-shadow: 0 0 0 4px var(--color-bg); }
-[data-style="modern"] .home-story__photo { background-color: var(--color-secondary); background-image: radial-gradient(circle, var(--color-bg) 0 4px, transparent 4.5px 8px, var(--color-surface) 8.5px 10px, transparent 10.5px); background-size: 22px 22px; }
+[data-style="modern"] .home-story__photo { width: min(15rem, 70vw); aspect-ratio: 1; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 4px var(--color-text); }
 [data-style="modern"] .home-story__img { aspect-ratio: 1; height: 100%; border-radius: 50%; }
-[data-style="modern"] .home-story :focus-visible { outline-color: var(--color-bg); }
 @media (min-width: 56.25rem) {
   .home-story { padding-block: 4rem; }
   .home-story:has(.home-story__photo) { grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+  [data-style="modern"] .home-story:has(.home-story__photo) { grid-template-columns: auto minmax(0, 32rem); justify-content: center; gap: 3rem; text-align: left; }
+  [data-style="modern"] .home-story:has(.home-story__photo) .home-story__text { justify-items: start; }
+  [data-style="modern"] .home-story__photo { width: 17rem; }
 }
 
 /* ================================================================
@@ -338,35 +312,44 @@
 .hero-dag { padding: 0.25rem 0.875rem 1.375rem; }
 .hero-dag__photo { position: relative; }
 .hero-dag__img {
-  width: 100%; height: 15.625rem; object-fit: cover; object-position: 50% 62%;
+  width: 100%; height: 17.5rem; object-fit: cover; object-position: 50% 62%; background: var(--color-surface-alt);
   border-radius: 46px 46px 120px 120px / 46px 46px 60px 60px;
-  box-sizing: border-box; padding: 7px; /* the cloth shows round the plate (wax-rings below) */
 }
+.hero-dag__photo { position: relative; }
 .hero-dag__nav { position: absolute; top: 0.75rem; left: 0.75rem; right: 0.75rem; z-index: 3; }
 .hero-dag__nav .site-nav { justify-content: space-between; }
 .hero-dag__word { position: relative; margin-top: -3.625rem; }
 .hero-dag__word svg { display: block; width: 100%; height: auto; overflow: visible; }
 .hero-dag__word text { font-family: var(--font-display); fill: var(--color-text); }
-.hero-dag .pill { position: relative; display: grid; margin: -0.125rem 0.375rem 0 auto; transform: rotate(-6deg); }
-.hero-dag__side { display: grid; justify-items: center; gap: 1rem; padding: 1.625rem 0.125rem 0.25rem; text-align: center; }
-.hero-dag__side .big { font: 400 2.5rem/1 var(--font-display); text-transform: uppercase; text-wrap: balance; }
-.hero-dag__side p:not(.big):not(.hours-badge) { max-width: 32ch; }
+/* The booking oval sits under the name, never over its letters (Kwabena, 21 Oct). */
+.hero-dag .pill { position: relative; display: grid; margin: 0.75rem 0.375rem 0 auto; transform: rotate(-6deg); }
 
 .star {
   display: grid; place-items: center; width: 6.5rem; height: 6.5rem; padding: 1.125rem; text-align: center; text-decoration: none;
-  background: var(--color-secondary); color: var(--color-bg); font: 400 1rem/1.05 var(--font-display); text-transform: uppercase;
+  background: var(--color-accent); color: var(--color-secondary); font: 400 1rem/1.05 var(--font-display); text-transform: uppercase;
   clip-path: polygon(100% 50%, 90.9% 59.3%, 95% 71.7%, 82.8% 76.2%, 81.2% 89.1%, 68.2% 87.8%, 61.1% 98.7%, 50% 92%, 38.9% 98.7%, 31.8% 87.8%, 18.8% 89.1%, 17.2% 76.2%, 5% 71.7%, 9.1% 59.3%, 0% 50%, 9.1% 40.7%, 5% 28.3%, 17.2% 23.8%, 18.8% 10.9%, 31.8% 12.2%, 38.9% 1.3%, 50% 8%, 61.1% 1.3%, 68.2% 12.2%, 81.2% 10.9%, 82.8% 23.8%, 95% 28.3%, 90.9% 40.7%);
 }
 /* The clip path would cut off an outline, so focus inverts the sticker instead. */
-.star:focus-visible { outline: none; background: var(--color-bg); color: var(--color-secondary); } /* a 6.8:1 change from rest */
-.hero-dag__photo > .star { position: absolute; right: 2.5rem; bottom: -2.75rem; z-index: 2; width: 8.25rem; height: 8.25rem; font-size: 1.3rem; }
+.star:focus-visible { outline: none; background: var(--color-secondary); color: var(--color-accent); } /* inverted: a clear change from rest */
 
-.slices-band { display: grid; justify-items: center; padding: 2rem 1rem 1.5rem; }
-.slices { position: relative; width: 78%; display: grid; gap: 0.375rem; }
-.slices i { display: block; height: 4.625rem; border-radius: 999px; background-size: cover; background-repeat: no-repeat; background-position: 50% 50%; }
+/* The middle of the modern home, as in the reference: a headline, the owner's line, then one dish
+   in three stacked slices with the sticker on it, between the hours and how to find us. */
+.intro-dag { padding: 2.25rem var(--pad) 2.5rem; display: grid; justify-items: center; gap: 1rem; text-align: center; }
+.intro-dag__title { max-width: 18ch; font: 400 2.5rem/0.95 var(--font-display); text-transform: uppercase; text-wrap: balance; }
+.intro-dag__voice { max-width: 38ch; }
+.intro-dag__feature { width: 100%; display: grid; gap: 2rem; justify-items: center; padding-top: 1.25rem; }
+.intro-dag__feature h3 { font: 400 1.75rem/1 var(--font-display); text-transform: uppercase; margin-bottom: 0.5rem; }
+.intro-dag__hours dl { display: grid; gap: 0.125rem; margin: 0; font-variant-numeric: tabular-nums; }
+.intro-dag__hours dl div { display: flex; justify-content: center; gap: 0.5rem; }
+.intro-dag__hours dd { margin: 0; }
+.intro-dag__hours .hours-badge { margin-top: 0.875rem; }
+.intro-dag__find address { font-style: normal; display: grid; justify-items: center; }
+.intro-dag__find a { display: inline-flex; align-items: center; min-height: 2.75rem; text-underline-offset: 3px; }
+.slices { position: relative; width: min(22rem, 80vw); display: grid; gap: 0.375rem; }
+.slices i { display: block; height: 6rem; border-radius: 999px; background-size: cover; background-repeat: no-repeat; background-position: 50% 50%; }
 .slices i:nth-child(1) { background-position: 50% 6%; }
 .slices i:nth-child(3) { background-position: 50% 94%; }
-.slices .star { position: absolute; right: -2.125rem; top: -1.75rem; }
+.slices .star { position: absolute; right: -1.5rem; top: -1.75rem; }
 
 .home-dishes { padding: 1.75rem var(--pad) 2.25rem; display: grid; gap: 1rem; }
 .home-dishes__head { display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 0.25rem 1rem; }
@@ -382,20 +365,25 @@
 @media (min-width: 56.25rem) {
   /* As in the reference: the nav above a short, wide photo; the name on one line across its full
      width, pulled up so about 40% of the letters sit on the photo; the booking oval on the word. */
-  .hero-dag { display: grid; grid-template-areas: "photo" "word" "side"; padding: 0.75rem var(--pad) 3.5rem; }
+  .hero-dag { display: grid; grid-template-areas: "photo" "word" "pill"; padding: 0.75rem var(--pad) 1.5rem; }
   .hero-dag__photo { grid-area: photo; display: flex; flex-direction: column; }
   .hero-dag__nav { position: static; order: -1; margin: 0 0 0.75rem; }
   .hero-dag__nav .site-nav__links { width: 100%; }
   .hero-dag__nav .site-nav__end { order: 2; }
   .hero-dag__nav .site-nav__end:first-child { margin-left: auto; }
-  .hero-dag__img { height: clamp(15rem, 25vw, 22rem); object-position: 50% 55%; border-radius: 80px 80px 240px 240px / 80px 80px 110px 110px; }
+  .hero-dag__img { height: clamp(20rem, 36vw, 30rem); object-position: 50% 55%; border-radius: 80px 80px 240px 240px / 80px 80px 110px 110px; }
   /* Percent margins follow the width, and so does the one-line word's height: -7% puts about
      40% of the capitals on the photo at any desktop width. */
   .hero-dag .hero-dag__word { grid-area: word; z-index: 1; margin-top: -7%; } /* beats .site h1 { margin: 0 } */
-  .hero-dag .pill { grid-area: word; z-index: 2; justify-self: end; align-self: end; margin: 0 6% 4% 0; width: 12.5rem; height: 5rem; font-size: 1.625rem; }
-  .hero-dag__photo > .star { top: 4.25rem; bottom: auto; right: 2rem; }
-  .hero-dag__side { grid-area: side; padding-top: 3rem; }
-  .hero-dag__side .big { font-size: 3.5rem; }
+  .hero-dag .pill { grid-area: pill; justify-self: end; margin: 1rem 4% 0 0; width: 12.5rem; height: 5rem; font-size: 1.625rem; }
+  .intro-dag { padding-block: 4rem; }
+  .intro-dag__title { font-size: 4.5rem; }
+  .intro-dag__feature { grid-template-columns: 1fr auto 1fr; grid-template-areas: "hours slices find"; align-items: center; gap: 3rem; }
+  .intro-dag__feature:not(.intro-dag__feature--photo) { grid-template-areas: "hours . find"; }
+  .intro-dag__feature .slices { grid-area: slices; width: 24rem; }
+  .intro-dag__feature .slices i { height: 8.5rem; }
+  .intro-dag__hours { grid-area: hours; }
+  .intro-dag__find { grid-area: find; }
   .home-dishes { padding-block: 2.5rem 4rem; }
   .dish-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
 }
@@ -452,22 +440,20 @@
 [data-style="modern"] .catbar { gap: 0.5rem; padding: 0.5rem var(--pad); }
 [data-style="modern"] .catbar a { padding: 0 1rem; border-radius: 999px; box-shadow: inset 0 0 0 2px var(--color-text); font-weight: 700; font-size: 0.90625rem; }
 [data-style="modern"] .catbar a[aria-current] { background: var(--color-text); color: var(--color-bg); }
-/* The list sits on a cream cloth with a woven selvedge along its top. */
+/* The list sits on a cream card. */
 [data-style="modern"] .menu-list { display: grid; gap: 0.5rem; margin: 0.75rem 0.625rem 0; padding: 0.5rem calc(var(--pad) - 0.625rem) 1.5rem; background: var(--color-surface); border-radius: 1.75rem; overflow: hidden; }
-[data-style="modern"] .menu-list::before { content: ""; display: block; margin: -0.5rem calc(0.625rem - var(--pad)) 0.5rem; }
 [data-style="modern"] .menu-cat { display: grid; gap: 0.25rem; padding-top: 1.25rem; }
 [data-style="modern"] .menu-cat > h2 { display: flex; align-items: center; gap: 0.75rem; font: 400 2.5rem/1 var(--font-display); text-transform: uppercase; }
-[data-style="modern"] .menu-cat > h2 .wax-swatch { width: 4.25rem; height: 1.625rem; flex: none; border-radius: 999px; background-position: 50% 50%, calc(50% + 22px) calc(50% + 22px); }
+[data-style="modern"] .menu-cat > h2 .squiggle { width: 3.75rem; height: 1rem; flex: none; }
 .menu-item { display: grid; align-content: start; gap: 0.375rem; padding-block: 1rem; border-bottom: 2px solid var(--rule); }
 .menu-item__top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
 .menu-item h3, .menu-item .price { font: 400 1.625rem/1 var(--font-display); text-transform: uppercase; }
 .menu-item .price { text-transform: none; }
 .menu-item__body { display: grid; grid-template-columns: 1fr auto; gap: 0.375rem 0.875rem; align-items: start; }
 .menu-item__text { display: grid; gap: 0.375rem; min-width: 0; }
-/* A plate on a print: cream, marigold and indigo rings round each round photo. */
-.menu-item__thumb { width: 5.25rem; height: 5.25rem; object-fit: cover; border-radius: 50%; margin: 9px; box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 6px var(--color-bg), 0 0 0 9px var(--color-secondary); }
+.menu-item__thumb { width: 5.25rem; height: 5.25rem; object-fit: cover; border-radius: 50%; box-shadow: 0 0 0 3px var(--color-text); }
 .menu-item .chip { padding: 0.1875rem 0.6875rem; border: 2px solid currentColor; border-radius: 999px; font-size: 0.8125rem; font-weight: 700; }
-.menu-item .chip--spicy { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-surface); } /* heat at a glance */
+.menu-item .chip--spicy { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-secondary); } /* heat at a glance */
 .menu-item .meta { font-size: 0.875rem; color: var(--color-text-muted); }
 .menu-item .out { justify-self: start; padding: 0.375rem 0.75rem; border-radius: 999px; background: var(--color-text); color: var(--color-bg); font: 700 0.8125rem/1 var(--font-body); }
 .menu-item.is-out h3, .menu-item.is-out .price { color: var(--color-text-muted); }
@@ -513,10 +499,9 @@
 [data-style="classic"] .site-footer__name { font: 400 1.75rem/1.1 var(--font-display); letter-spacing: -0.01em; }
 [data-style="classic"] .site-footer__social a { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-hero-text) 45%, transparent); }
 [data-style="classic"] .site-footer__social a:hover { background: color-mix(in srgb, var(--color-hero-text) 12%, transparent); }
-[data-style="modern"] .site-footer { --above: var(--color-bg); }
-/* On home the story's indigo band ends the page, so the teeth are indigo there. */
-[data-style="modern"] .site:has(main > .home-story:last-child) .site-footer { --above: var(--color-secondary); }
-[data-style="modern"] .site-footer::before { content: ""; display: block; }
+.site-footer__call { display: grid; justify-items: center; gap: 1rem; padding: 2.5rem var(--pad) 0; text-align: center; }
+
+.site-footer__call p { font: 400 2.75rem/0.95 var(--font-display); text-transform: uppercase; text-wrap: balance; }
 [data-style="modern"] .site-footer__name { font: 400 2.25rem/1 var(--font-display); text-transform: uppercase; color: var(--color-bg); }
 [data-style="modern"] .site-footer__social a { background: var(--color-bg); color: var(--color-text); }
 [data-style="modern"] .site-footer__social a:focus-visible { outline-color: var(--color-bg); }
@@ -524,6 +509,13 @@
 @media (min-width: 56.25rem) {
   .site-footer__inner { grid-template-columns: 1.3fr 1fr 1fr; gap: 2.5rem; padding-block: 3.25rem 2.75rem; }
   .site-footer__links { border-top: 0; padding-top: 0; }
+  .site-footer__call p { font-size: 4.5rem; }
+  /* Modern: three centred columns under the call, as in the reference. */
+  [data-style="modern"] .site-footer__inner { text-align: center; justify-items: center; }
+  [data-style="modern"] .site-footer__col { justify-items: center; }
+  [data-style="modern"] .site-footer address a, [data-style="modern"] .site-footer__week dl { justify-self: center; }
+  [data-style="modern"] .site-footer__social, [data-style="modern"] .site-footer__links { justify-content: center; }
+
 }
 
 /* ================================================================

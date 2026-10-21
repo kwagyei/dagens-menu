@@ -1,11 +1,12 @@
 ---
 import Horizon from "./Horizon.astro";
 import Photo from "./Photo.astro";
+import Squiggle from "./Squiggle.astro";
 /**
  * The menu: a category bar on one row that stays at the top while scrolling, then every
  * category in order. With JavaScript the bar also fades at the edge that has more categories
- * and marks the category being read (owner feedback B4, 18 Oct); without it, it works as before. Classic sets it as a printed card on an oak table, text only. Modern sets the list on a cream cloth and gives each dish
- * with a photo a round plate on a print beside its description. Both use one price style and one left
+ * and marks the category being read (owner feedback B4, 18 Oct); without it, it works as before. Classic sets it as a printed card on an oak table, text only. Modern sets the list on a cream card and gives each dish
+ * with a photo a round plate beside its description. Both use one price style and one left
  * edge, and keep sold-out and off-menu dishes in place with a label (UI review P2-5).
  */
 import MenuRow from "./MenuRow.astro";
@@ -55,7 +56,7 @@ const allergenList = (item: MenuItem) => item.allergens.map((a) => t(locale, `al
       <section class="menu-cat" id={`cat-${category.id}`} aria-labelledby={`cat-${category.id}-title`}>
         <h2 id={`cat-${category.id}-title`}>
           {localized(category.name, locale)}
-          <span class="wax-swatch" aria-hidden="true"></span>
+          <Squiggle />
         </h2>
         {category.items.map((item) => (
           <article class:list={["menu-item menu-item-row", { "is-out": !onSale(item) }]} aria-labelledby={`dish-${item.id}`}>
