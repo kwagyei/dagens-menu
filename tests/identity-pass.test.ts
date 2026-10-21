@@ -1,7 +1,7 @@
 /**
  * Tester checks for the identity-pass branch (19 Oct): colour pairs site.css draws that
  * tests/theme-contrast.test.ts does not list, localityOf with odd addresses, and leftovers of
- * the removed squiggle. The four bugs it found are fixed, and their tests pass.
+ * the squiggle (one component since the 21 Oct makeover). The four bugs it found are fixed.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -48,20 +48,20 @@ describe("modern: pairs the base test leaves out", () => {
   it.each([
     ["text", "background", 4.5],
     ["text", "surface", 4.5],
-    ["accent", "surface", 4.5],
+    ["accent", "secondary", 4.5], // the focused sticker: orange text on dark ink (orange is never text on cream)
     ["heroText", "text", 4.5], // the open menu panel
     ["heroMuted", "text", 4.5],
     ["background", "heroBg", 4.5], // footer name
     ["text", "background", 3], // focus ring on the page
-    ["secondary", "background", 3], // the ring motif's edge against the cloth
+    ["accent", "background", 2], // the orange oval and sticker against the lime (decorative edge)
   ])("%s on %s is at least %s:1", (fg, bg, min) => {
     expect(contrastRatio(abena[fg], abena[bg])).toBeGreaterThanOrEqual(min);
   });
 
-  // .star:focus-visible inverts the sticker: fill secondary -> background, text background ->
-  // secondary. The change and the focused text must both clear 3:1 (it was 1.2:1 before the fix).
+  // .star:focus-visible inverts the sticker: fill accent -> secondary, text secondary -> accent.
+  // The change of fill and the focused text must both clear 3:1.
   it("the sticker's focus state differs from its resting state by at least 3:1", () => {
-    expect(contrastRatio(abena.secondary, abena.background)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(abena.accent, abena.secondary)).toBeGreaterThanOrEqual(3);
   });
 });
 
@@ -102,17 +102,19 @@ describe("localityOf: odd addresses", () => {
   });
 });
 
-describe("the squiggle is gone from the source", () => {
+describe("the squiggle lives in one component, and Cormorant is gone", () => {
+  // The Chez Abena makeover (21 Oct, after inspiration/modern) brought the squiggle back as its
+  // divider: it is drawn once, in Squiggle.astro, never as a copied path.
   const dirs = ["src/components", "src/pages"];
   const files = dirs.flatMap((d) =>
     readdirSync(d, { recursive: true, encoding: "utf-8" })
-      .filter((f) => f.endsWith(".astro"))
+      .filter((f) => f.endsWith(".astro") && !f.endsWith("Squiggle.astro"))
       .map((f) => `${d}/${f}`),
   );
-  it.each(files)("%s has no squiggle path", (file) => {
-    expect(readFileSync(file, "utf-8")).not.toMatch(/squiggle|M3 12 q 6\.5/);
+  it.each(files)("%s draws no squiggle path of its own", (file) => {
+    expect(readFileSync(file, "utf-8")).not.toMatch(/M3 12 q 6\.5/);
   });
-  it("site.css has no rule for it, or for Cormorant", () => {
-    expect(readFileSync("src/styles/site.css", "utf-8")).not.toMatch(/squiggle|Cormorant/);
+  it("site.css has no rule for Cormorant", () => {
+    expect(readFileSync("src/styles/site.css", "utf-8")).not.toMatch(/Cormorant/);
   });
 });

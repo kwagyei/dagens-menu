@@ -44,13 +44,7 @@ function pairs(style: string): [string, string, string][] {
   ];
   return style === "classic"
     ? [...common, ["accent", "background", "prices and eyebrows"], ["accent", "surface", "prices on the menu card"], ["background", "accent", "primary button"]]
-    : [
-        ...common,
-        ["surface", "accent", "primary button"],
-        ["background", "text", "badge, price pills"],
-        ["background", "secondary", "story band heading, the sticker"],
-        ["surface", "secondary", "story band text"],
-      ];
+    : [...common, ["secondary", "accent", "primary button, the sticker, the spicy chip"], ["background", "text", "badge, price pills"]];
 }
 
 describe.each(themes)("$site theme", ({ style, colors }) => {

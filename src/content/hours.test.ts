@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayAndMonth, hoursOn, restaurantDay, upcomingExceptions } from "./hours";
+import { dayAndMonth, hoursOn, restaurantDay, upcomingExceptions, weekRuns } from "./hours";
 import type { OpeningHours } from "./load";
 
 const hours: OpeningHours = {
@@ -82,5 +82,44 @@ describe("dayAndMonth", () => {
     expect(dayAndMonth("2026-12-24", "sv")).toBe("24 december");
     expect(dayAndMonth("2026-12-24", "en")).toBe("24 December");
     expect(dayAndMonth("2027-01-01", "sv")).toBe("1 januari");
+  });
+});
+
+describe("weekRuns", () => {
+  const open = (o: string, c: string) => ({ open: o, close: c });
+  it("groups consecutive days with the same hours, a closed day included", () => {
+    expect(
+      weekRuns({
+        monday: null,
+        tuesday: open("12:00", "22:00"),
+        wednesday: open("12:00", "22:00"),
+        thursday: open("12:00", "22:00"),
+        friday: open("12:00", "23:00"),
+        saturday: open("12:00", "23:00"),
+        sunday: open("13:00", "20:00"),
+      }),
+    ).toEqual([
+      { first: "monday", last: "monday", hours: null },
+      { first: "tuesday", last: "thursday", hours: open("12:00", "22:00") },
+      { first: "friday", last: "saturday", hours: open("12:00", "23:00") },
+      { first: "sunday", last: "sunday", hours: open("13:00", "20:00") },
+    ]);
+  });
+
+  it("makes one run of a week with the same hours every day, and of a week closed every day", () => {
+    const every = (h: { open: string; close: string } | null) =>
+      Object.fromEntries(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((d) => [d, h]));
+    expect(weekRuns(every(open("11:00", "22:00")) as never)).toEqual([{ first: "monday", last: "sunday", hours: open("11:00", "22:00") }]);
+    expect(weekRuns(every(null) as never)).toEqual([{ first: "monday", last: "sunday", hours: null }]);
+  });
+
+  it("doesn't join days with the same hours that aren't next to each other", () => {
+    const runs = weekRuns({ monday: open("12:00", "22:00"), tuesday: null, wednesday: open("12:00", "22:00"), thursday: null, friday: null, saturday: null, sunday: null });
+    expect(runs.map((r) => [r.first, r.last])).toEqual([
+      ["monday", "monday"],
+      ["tuesday", "tuesday"],
+      ["wednesday", "wednesday"],
+      ["thursday", "sunday"],
+    ]);
   });
 });

@@ -10,8 +10,10 @@ import { dayAndMonth, upcomingExceptions } from "../content/hours";
 import { needsConsent } from "../content/consent";
 import { localized } from "../content/load";
 import { getLocale, t, localePath } from "../i18n";
+import Squiggle from "./Squiggle.astro";
 
 const settings = Astro.locals.content.settings;
+const style = Astro.locals.content.theme.style;
 const hours = Astro.locals.content.hours;
 const today = Astro.locals.today;
 const locale = getLocale(Astro.url);
@@ -57,6 +59,12 @@ const socials = Object.entries(settings.socialLinks).map(([network, url]) => ({
 </script>
 
 <footer class="site-footer">
+  {style === "modern" && (
+    <div class="site-footer__call">
+      <Squiggle />
+      <p>{t(locale, "footer.call")}</p>
+    </div>
+  )}
   <div class="site-footer__inner">
     <div class="site-footer__col">
       <p class="site-footer__name">{siteName}</p>

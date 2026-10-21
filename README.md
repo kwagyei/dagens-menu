@@ -82,15 +82,16 @@ is the seed data the demos are loaded from.
   plus a theme file. Nothing forks, so a fix ships to every site.
 - **Two looks, not two colour schemes.** `theme.json` picks `"style": "classic"` (a full-bleed
   photo, the name in a Nordic serif, linen and oak textures, a printed menu on a table) or
-  `"modern"` (one huge condensed word over a rounded photo on a wax-print cloth, pill shapes, an
-  oval button). The same pages render either: the looks
-  live in `src/styles/site.css` under `[data-style]`, with markup branches only where the
+  `"modern"` (one huge condensed word biting into a rounded photo, an orange oval button, a dish
+  in stacked slices with a starburst sticker, squiggles and pill shapes). The same pages render
+  either: the looks live in `src/styles/site.css` under `[data-style]`, with markup branches
+  only where the
   structure differs (the home hero and the menu). Colours and fonts still come from the theme,
   so a client recolours a look rather than forking it. Each page has one booking button, and
   the navigation, menu button and footer work without JavaScript.
 - **Textures and patterns are CSS, fonts are self-hosted and checked.** The linen, the oak
-  grain and the wax-print rings, weave and teeth are gradients and an SVG data URI built from
-  the theme's colours, so they cost no requests and follow a recolour. Every font is a
+  grain and the squiggles are gradients and inline SVG built from the theme's colours, so they
+  cost no requests and follow a recolour. Every font is a
   subset woff2 under `public/fonts/`, within a 40 kB budget and named in its licence file, and
   a test checks every theme's text colours against WCAG AA (`tests/fonts.test.ts`,
   `tests/theme-contrast.test.ts`).
