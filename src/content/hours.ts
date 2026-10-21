@@ -47,3 +47,25 @@ export function upcomingExceptions(hours: OpeningHours, today: string): OpeningH
 export function dayAndMonth(date: string, locale: "sv" | "en"): string {
   return new Intl.DateTimeFormat(locale === "sv" ? "sv-SE" : "en-GB", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${date}T12:00:00Z`));
 }
+
+export interface WeekRun {
+  first: Weekday;
+  last: Weekday;
+  hours: DayHours | null;
+}
+
+/**
+ * The week as runs of days with the same hours, Monday first: "Tuesday–Thursday 12:00–22:00".
+ * A closed day is a run of its own kind (hours null). For the modern home's hours column.
+ */
+export function weekRuns(weekly: OpeningHours["weekly"]): WeekRun[] {
+  const same = (a: DayHours | null, b: DayHours | null) => (a === null || b === null ? a === b : a.open === b.open && a.close === b.close);
+  const runs: WeekRun[] = [];
+  for (const day of WEEKDAYS) {
+    const hours = weekly[day] ?? null;
+    const last = runs.at(-1);
+    if (last && same(last.hours, hours)) last.last = day;
+    else runs.push({ first: day, last: day, hours });
+  }
+  return runs;
+}
