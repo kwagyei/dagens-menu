@@ -5,7 +5,7 @@
 // good, and only then shows the button; the ceremony posts it in the request body.
 import AdminLayout from "../../../../layouts/AdminLayout.astro";
 import { localized } from "../../../../content/load";
-import { getLocale, localePath, t } from "../../../../i18n";
+import { fill, getLocale, localePath, t } from "../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -18,7 +18,7 @@ const siteName = localized(Astro.locals.content.settings.name, locale);
   <section class="space-y-6" data-invite>
     <h1 class="text-3xl font-bold">{t(locale, "admin.invite.heading")}</h1>
     <div class="space-y-6" data-invite-valid hidden>
-      <p>{t(locale, "admin.invite.lead").replace("{site}", siteName)}</p>
+      <p>{fill(t(locale, "admin.invite.lead"), { site: siteName })}</p>
       <p class="admin-muted" data-invite-email></p>
       <button
         class="admin-button w-full sm:w-auto"

@@ -8,7 +8,7 @@ import { adminPage } from "../../../../admin/page";
 import { adminMenu } from "../../../../db/menu";
 import { restoreMenuItem } from "../../../../db/repository";
 import { categoryFor, parseSnapshot, undoableEntry } from "../../../../db/undo";
-import { t } from "../../../../i18n";
+import { fill, t } from "../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -61,7 +61,7 @@ const categories = await adminMenu(repo);
       </>
     ) : (
       <form method="post" class="space-y-4">
-        <p>{t(locale, "admin.restore.lead").replace("{name}", snapshot.item.name[locale])}</p>
+        <p>{fill(t(locale, "admin.restore.lead"), { name: snapshot.item.name[locale] })}</p>
         <input type="hidden" name="csrf" value={page.csrf} />
         <input type="hidden" name="entry" value={entry.id} />
         <fieldset class="space-y-2">

@@ -6,7 +6,7 @@ import { thumbnail } from "../../../../admin/library";
 import { adminPage } from "../../../../admin/page";
 import { listLibrary } from "../../../../db/library";
 import { PAGE_SLOTS, pagePhotos, shownSlots } from "../../../../db/photo-choice";
-import { t, type TranslationKey } from "../../../../i18n";
+import { fill, t, type TranslationKey } from "../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -40,7 +40,7 @@ const hidden = PAGE_SLOTS.filter((slot) => !shown.includes(slot) && chosen?.[slo
             {thumb && <img src={thumb.src} alt="" width="72" height={Math.round((72 * thumb.height) / thumb.width)} loading="lazy" class="rounded shrink-0" />}
             <div class="min-w-0 flex-1 space-y-1">
               <p class="font-medium">{upperFirst(slotName(slot))}</p>
-              <p class="text-sm admin-muted">{t(locale, "admin.pagePhotos.current").replace("{photo}", name)}</p>
+              <p class="text-sm admin-muted">{fill(t(locale, "admin.pagePhotos.current"), { photo: name })}</p>
             </div>
             <a
               class="admin-small-button inline-flex items-center"
@@ -67,7 +67,7 @@ const hidden = PAGE_SLOTS.filter((slot) => !shown.includes(slot) && chosen?.[slo
               <li class="admin-card p-3 flex flex-wrap items-center gap-3" id={`slot-${slot}`}>
                 <div class="min-w-0 flex-1 space-y-1">
                   <p class="font-medium">{upperFirst(slotName(slot))}</p>
-                  <p class="text-sm admin-muted">{t(locale, "admin.pagePhotos.current").replace("{photo}", name)}</p>
+                  <p class="text-sm admin-muted">{fill(t(locale, "admin.pagePhotos.current"), { photo: name })}</p>
                 </div>
                 <a
                   class="admin-small-button inline-flex items-center"
