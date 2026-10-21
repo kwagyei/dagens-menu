@@ -207,8 +207,8 @@ is the seed data the demos are loaded from.
   italic, so emphasis there comes from size and the body face, not from slanted serif lines.
 - **The wood is a texture, not a photo.** The oak grain is an SVG noise filter, which reads as
   wood at a glance but repeats on close inspection. It frames cards only and never sits under
-  text.
-
+  text. Its colours are fixed, not taken from
+  the theme, so a client who recolours the classic look keeps the oak as it is.
 - **Booking widgets that are only a script can't be embedded.** A provider runs only in a
   sandboxed `<iframe>`, because the admin shares the site's origin and a provider script
   there could act as a signed-in owner. A provider that offers no iframe or hosted booking
