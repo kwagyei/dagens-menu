@@ -11,6 +11,9 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { ROUTES } from "./check-no-third-party.mjs";
 
+/** A path no site has, for the 404 page. */
+const NOT_FOUND = "/finns-inte-check/";
+
 /** Admin pages a signed-out visitor gets, in both languages: sign-in and the invite page. */
 export const ADMIN_ROUTES = ["/admin/", "/en/admin/", "/admin/invite/", "/en/admin/invite/"];
 
@@ -45,8 +48,14 @@ async function main() {
     process.exit(2);
   }
   const problems = [];
-  for (const route of ROUTES) {
+  // Each public route must render (an error page would pass a check for inline scripts), and
+  // the 404 page, which uses the same layout, must answer 404 and carry none either (review L6).
+  for (const [route, status] of [...ROUTES.map((r) => [r, 200]), [NOT_FOUND, 404]]) {
     const res = await fetch(new URL(route, values.url));
+    if (res.status !== status) {
+      problems.push(`${route}: ${res.status}, expected ${status}`);
+      continue;
+    }
     problems.push(...inlineScripts(await res.text()).map((p) => `${route}: ${p}`));
   }
   for (const route of ADMIN_ROUTES) {
@@ -62,7 +71,7 @@ async function main() {
     process.exit(1);
   }
   console.log(
-    `No inline script on the ${ROUTES.length} public routes or the ${ADMIN_ROUTES.length} signed-out admin pages, and each admin page loads the admin script from a file.`,
+    `No inline script on the ${ROUTES.length} public routes, the 404 page or the ${ADMIN_ROUTES.length} signed-out admin pages, and each admin page loads the admin script from a file.`,
   );
 }
 
