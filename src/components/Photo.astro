@@ -10,6 +10,7 @@
  * | card      | home dishes, modern: 3 across wide         | the library's alt   |
  * | thumb     | the menu's round 84 px photo               | the library's alt   |
  * | story     | the about page's two photos                | the library's alt   |
+ * | portrait  | the modern home story's 11rem round photo  | the library's alt   |
  * | gallery   | the gallery grid: one column, 3 from 640px | the library's alt   |
  * | galleryWide | a gallery tile two columns wide          | the library's alt   |
  *
@@ -20,7 +21,7 @@ import { localized } from "../content/load";
 import { photoSources } from "../content/images";
 import { getLocale } from "../i18n";
 
-type Slot = "hero" | "cta" | "strip" | "card" | "thumb" | "story" | "gallery" | "galleryWide";
+type Slot = "hero" | "cta" | "strip" | "card" | "thumb" | "story" | "portrait" | "gallery" | "galleryWide";
 interface Props {
   ref: string | undefined;
   slot: Slot;
@@ -36,6 +37,8 @@ const SIZES: Record<Slot, string> = {
   card: "(min-width: 56.25rem) 30vw, 92vw",
   thumb: "84px",
   story: "(min-width: 56.25rem) 50vw, 92vw",
+  // The round photo in the modern home's story band: 11rem across (site.css), less its padding.
+  portrait: "11rem",
   // .gallery-magazine (site.css): one column, then 3 from 40rem, where tiles 1 and 4 span two.
   gallery: "(min-width: 40rem) 33vw, 100vw",
   galleryWide: "(min-width: 40rem) 67vw, 100vw",
