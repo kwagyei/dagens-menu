@@ -107,7 +107,7 @@ describe("what a restore refuses, writing nothing", () => {
     expect(await state()).toEqual(before);
   });
 
-  it.each(["", "0", "-1", "1.5", "1e3", "abc", "1 OR 1=1", "99999999999999999", " 1", "1\n", "١"])("a malformed entry id %j", async (entry) => {
+  it.each(["", "0", "-1", "1.5", "1e3", "abc", "1 OR 1=1", "99999999999999999", "9007199254740993", " 1", "1\n", "١"])("a malformed entry id %j", async (entry) => {
     await deleted(bistro, BISTRO_DISH);
     const before = await state();
     expect(await restoreMenuItem(bistro, entry)).toEqual({ ok: false, error: "not-found" });
