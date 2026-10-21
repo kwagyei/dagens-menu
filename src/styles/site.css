@@ -310,7 +310,6 @@
    Home: modern
    ================================================================ */
 .hero-dag { padding: 0.25rem 0.875rem 1.375rem; }
-.hero-dag__photo { position: relative; }
 .hero-dag__img {
   width: 100%; height: 17.5rem; object-fit: cover; object-position: 50% 62%; background: var(--color-surface-alt);
   border-radius: 46px 46px 120px 120px / 46px 46px 60px 60px;

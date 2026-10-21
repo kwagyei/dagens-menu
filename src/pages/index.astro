@@ -32,14 +32,16 @@ const highlights = resolveHighlights(menu, pages.home.highlights, today.soldOut)
 // Modern: the week as runs of days with the same hours ("Tisdag–torsdag 12:00–22:00").
 const runs = weekRuns(Astro.locals.content.hours.weekly);
 const dayName = (day: string) => t(locale, `weekday.${day}` as Parameters<typeof t>[1]);
+// Swedish writes the second day of a range in lower case ("Tisdag–torsdag"); English doesn't.
+const laterDay = (day: string) => (locale === "sv" ? dayName(day).toLowerCase() : dayName(day));
 // The town above the classic hero's name, from the address ("Stockholm").
 const locality = localityOf(settings.address);
 const todayText = `${t(locale, "hours.today")}: ${today.hours ? `${today.hours.open}–${today.hours.close}` : t(locale, "hours.closed")}`;
 
 // The hero photo sits behind the name and the booking button: decorative (alt="", ADR-015 §4).
 const heroImage = pages.home.heroImage;
-// The CTA strip draws its photo as a CSS background three times, so it takes one fixed size:
-// the slices are up to ~700 px wide (78% of a viewport under 900 px), so 1200 covers 2x screens.
+// The stacked slices draw this photo as a CSS background three times, so it takes one fixed size:
+// they are at most 24rem wide (site.css), so 1200 px covers 2x screens with room to spare.
 const ctaImage = pages.home.ctaImage ? Astro.locals.content.images.find((i) => i.ref === pages.home.ctaImage) : undefined;
 const ctaSizes = ctaImage ? photoSources(ctaImage)?.sizes : undefined;
 const ctaUrl = ctaSizes ? (ctaSizes.find((s) => s.width >= 1200) ?? ctaSizes[ctaSizes.length - 1]).url : (ctaImage?.ref ?? pages.home.ctaImage);
@@ -190,7 +192,7 @@ const oneLineHeight = Math.ceil(oneLineY + 1);
             <dl>
               {runs.map((run) => (
                 <div>
-                  <dt>{run.first === run.last ? dayName(run.first) : `${dayName(run.first)}–${dayName(run.last).toLowerCase()}`}</dt>
+                  <dt>{run.first === run.last ? dayName(run.first) : `${dayName(run.first)}–${laterDay(run.last)}`}</dt>
                   <dd>{run.hours ? `${run.hours.open}–${run.hours.close}` : t(locale, "hours.closed")}</dd>
                 </div>
               ))}
