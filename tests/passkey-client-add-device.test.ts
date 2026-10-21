@@ -48,6 +48,7 @@ class FakeButton extends FakeElement {
 
 const page = { focused: null as unknown, assigned: [] as string[] };
 const AGAIN = "Börja om";
+const UNANSWERED = "Ladda om och kolla listan";
 const LABEL = "Lägg till en enhet";
 const CREATE = "Skapa passkey";
 
@@ -65,7 +66,7 @@ function build(again = true) {
     working: "Arbetar…",
     cancelled: "Avbrutet",
     failed: "Det gick inte",
-    ...(again ? { again: AGAIN } : {}),
+    ...(again ? { again: AGAIN, unanswered: UNANSWERED } : {}),
   };
   const create = new FakeButton("add-create", "button");
   create.hidden = true;
@@ -155,14 +156,14 @@ describe("the server refuses the new passkey: back to step one", () => {
     expect([create.disabled, create.textContent]).toEqual([false, CREATE]);
   });
 
-  it("a network failure of add-verify also starts again", async () => {
+  it("a network failure of add-verify starts again, but says to check the list, not to delete the passkey (review L5)", async () => {
     const { add, create, status } = await load();
     server({ ...OK, "/admin/api/add-verify": () => Promise.reject(new TypeError("Failed to fetch")) });
     add.click();
     await settle();
     create.click();
     await settle();
-    expect([add.hidden, create.hidden, status.textContent]).toEqual([false, true, AGAIN]);
+    expect([add.hidden, create.hidden, status.textContent]).toEqual([false, true, UNANSWERED]);
   });
 
   it("without data-again it says the generic failure, and is still back at step one", async () => {

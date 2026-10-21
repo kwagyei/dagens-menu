@@ -98,6 +98,7 @@ export default {
   "admin.security.addAlreadyHere": "This device already has your passkey. Create the new one on another phone or computer, or choose it in the passkey window.",
   "admin.security.addStartAgain":
     "The new passkey couldn't be saved. Start again by confirming with your current passkey. If the new device saved a passkey anyway, you can delete it in that device's password manager.",
+  "admin.security.addUnanswered": "The connection dropped before the answer came, so the new passkey may already be saved. Reload the page and check the list before trying again.",
   "admin.security.signOutEverywhere": "Sign out everywhere",
   "admin.security.signOutEverywhereLead": "Ends every sign-in, on other devices too.",
   "admin.security.removed": "The passkey was removed, and the sign-ins made with it have ended.",

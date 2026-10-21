@@ -54,10 +54,22 @@ const alreadyHere = (error: unknown) =>
   error instanceof WebAuthnError ? error.code === "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED" : error instanceof DOMException && error.name === "InvalidStateError";
 
 /** The server refused a passkey the device has already made: start again from step one. */
-class StartAgain extends Error {}
+class StartAgain extends Error {
+  /**
+   * The request never got an answer (fetch rejected): the server may have saved the passkey,
+   * so the page must not suggest deleting it from the device (wrap-up review L5).
+   */
+  constructor(
+    message: string,
+    readonly unanswered: boolean,
+  ) {
+    super(message);
+  }
+}
 
 /** What to tell the person after a failed ceremony, from the button's data-* messages. */
 function failureMessage(error: unknown, source: HTMLElement): string {
+  if (error instanceof StartAgain && error.unanswered && source.dataset.unanswered) return source.dataset.unanswered;
   if (error instanceof StartAgain && source.dataset.again) return source.dataset.again;
   if (alreadyHere(error) && source.dataset.already) {
     const signIn = document.getElementById(source.dataset.signin ?? "");
@@ -122,7 +134,8 @@ async function confirmThenOfferCreate(button: HTMLButtonElement, label: string, 
         button.disabled = false;
         button.textContent = label;
         button.focus();
-        throw new StartAgain(error instanceof Error ? error.message : String(error));
+        // post() turns every server answer into an Error; only an unanswered request is a TypeError.
+        throw new StartAgain(error instanceof Error ? error.message : String(error), error instanceof TypeError);
       }
       window.location.assign(button.dataset.next ?? "/admin/");
     });
