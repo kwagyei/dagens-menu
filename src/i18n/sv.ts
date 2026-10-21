@@ -159,6 +159,8 @@ export default {
   "admin.menu.cantRestore": "Rätten kan inte läggas tillbaka automatiskt. Lägg till den igen.",
   "admin.restore.heading": "Vilken kategori?",
   "admin.restore.lead": "Kategorin som {name} låg i finns inte längre. Välj var rätten ska läggas tillbaka.",
+  "admin.restore.fitsHeading": "Lägga tillbaka rätten?",
+  "admin.restore.fits": "{name} kan läggas tillbaka där den låg.",
   "admin.restore.confirm": "Lägg tillbaka",
   "admin.restore.noCategories": "Menyn har ingen kategori. Lägg till en först, så kan rätten läggas tillbaka.",
   "admin.menu.added": "Tillagt.",

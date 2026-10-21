@@ -160,6 +160,8 @@ export default {
   "admin.menu.cantRestore": "The dish can't be put back automatically. Add it again.",
   "admin.restore.heading": "Which category?",
   "admin.restore.lead": "The category {name} was in no longer exists. Choose where to put the dish back.",
+  "admin.restore.fitsHeading": "Put the dish back?",
+  "admin.restore.fits": "{name} can go back where it was.",
   "admin.restore.confirm": "Put it back",
   "admin.restore.noCategories": "The menu has no categories. Add one first; then the dish can be put back.",
   "admin.menu.added": "Added.",
