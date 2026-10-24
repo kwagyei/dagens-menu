@@ -103,7 +103,7 @@ describe("localityOf: odd addresses", () => {
 });
 
 describe("the squiggle lives in one component, and Cormorant is gone", () => {
-  // The Chez Abena makeover (21 Oct, after inspiration/modern) brought the squiggle back as its
+  // The Chez Abena makeover (21 Oct, after the reference template) brought the squiggle back as its
   // divider: it is drawn once, in Squiggle.astro, never as a copied path.
   const dirs = ["src/components", "src/pages"];
   const files = dirs.flatMap((d) =>
