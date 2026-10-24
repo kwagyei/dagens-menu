@@ -107,6 +107,34 @@ describe.each(SITES)("%s: the snapshot on delete", (site) => {
     expect(await audits()).toBe(n + 1);
   });
 
+  // The delete and its audit row are one batch (ADR-018 task 2 AC). A trigger makes one of the
+  // two fail on purpose; the other must not land either.
+  it.each([
+    ["the audit row", "BEFORE INSERT ON audit_log"],
+    ["the delete", "BEFORE DELETE ON menu_items"],
+  ])("a forced failure in %s leaves the dish, the highlight and the log unchanged", async (_which, when) => {
+    const content = await load(site);
+    const dish = content.pages.home.highlights[0];
+    const state = async () => ({
+      dish: await getMenuItem(ctx(site), dish),
+      highlight: await row("SELECT position FROM home_highlights WHERE site_id = ? AND item_id = ?", site, dish),
+      audits: (await row<{ n: number }>("SELECT count(*) AS n FROM audit_log WHERE site_id = ?", site))!.n,
+      version: (await row<{ v: number }>("SELECT content_version AS v FROM sites WHERE id = ?", site))!.v,
+    });
+    const before = await state();
+    expect(before.dish).not.toBeNull();
+    expect(before.highlight).not.toBeNull();
+    await db.prepare(`CREATE TRIGGER forced_failure ${when} BEGIN SELECT RAISE(ABORT, 'forced failure'); END`).run();
+    try {
+      await expect(deleteMenuItem(ctx(site), dish)).rejects.toThrow(/forced failure/);
+    } finally {
+      await db.prepare("DROP TRIGGER forced_failure").run();
+    }
+    expect(await state()).toEqual(before);
+    // And with the trigger gone the same delete goes through: the failure was the trigger's.
+    expect(await deleteMenuItem(ctx(site), dish)).toMatchObject({ ok: true });
+  });
+
   it("a dish removed by deleting its category gets no snapshot of its own", async () => {
     const content = await load(site);
     const category = content.menu.categories[0];
