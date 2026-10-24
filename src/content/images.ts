@@ -55,3 +55,13 @@ export function photoSources(image: Pick<LibraryImage, "ref" | "width" | "height
   const fallback = sizes.find((s) => s.width === 800) ?? master;
   return { src: fallback.url, srcset: sizes.map((s) => `${s.url} ${s.width}w`).join(", "), width: master.width, height: master.height, sizes };
 }
+
+/**
+ * A CSS `url("…")` for an image path, or null when the path has anything outside letters,
+ * digits and `._/-`. The schema only lets such paths through today, but this is where the path
+ * lands in a style attribute, so the guard sits here too (review L2): a `)`, `"` or `;` from a
+ * future image source can't close the url() and add a declaration.
+ */
+export function cssUrl(path: string | undefined): string | null {
+  return path && /^[A-Za-z0-9._/-]+$/.test(path) ? `url("${path}")` : null;
+}
