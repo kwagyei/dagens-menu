@@ -65,12 +65,14 @@ test.describe("auth, CSRF and origin", () => {
     await signedInOwner(page);
     const cookie = await cookieHeader(page);
     const body = '--b\r\nContent-Disposition: form-data; name="alt_sv"\r\n\r\na\r\n--b--\r\n';
-    // Raw, one connection each: wrangler dev's proxy loses a reused connection when the Worker
-    // answers without reading the body (a local artifact, also noted in photos.spec.ts).
+    // Raw, one connection each, and the head only: the 403 must come before any of the body is
+    // read. Sending the body too raced the refusal in wrangler dev's proxy, which then answered
+    // 500 "Network connection lost" (a local artifact, also noted in photos.spec.ts; PR #80).
     for (const origin of ["Origin: https://evil.example\r\n", "Origin: null\r\n", "", `Origin: ${BASE}.evil.example\r\n`]) {
       const head = await raw(
         `POST ${NEW} HTTP/1.1\r\nHost: localhost:8790\r\n${origin}Cookie: ${cookie}\r\nContent-Type: multipart/form-data; boundary=b\r\nContent-Length: ${body.length}\r\nConnection: close\r\n\r\n`,
-        body,
+        "",
+        { endAfter: false },
       );
       expect(head.split("\r\n")[0], origin || "no Origin").toBe("HTTP/1.1 403 Forbidden");
     }
