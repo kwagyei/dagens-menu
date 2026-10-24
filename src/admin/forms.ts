@@ -12,7 +12,7 @@ import { parseKronor, type PriceError } from "../content/price";
 import { ALLERGENS, MENU_TAGS, SOCIAL_NETWORKS, WEEKDAYS, type Weekday } from "../content/vocabulary";
 import type { MenuItemEdit } from "../db/repository";
 import type { OwnerSettings, PageTexts } from "../db/texts";
-import { t } from "../i18n";
+import { fill, t } from "../i18n";
 
 type Locale = "sv" | "en";
 
@@ -60,10 +60,10 @@ const PRICE_MESSAGES: Record<PriceError, Parameters<typeof t>[1]> = {
 function textError(locale: Locale, value: string, max: number): string | undefined {
   // Before cleaning or counting graphemes, which costs CPU per character: the form's own
   // maxlength allows twice the limit, so anything longer is a crafted post (M6.6 tester F2).
-  if (value.length > inputMaxLength(max)) return t(locale, "admin.form.tooLong").replace("{max}", String(max));
+  if (value.length > inputMaxLength(max)) return fill(t(locale, "admin.form.tooLong"), { max });
   const clean = cleanText(value);
   if (!/[^\s\p{Cf}]/u.test(clean)) return t(locale, "admin.form.required");
-  if (visibleLength(clean) > max) return t(locale, "admin.form.tooLong").replace("{max}", String(max));
+  if (visibleLength(clean) > max) return fill(t(locale, "admin.form.tooLong"), { max });
   return undefined;
 }
 

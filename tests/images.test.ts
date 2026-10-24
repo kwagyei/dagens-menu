@@ -1,6 +1,6 @@
 /** The srcset helper (plan M6.9; ADR-015 §4). */
 import { describe, expect, it } from "vitest";
-import { curatedVariantUrl, photoSources } from "../src/content/images";
+import { cssUrl, curatedVariantUrl, photoSources } from "../src/content/images";
 import { checkLadder } from "../src/server/upload-validate";
 
 describe("photoSources", () => {
@@ -40,5 +40,24 @@ describe("photoSources", () => {
 describe("curatedVariantUrl", () => {
   it("keeps the photo in its own site's folder", () => {
     expect(curatedVariantUrl("/images/bistro/köttbullar.jpeg", 400)).toBe("/images/bistro/v/köttbullar-400.webp");
+  });
+});
+
+describe("cssUrl", () => {
+  it("wraps a curated path and an upload's variant path", () => {
+    expect(cssUrl("/images/bistro/hero.jpg")).toBe('url("/images/bistro/hero.jpg")');
+    expect(cssUrl(`/media/${"a".repeat(64)}-1200.webp`)).toBe(`url("/media/${"a".repeat(64)}-1200.webp")`);
+  });
+  it.each([
+    ["a closing paren and a new declaration", '/x.jpg");background:url(https://evil.example/t'],
+    ["a quote", '/x".jpg'],
+    ["a semicolon", "/x.jpg;color:red"],
+    ["an absolute URL", "https://cdn.example/x.jpg"],
+    ["a backslash escape", "/x\\29.jpg"],
+    ["whitespace", "/x .jpg"],
+    ["nothing", ""],
+    ["undefined", undefined],
+  ])("refuses %s", (_what, path) => {
+    expect(cssUrl(path)).toBeNull();
   });
 });

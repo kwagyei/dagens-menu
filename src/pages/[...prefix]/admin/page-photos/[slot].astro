@@ -6,7 +6,7 @@ import PhotoPicker from "../../../../admin/PhotoPicker.astro";
 import { adminPage } from "../../../../admin/page";
 import { listLibrary } from "../../../../db/library";
 import { isPageSlot, pagePhotos, setPagePhoto, shownSlots } from "../../../../db/photo-choice";
-import { t, type TranslationKey } from "../../../../i18n";
+import { fill, t, type TranslationKey } from "../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -64,7 +64,7 @@ const heading = slotName.charAt(0).toUpperCase() + slotName.slice(1);
     {isShown && photos.length === 0 && <p class="admin-muted">{t(locale, "admin.pick.noneYet")}</p>}
     <form method="post" class="space-y-4">
       <input type="hidden" name="csrf" value={page.csrf} />
-      <PhotoPicker locale={locale} legend={t(locale, "admin.pagePhotos.legend").replace("{slot}", slotName)} photos={photos} current={chosen?.[slot] ?? null} />
+      <PhotoPicker locale={locale} legend={fill(t(locale, "admin.pagePhotos.legend"), { slot: slotName })} photos={photos} current={chosen?.[slot] ?? null} />
       <button class="admin-button" type="submit">
         {t(locale, "admin.pick.save")}
       </button>

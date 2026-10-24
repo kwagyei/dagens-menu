@@ -9,7 +9,7 @@ import { adminPage } from "../../../../admin/page";
 import { bodySizeProblem, readUploadForm, type UploadFormValues } from "../../../../admin/upload";
 import { TEXT_LIMITS } from "../../../../content/schema";
 import { addUpload, photoUsage, SITE_PHOTO_BYTES, SITE_PHOTO_LIMIT } from "../../../../db/photos";
-import { t } from "../../../../i18n";
+import { fill, t } from "../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -38,8 +38,8 @@ if (Astro.request.method === "POST") {
       if (result.ok) return Astro.redirect(`${here}?done=added`, 303);
       if (result.error === "duplicate") return Astro.redirect(`${here}?done=duplicate`, 303);
       const quota = {
-        count: t(locale, "admin.photos.quotaCount").replace("{limit}", String(SITE_PHOTO_LIMIT)),
-        "site-bytes": t(locale, "admin.photos.quotaBytes").replace("{limitMb}", mb(SITE_PHOTO_BYTES)),
+        count: fill(t(locale, "admin.photos.quotaCount"), { limit: SITE_PHOTO_LIMIT }),
+        "site-bytes": fill(t(locale, "admin.photos.quotaBytes"), { limitMb: mb(SITE_PHOTO_BYTES) }),
         "database-bytes": t(locale, "admin.photos.quotaDatabase"),
       };
       errors = { photo: quota[result.limit] };
@@ -64,11 +64,7 @@ const labels: Record<string, string> = { photo: t(locale, "admin.photos.choose")
       <h1 class="text-3xl font-bold">{t(locale, "admin.photos.heading")}</h1>
       <p class="admin-muted mt-1">{t(locale, "admin.photos.lead")}</p>
       <p class="admin-muted text-sm mt-1" id="photo-usage">
-        {t(locale, "admin.photos.usage")
-          .replace("{count}", String(usage.count))
-          .replace("{limit}", String(SITE_PHOTO_LIMIT))
-          .replace("{mb}", mb(usage.bytes))
-          .replace("{limitMb}", mb(SITE_PHOTO_BYTES))}
+        {fill(t(locale, "admin.photos.usage"), { count: usage.count, limit: SITE_PHOTO_LIMIT, mb: mb(usage.bytes), limitMb: mb(SITE_PHOTO_BYTES) })}
       </p>
     </div>
     {done && message[done] && (

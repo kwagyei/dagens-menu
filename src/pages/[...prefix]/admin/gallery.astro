@@ -10,7 +10,7 @@ import { localized } from "../../../content/load";
 import { addToGallery, GALLERY_LIMIT, listGallery, moveGalleryImage, removeFromGallery } from "../../../db/gallery";
 import { listLibrary } from "../../../db/library";
 import type { Direction } from "../../../db/menu";
-import { t } from "../../../i18n";
+import { fill, t } from "../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -54,7 +54,7 @@ const message: Record<string, string> = {
   added: t(locale, "admin.gallery.added"),
   removed: t(locale, "admin.gallery.removed"),
   already: t(locale, "admin.gallery.already"),
-  full: t(locale, "admin.gallery.full").replace("{limit}", String(GALLERY_LIMIT)),
+  full: fill(t(locale, "admin.gallery.full"), { limit: GALLERY_LIMIT }),
   "not-found": t(locale, "admin.gallery.notFound"),
   busy: t(locale, "admin.gallery.busy"),
   expired: t(locale, "admin.error.form"),
@@ -100,9 +100,7 @@ const focusMove = (id: string, index: number, dir: Direction) => {
         {gallery.map((entry, index) => {
           const thumb = thumbnail(entry);
           const alt = localized(entry.alt, locale);
-          const position = t(locale, "admin.gallery.position")
-            .replace("{n}", String(index + 1))
-            .replace("{total}", String(gallery.length));
+          const position = fill(t(locale, "admin.gallery.position"), { n: index + 1, total: gallery.length });
           return (
             <li class="admin-card p-3 flex flex-wrap gap-3 items-center" id={`gallery-${entry.id}`}>
               {thumb ? (

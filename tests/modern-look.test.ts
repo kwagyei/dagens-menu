@@ -1,4 +1,4 @@
-/** Tester checks for the abena-makeover branch (21 Oct): colour pairs the modern look draws, weekRuns edges, classic untouched. */
+/** The modern look (Chez Abena, 21 Oct): the colour pairs it draws, weekRuns edges, and the classic look kept out of its rules. */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { contrastRatio } from "../src/content/contrast";
@@ -40,9 +40,27 @@ describe("weekRuns edges", () => {
   });
 });
 
-describe("classic is untouched by unscoped rules", () => {
-  it("every unscoped new rule targets a modern-only class", () => {
+describe("the modern look's rules can't reach the classic look", () => {
+  // These classes have unscoped rules in site.css; they stay modern-only as long as no classic
+  // markup uses them. The home page and the footer are where the two looks branch.
+  const modernOnly = /\b(squiggle|site-footer__call|intro-dag[\w-]*|slices|star|hero-dag[\w-]*|dish-cards?)\b|<Squiggle/;
+  const home = readFileSync("src/pages/index.astro", "utf-8");
+  const footer = readFileSync("src/components/Footer.astro", "utf-8");
+
+  it("site.css still has the unscoped modern classes, and the retired wax print is gone", () => {
     for (const sel of [".squiggle", ".site-footer__call", ".intro-dag", ".slices", ".star"]) expect(css).toContain(sel);
     expect(css).not.toMatch(/wax-|\.teeth|--above/);
+  });
+
+  it("the classic home markup uses none of them", () => {
+    const classic = home.slice(home.indexOf('theme.style === "classic" ? ('), home.indexOf("\n  ) : (\n"));
+    expect(classic.length).toBeGreaterThan(500);
+    expect(classic).not.toMatch(modernOnly);
+    expect(home.slice(home.indexOf("\n  ) : (\n"))).toMatch(modernOnly);
+  });
+
+  it("the footer draws them only for the modern look", () => {
+    const call = footer.indexOf('class="site-footer__call"');
+    expect(footer.lastIndexOf('{style === "modern" && (', call)).toBeGreaterThan(footer.lastIndexOf("\n  )}", call));
   });
 });

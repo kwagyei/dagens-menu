@@ -53,7 +53,7 @@ test("each page has one booking button, in the page and not in the header, at ea
       await page.setViewportSize({ width, height: 900 });
       await page.goto(path);
       // The one exception, chosen by Kwabena from the reference: the modern home on a wide screen
-      // has Boka bord in the nav above the photo as well as the oval on the name.
+      // has Boka bord in the nav above the photo as well as the pill under the name.
       const expected = theme.style === "modern" && path === "/" && width === 1440 ? 2 : 1;
       await expect(page.locator("main a[href='/book/']:visible"), `${path} at ${width}px`).toHaveCount(expected);
       await expect(page.locator("header a[href='/book/']:visible"), `${path} at ${width}px`).toHaveCount(0);
