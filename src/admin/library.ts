@@ -5,7 +5,7 @@
  */
 import { photoSources } from "../content/images";
 import type { ImageUse, LibraryImage } from "../db/library";
-import { localePath, t, type TranslationKey } from "../i18n";
+import { fill, localePath, t, type TranslationKey } from "../i18n";
 
 type Locale = "sv" | "en";
 
@@ -23,7 +23,7 @@ const GALLERY_PAGE = "/admin/gallery/";
 /** Each use as words and the admin page where it can be changed. */
 export function describeUses(uses: readonly ImageUse[], locale: Locale): Array<{ label: string; href: string }> {
   return uses.map((use) => {
-    if (use.kind === "dish") return { label: t(locale, "admin.photos.useDish").replace("{name}", use.name[locale]), href: localePath(locale, `/admin/menu/item/${use.id}/photo/`) };
+    if (use.kind === "dish") return { label: fill(t(locale, "admin.photos.useDish"), { name: use.name[locale] }), href: localePath(locale, `/admin/menu/item/${use.id}/photo/`) };
     if (use.kind === "gallery") return { label: t(locale, "admin.photos.useGallery").replace("{n}", String(use.position)), href: localePath(locale, GALLERY_PAGE) };
     return { label: t(locale, `admin.photos.slot.${use.slot}` as TranslationKey), href: localePath(locale, `/admin/page-photos/${use.slot}/`) };
   });

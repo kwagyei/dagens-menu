@@ -8,8 +8,11 @@ import { z } from "zod";
 import { menuItemSchema } from "../content/schema";
 import type { RepoContext } from "./repository";
 
-/** The audit row id as it arrives from a form: digits only, no leading zero, 16 at most. */
-export const ENTRY_ID = /^[1-9][0-9]{0,15}$/;
+/**
+ * The audit row id as it arrives from a form: digits only, no leading zero, 15 at most, so
+ * Number() reads it exactly (16 digits can pass Number.MAX_SAFE_INTEGER; review L10).
+ */
+export const ENTRY_ID = /^[1-9][0-9]{0,14}$/;
 const ID = /^[a-z0-9]{12}$/;
 const IMAGE_ID = /^[0-9a-f]{64}$/;
 

@@ -7,7 +7,7 @@ import { adminPage } from "../../../../../../admin/page";
 import { listLibrary } from "../../../../../../db/library";
 import { dishPhoto, setDishPhoto } from "../../../../../../db/photo-choice";
 import { getMenuItem } from "../../../../../../db/repository";
-import { t } from "../../../../../../i18n";
+import { fill, t } from "../../../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -36,7 +36,7 @@ const message: Record<string, { text: string; problem: boolean }> = {
   expired: { text: t(locale, "admin.error.form"), problem: true },
 };
 const shown = done ? message[done] : undefined;
-const heading = t(locale, "admin.dishPhoto.heading").replace("{name}", item.name[locale]);
+const heading = fill(t(locale, "admin.dishPhoto.heading"), { name: item.name[locale] });
 ---
 
 <AdminLayout title={heading} csrf={page.csrf}>

@@ -299,7 +299,11 @@ export async function restoreMenuItem(ctx: RepoContext, entryId: string, categor
   const { item } = snapshot;
   const stillUndoable = `NOT EXISTS (SELECT 1 FROM audit_log b WHERE b.site_id = ?1 AND b.entity = 'menu_item' AND b.entity_id = ?2 AND b.id > ?3)`;
   const absent = `NOT EXISTS (SELECT 1 FROM menu_items WHERE site_id = ?1 AND id = ?2)`;
-  const present = `EXISTS (SELECT 1 FROM menu_items WHERE site_id = ?1 AND id = ?2)`;
+  // The dish this restore wrote, not just a dish with this id: a re-seed between the check and
+  // the batch could bring the id back with row_version 0 and no updated_at (review L1). Both
+  // values are inlined because the statements number their parameters differently; one is a
+  // schema-checked integer, the other the restore's own timestamp, so neither carries input.
+  const written = `EXISTS (SELECT 1 FROM menu_items WHERE site_id = ?1 AND id = ?2 AND row_version = ${snapshot.rowVersion + 1} AND updated_at = '${isoSeconds(ctx.now)}')`;
   // The original position, or the end of the category if it is shorter now. Positions keep
   // gaps (a delete never renumbers), so "the end" is the highest position + 1, not the count.
   const place = `min(?5, (SELECT coalesce(max(position) + 1, 0) FROM menu_items WHERE site_id = ?1 AND category_id = ?4))`;
@@ -344,7 +348,8 @@ export async function restoreMenuItem(ctx: RepoContext, entryId: string, categor
       stmt(
         `INSERT INTO home_highlights (site_id, item_id, position)
          SELECT ?1, ?2, (SELECT coalesce(max(position) + 1, 0) FROM home_highlights WHERE site_id = ?1)
-         WHERE (SELECT count(*) FROM home_highlights WHERE site_id = ?1) < ?4 AND ${present} AND ${stillUndoable}`,
+         WHERE (SELECT count(*) FROM home_highlights WHERE site_id = ?1) < ?4 AND ${written} AND ${stillUndoable}
+         ON CONFLICT (site_id, item_id) DO NOTHING`,
         ...guard,
         MAX_HIGHLIGHTS,
       ),
@@ -352,7 +357,7 @@ export async function restoreMenuItem(ctx: RepoContext, entryId: string, categor
   }
   statements.push(
     stmt(
-      `INSERT INTO audit_log (${AUDIT_COLUMNS}) SELECT ?1, ?4, ?5, 'menu_item', ?2, 'create', ?6 WHERE ${present} AND ${stillUndoable}`,
+      `INSERT INTO audit_log (${AUDIT_COLUMNS}) SELECT ?1, ?4, ?5, 'menu_item', ?2, 'create', ?6 WHERE ${written} AND ${stillUndoable}`,
       ...guard,
       ctx.userId,
       isoSeconds(ctx.now),

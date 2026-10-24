@@ -85,15 +85,14 @@ is the seed data the demos are loaded from.
   `"modern"` (one huge condensed word biting into a rounded photo, an orange oval button, a dish
   in stacked slices with a starburst sticker, squiggles and pill shapes). The same pages render
   either: the looks live in `src/styles/site.css` under `[data-style]`, with markup branches
-  only where the
-  structure differs (the home hero and the menu). Colours and fonts still come from the theme,
+  only where the structure differs (the home hero and the menu). Colours and fonts still come from the theme,
   so a client recolours a look rather than forking it. Each page has one booking button, and
   the navigation, menu button and footer work without JavaScript.
 - **Textures and patterns are CSS, fonts are self-hosted and checked.** The linen, the oak
-  grain and the squiggles are gradients and inline SVG built from the theme's colours, so they
-  cost no requests and follow a recolour. Every font is a
-  subset woff2 under `public/fonts/`, within a 40 kB budget and named in its licence file, and
-  a test checks every theme's text colours against WCAG AA (`tests/fonts.test.ts`,
+  grain and the squiggles are gradients and inline SVG, so they cost no requests; the linen and
+  the squiggles take the theme's colours (the oak's are fixed, see the limitations). Every font
+  is a subset woff2 under `public/fonts/`, within a 40 kB budget and named in its licence file,
+  and a test checks every theme's text colours against WCAG AA (`tests/fonts.test.ts`,
   `tests/theme-contrast.test.ts`).
 - **Prices are integers in öre.** They are never floats, so `145.5 kr` can't appear. They
   are formatted in one place (`formatPrice`), which rejects anything that isn't a
@@ -207,8 +206,8 @@ is the seed data the demos are loaded from.
   italic, so emphasis there comes from size and the body face, not from slanted serif lines.
 - **The wood is a texture, not a photo.** The oak grain is an SVG noise filter, which reads as
   wood at a glance but repeats on close inspection. It frames cards only and never sits under
-  text.
-
+  text. Its colours are fixed, not taken from
+  the theme, so a client who recolours the classic look keeps the oak as it is.
 - **Booking widgets that are only a script can't be embedded.** A provider runs only in a
   sandboxed `<iframe>`, because the admin shares the site's origin and a provider script
   there could act as a signed-in owner. A provider that offers no iframe or hosted booking

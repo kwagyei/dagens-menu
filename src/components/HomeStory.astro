@@ -25,7 +25,7 @@ const photo = ref && Astro.locals.content.images.some((i) => i.ref === ref) ? re
   <section class="home-story" aria-labelledby="story-title">
     {photo && (
       <div class="home-story__photo">
-        <Photo ref={photo} slot="story" class="home-story__img" />
+        <Photo ref={photo} slot={theme.style === "classic" ? "story" : "portrait"} class="home-story__img" />
       </div>
     )}
     <div class="home-story__text">

@@ -10,7 +10,7 @@ import { getMenuItem, updateMenuItem } from "../../../../../../db/repository";
 import { getLibraryImage } from "../../../../../../db/library";
 import { dishPhoto } from "../../../../../../db/photo-choice";
 import { thumbnail } from "../../../../../../admin/library";
-import { t } from "../../../../../../i18n";
+import { fill, t } from "../../../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -86,7 +86,7 @@ const photoName = photo ? photo.alt[locale] : t(locale, "admin.pick.none");
     )}
     <div class="admin-card p-3 flex flex-wrap items-center gap-3" id="dish-photo">
       {photoThumb && <img src={photoThumb.src} alt="" width="72" height={Math.round((72 * photoThumb.height) / photoThumb.width)} class="rounded shrink-0" />}
-      <p class="min-w-0 flex-1">{t(locale, "admin.dishPhoto.link").replace("{photo}", photoName)}</p>
+      <p class="min-w-0 flex-1">{fill(t(locale, "admin.dishPhoto.link"), { photo: photoName })}</p>
       <a class="admin-small-button inline-flex items-center" href={page.path(`/menu/item/${id}/photo/`)}>
         {t(locale, "admin.dishPhoto.change")}
       </a>

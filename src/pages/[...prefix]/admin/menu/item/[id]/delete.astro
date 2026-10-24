@@ -3,7 +3,7 @@
 import AdminLayout from "../../../../../../layouts/AdminLayout.astro";
 import { adminPage } from "../../../../../../admin/page";
 import { deleteMenuItem, getMenuItem } from "../../../../../../db/repository";
-import { t } from "../../../../../../i18n";
+import { fill, t } from "../../../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -28,7 +28,7 @@ if (!item) return Astro.redirect(`${page.path("/")}?done=not-found`, 303);
 <AdminLayout title={t(locale, "admin.item.deleteHeading")} csrf={page.csrf}>
   <section class="space-y-6">
     <h1 class="text-3xl font-bold">{t(locale, "admin.item.deleteHeading")}</h1>
-    <p>{t(locale, "admin.item.deleteLead").replace("{name}", item.name[locale])}</p>
+    <p>{fill(t(locale, "admin.item.deleteLead"), { name: item.name[locale] })}</p>
     <form method="post" class="flex flex-wrap gap-3">
       <input type="hidden" name="csrf" value={page.csrf} />
       <button class="admin-button" type="submit">

@@ -1,5 +1,7 @@
 # Prettier also skips everything in .gitignore.
 package-lock.json
+# Agent worktrees are checkouts of other branches, not this one's files.
+.claude/
 # The stylesheets keep short rules on one line (font faces, utilities); Prettier always expands them.
 *.css
 # Prose: Prettier pads tables and re-wraps lists, which only adds churn to the docs.

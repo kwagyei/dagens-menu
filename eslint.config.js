@@ -5,7 +5,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist/", ".astro/", ".wrangler/", "public/", "test-results/", "playwright-report*/", "pages-redirect/"] },
+  { ignores: ["dist/", ".astro/", ".wrangler/", "public/", "test-results/", "playwright-report*/", "pages-redirect/", ".claude/"] },
   js.configs.recommended,
   tseslint.configs.recommended,
   astro.configs.recommended,

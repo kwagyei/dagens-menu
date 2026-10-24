@@ -14,6 +14,12 @@ test.describe.configure({ timeout: 90_000 });
 const BASE = "http://localhost:8790";
 const RESTORE = "/admin/menu/restore/";
 const csrf = (page: Page) => page.locator("input[name=csrf]").first().inputValue();
+// One character changed in the middle, where every bit counts: the last character of a 32-byte
+// token carries two unused bits, so changing it can spell the same token (24 Oct nightly).
+const tampered = (token: string) => {
+  const i = Math.floor(token.length / 2);
+  return token.slice(0, i) + (token[i] === "A" ? "B" : "A") + token.slice(i + 1);
+};
 const post = (page: Page, form: Record<string, string>, headers: Record<string, string> = { Origin: BASE }) =>
   page.request.post(`${BASE}${RESTORE}`, { form, maxRedirects: 0, headers });
 const location = (res: APIResponse) => res.headers().location ?? "";
@@ -50,7 +56,7 @@ test("without a valid token, or from another origin, nothing is restored", async
   for (const [form, headers] of [
     [{ entry }, { Origin: BASE }],
     [{ entry, csrf: "wrong" }, { Origin: BASE }],
-    [{ entry, csrf: token.slice(0, -1) + (token.endsWith("a") ? "b" : "a") }, { Origin: BASE }],
+    [{ entry, csrf: tampered(token) }, { Origin: BASE }],
     [{ entry, csrf: token }, { Origin: "https://evil.example" }],
     [{ entry, csrf: token }, { Origin: "null" }],
     [{ entry, csrf: token }, {}],
@@ -78,10 +84,12 @@ test("crafted entry values are not found, and GET restores nothing", async ({ pa
     expect(res.status(), query).toBe(303);
     expect(location(res), query).toMatch(/done=not-found$/);
   }
-  // A GET with the real entry while the dish's category still exists has nothing to ask: back to the menu, nothing restored.
-  const picker = await page.request.get(`${BASE}${RESTORE}?entry=${entry}`, { maxRedirects: 0 });
-  expect(picker.status()).toBe(303);
-  expect(location(picker)).toMatch(/\/admin\/$/);
+  // A GET with the real entry while the dish's category still exists offers one button, no choice, and restores nothing.
+  const fits = await page.request.get(`${BASE}${RESTORE}?entry=${entry}`, { maxRedirects: 0 });
+  expect(fits.status()).toBe(200);
+  const html = await fits.text();
+  expect(html).toContain("kan läggas tillbaka där den låg");
+  expect(html).not.toContain('type="radio"');
   expect(dishes(name)).toBe(0);
   // A POST with a crafted category id is ignored when the dish's own category exists: it still restores there.
   const res = await post(page, { csrf: token, entry, category: "'; DROP TABLE menu_items; --" });

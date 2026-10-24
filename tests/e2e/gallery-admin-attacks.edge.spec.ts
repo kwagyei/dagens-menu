@@ -17,6 +17,12 @@ const rows = () =>
   d1<{ id: string; image_id: string; position: number; site_id: string }>("SELECT site_id, id, image_id, position FROM gallery_images ORDER BY site_id, position, id");
 const version = () => d1<{ v: number }>("SELECT content_version AS v FROM sites WHERE id = 'bistro'")[0].v;
 const csrf = (page: Page) => page.locator("input[name=csrf]").first().inputValue();
+// One character changed in the middle, where every bit counts: the last character of a 32-byte
+// token carries two unused bits, so changing it can spell the same token (24 Oct nightly).
+const tampered = (token: string) => {
+  const i = Math.floor(token.length / 2);
+  return token.slice(0, i) + (token[i] === "A" ? "B" : "A") + token.slice(i + 1);
+};
 const post = (page: Page, form: Record<string, string>, headers: Record<string, string> = { Origin: BASE }, path = GALLERY) =>
   page.request.post(path, { form, maxRedirects: 0, headers });
 const addable = (page: Page, id: string) => page.locator(`#addable-${id.slice(0, 12)}`);
@@ -134,7 +140,7 @@ test("another site's rows and photos, malformed ids, bad CSRF, wrong Origin and 
     for (const [form, headers] of [
       [{ ...good }, { Origin: BASE }],
       [{ ...good, csrf: "wrong" }, { Origin: BASE }],
-      [{ ...good, csrf: token.slice(0, -1) + (token.endsWith("a") ? "b" : "a") }, { Origin: BASE }],
+      [{ ...good, csrf: tampered(token) }, { Origin: BASE }],
       [{ ...good, csrf: token }, { Origin: "https://evil.example" }],
       [{ ...good, csrf: token }, { Origin: "null" }],
       [{ ...good, csrf: token }, {}],

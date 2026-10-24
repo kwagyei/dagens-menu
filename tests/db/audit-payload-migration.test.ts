@@ -16,6 +16,7 @@ import { siteContentSchema } from "../../src/content/schema";
 import { deleteMenuItem, type RepoContext } from "../../src/db/repository";
 import { type ImageResolver, seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare } from "../../src/db/sql";
+import { UNDOABLE } from "../../src/db/undo";
 
 const db = env.DB;
 const SITE = "bistro";
@@ -38,8 +39,11 @@ const count = async (sql: string, ...params: unknown[]) =>
 const columns = async (table: string) => (await db.prepare(`SELECT name FROM pragma_table_info('${table}')`).all<{ name: string }>()).results.map((r) => r.name);
 
 const firstDish = content.menu.categories[0].items[0];
-/** A JSON object of exactly `bytes` ASCII characters. */
-const objectOf = (bytes: number) => JSON.stringify({ v: 1, pad: "x".repeat(bytes - JSON.stringify({ v: 1, pad: "" }).length) });
+/**
+ * A JSON object of exactly `chars` ASCII characters. The CHECK's length() counts characters,
+ * not bytes (review L3): with ASCII the two agree, so these are the boundary either way.
+ */
+const objectOf = (chars: number) => JSON.stringify({ v: 1, pad: "x".repeat(chars - JSON.stringify({ v: 1, pad: "" }).length) });
 let rowsBefore: number;
 
 beforeAll(async () => {
@@ -78,7 +82,7 @@ describe("migration 0007", () => {
     ["not JSON", "{not json"],
     ["a JSON array", "[1, 2]"],
     ["a JSON string", '"text"'],
-    ["one byte over 16 KiB", objectOf(16385)],
+    ["one character over 16,384", objectOf(16385)],
   ])("refuses a payload that is %s", async (_what, payload) => {
     expect(payload.length).toBeGreaterThanOrEqual(2);
     await expect(
@@ -89,7 +93,7 @@ describe("migration 0007", () => {
     ).rejects.toThrow(/CHECK|constraint/i);
   });
 
-  it("accepts a JSON object of exactly 16 KiB", async () => {
+  it("accepts a JSON object of exactly 16,384 characters", async () => {
     const payload = objectOf(16384);
     expect(payload.length).toBe(16384);
     await db
@@ -115,15 +119,8 @@ describe("migration 0007", () => {
   });
 
   it("the undoable lookup uses the new index", async () => {
-    // The clause ADR-018 §3 builds: no later audit row of this site for the same dish.
-    const plan = await db
-      .prepare(
-        `EXPLAIN QUERY PLAN SELECT id FROM audit_log a
-         WHERE a.id = ? AND a.site_id = ? AND a.entity = 'menu_item' AND a.action = 'delete' AND a.payload IS NOT NULL
-           AND NOT EXISTS (SELECT 1 FROM audit_log b WHERE b.site_id = a.site_id AND b.entity = a.entity AND b.entity_id = a.entity_id AND b.id > a.id)`,
-      )
-      .bind(1, SITE)
-      .all<{ detail: string }>();
+    // The very clause undoableEntry() and the history page use, so the two can't drift (review L3).
+    const plan = await db.prepare(`EXPLAIN QUERY PLAN SELECT a.id FROM audit_log a WHERE a.id = ? AND a.site_id = ? AND ${UNDOABLE}`).bind(1, SITE).all<{ detail: string }>();
     expect(plan.results.map((r) => r.detail).join("\n")).toContain("audit_log_entity");
   });
 });

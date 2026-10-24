@@ -2,13 +2,14 @@
 // Put a deleted dish back from its history entry (ADR-018). POST restores: the "Ångra" forms
 // on the menu page and the history page land here, with the entry's id. GET, with ?entry=,
 // is the one page the owner sees in between: which category to put the dish in, when the one
-// it was in no longer exists. Nothing on GET changes the site.
+// it was in no longer exists, or (back button, a typed URL) one button to put it back where it
+// was (review L2). Nothing on GET changes the site.
 import AdminLayout from "../../../../layouts/AdminLayout.astro";
 import { adminPage } from "../../../../admin/page";
 import { adminMenu } from "../../../../db/menu";
 import { restoreMenuItem } from "../../../../db/repository";
 import { categoryFor, parseSnapshot, undoableEntry } from "../../../../db/undo";
-import { t } from "../../../../i18n";
+import { fill, t } from "../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -45,14 +46,28 @@ if (!entry) return Astro.redirect(`${home}?done=not-found`, 303);
 const snapshot = parseSnapshot(entry.payload, repo.siteId, entry.entityId);
 if (!snapshot) return Astro.redirect(`${home}?done=cant-restore`, 303);
 // The picker is for a dish whose category is gone; otherwise there is nothing to choose.
-if (await categoryFor(repo, snapshot)) return Astro.redirect(home, 303);
-const categories = await adminMenu(repo);
+const fits = (await categoryFor(repo, snapshot)) !== null;
+const categories = fits ? [] : await adminMenu(repo);
 ---
 
-<AdminLayout title={t(locale, "admin.restore.heading")} csrf={page.csrf}>
+<AdminLayout title={t(locale, fits ? "admin.restore.fitsHeading" : "admin.restore.heading")} csrf={page.csrf}>
   <section class="space-y-6">
-    <h1 class="text-3xl font-bold">{t(locale, "admin.restore.heading")}</h1>
-    {categories.length === 0 ? (
+    <h1 class="text-3xl font-bold">{t(locale, fits ? "admin.restore.fitsHeading" : "admin.restore.heading")}</h1>
+    {fits ? (
+      <form method="post" class="space-y-4">
+        <p>{fill(t(locale, "admin.restore.fits"), { name: snapshot.item.name[locale] })}</p>
+        <input type="hidden" name="csrf" value={page.csrf} />
+        <input type="hidden" name="entry" value={entry.id} />
+        <div class="flex flex-wrap gap-3">
+          <button class="admin-button" type="submit">
+            {t(locale, "admin.restore.confirm")}
+          </button>
+          <a class="admin-button admin-button-quiet" href={home}>
+            {t(locale, "admin.item.cancel")}
+          </a>
+        </div>
+      </form>
+    ) : categories.length === 0 ? (
       <>
         <p>{t(locale, "admin.restore.noCategories")}</p>
         <a class="admin-button admin-button-quiet" href={home}>
@@ -61,7 +76,7 @@ const categories = await adminMenu(repo);
       </>
     ) : (
       <form method="post" class="space-y-4">
-        <p>{t(locale, "admin.restore.lead").replace("{name}", snapshot.item.name[locale])}</p>
+        <p>{fill(t(locale, "admin.restore.lead"), { name: snapshot.item.name[locale] })}</p>
         <input type="hidden" name="csrf" value={page.csrf} />
         <input type="hidden" name="entry" value={entry.id} />
         <fieldset class="space-y-2">

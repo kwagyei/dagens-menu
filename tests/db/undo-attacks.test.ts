@@ -14,6 +14,7 @@ import { deleteMenuItem, getMenuItem, isoSeconds, type RepoContext, restoreMenuI
 import { type ImageResolver, seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare } from "../../src/db/sql";
 import { undoableEntry } from "../../src/db/undo";
+import type { D1PreparedStatement } from "../../src/db/types";
 
 const db = env.DB;
 const now = new Date("2026-10-19T12:00:00Z");
@@ -107,7 +108,7 @@ describe("what a restore refuses, writing nothing", () => {
     expect(await state()).toEqual(before);
   });
 
-  it.each(["", "0", "-1", "1.5", "1e3", "abc", "1 OR 1=1", "99999999999999999", " 1", "1\n", "١"])("a malformed entry id %j", async (entry) => {
+  it.each(["", "0", "-1", "1.5", "1e3", "abc", "1 OR 1=1", "99999999999999999", "9007199254740993", " 1", "1\n", "١"])("a malformed entry id %j", async (entry) => {
     await deleted(bistro, BISTRO_DISH);
     const before = await state();
     expect(await restoreMenuItem(bistro, entry)).toEqual({ ok: false, error: "not-found" });
@@ -179,5 +180,54 @@ describe("a restore happens once", () => {
     expect(await count("SELECT count(*) AS n FROM menu_items WHERE site_id = 'bistro' AND id = ?", BISTRO_DISH)).toBe(1);
     expect(await audits("bistro")).toBe(before.bistro.audits + 1);
     expect(await count("SELECT count(*) AS n FROM audit_log WHERE site_id = 'bistro' AND entity_id = ? AND action = 'create'", BISTRO_DISH)).toBe(1);
+  });
+});
+
+describe("a re-seed that lands between the undoable check and the restore's batch (21 Oct review M2)", () => {
+  /**
+   * The race the `written` guard closes: restoreMenuItem has found the entry undoable, then an
+   * operator re-seed brings the dish back (same id, row_version 0, no updated_at, and its
+   * highlight), and only then does the restore's batch run. This wraps the database so the
+   * "re-seed" happens exactly there.
+   */
+  const reseedBeforeBatch = (id: string, categoryId: string): RepoContext => {
+    let done = false;
+    const db = new Proxy(env.DB, {
+      get(target, prop, receiver) {
+        if (prop !== "batch") return Reflect.get(target, prop, receiver);
+        return async (statements: D1PreparedStatement[]) => {
+          if (!done) {
+            done = true;
+            await target.batch([
+              target
+                .prepare(
+                  "INSERT INTO menu_items (site_id, id, category_id, name_sv, name_en, description_sv, description_en, price_ore, position) VALUES ('bistro', ?, ?, 'Omseedad', 'Re-seeded', 'Från seed', 'From the seed', 10000, 99)",
+                )
+                .bind(id, categoryId),
+              target
+                .prepare(
+                  "INSERT INTO home_highlights (site_id, item_id, position) SELECT 'bistro', ?, coalesce(max(position) + 1, 0) FROM home_highlights WHERE site_id = 'bistro'",
+                )
+                .bind(id),
+            ]);
+          }
+          return target.batch(statements);
+        };
+      },
+    });
+    return { db, siteId: "bistro", userId: null, now };
+  };
+
+  it("writes no 'restored' row and no second highlight, doesn't throw, and says the dish is back", async () => {
+    const highlighted = (await db.prepare("SELECT item_id FROM home_highlights WHERE site_id = 'bistro' ORDER BY position LIMIT 1").first<{ item_id: string }>())!.item_id;
+    const { category_id } = (await db.prepare("SELECT category_id FROM menu_items WHERE site_id = 'bistro' AND id = ?").bind(highlighted).first<{ category_id: string }>())!;
+    const entry = await deleted(bistro, highlighted);
+    const restoredRows = () => count("SELECT count(*) AS n FROM audit_log WHERE site_id = 'bistro' AND entity_id = ? AND action = 'create'", highlighted);
+    expect(await restoredRows()).toBe(0);
+    expect(await restoreMenuItem(reseedBeforeBatch(highlighted, category_id), entry)).toEqual({ ok: false, error: "already-back" });
+    expect(await restoredRows()).toBe(0);
+    expect(await count("SELECT count(*) AS n FROM home_highlights WHERE site_id = 'bistro' AND item_id = ?", highlighted)).toBe(1);
+    // The re-seeded dish is left exactly as the seed wrote it.
+    expect(await getMenuItem(bistro, highlighted)).toMatchObject({ name: { sv: "Omseedad" }, rowVersion: 0 });
   });
 });
