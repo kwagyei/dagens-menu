@@ -5,7 +5,7 @@
    - classic ("Ljus", Bistro Norden): a full-bleed photo, the name in a
      Nordic serif (Hedvig Letters, one weight, no italic) under a low sun,
      linen, oak and window light, a printed menu on a table.
-   - modern ("Dag", Chez Abena, after inspiration/modern): one huge
+   - modern ("Dag", Chez Abena, after the reference template): one huge
      condensed word biting into a rounded photo, an orange oval button,
      a dish in stacked slices with a starburst sticker, squiggles, pills.
 
@@ -85,7 +85,7 @@
   background: #d9c6a8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='260'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0032 0.11' numOctaves='3' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.40  0 0 0 0 0.25  1.4 0 0 0 -0.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='%23D9C6A8'/%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.75'/%3E%3C/svg%3E") 0 0 / 900px 260px;
 }
 
-/* --- Modern divider (after inspiration/modern) --------------------- */
+/* --- Modern divider (after the reference template) --------------------- */
 .squiggle { display: block; width: 5.25rem; height: 1.25rem; color: currentColor; }
 
 /* --- Buttons ---------------------------------------------------- */
@@ -342,6 +342,7 @@
 .intro-dag__hours dl div { display: flex; justify-content: center; gap: 0.5rem; }
 .intro-dag__hours dd { margin: 0; }
 .intro-dag__hours .hours-badge { margin-top: 0.875rem; }
+.intro-dag__exception { max-width: 20rem; margin: 0.75rem auto 0; font-weight: 600; }
 .intro-dag__find address { font-style: normal; display: grid; justify-items: center; }
 .intro-dag__find a { display: inline-flex; align-items: center; min-height: 2.75rem; text-underline-offset: 3px; }
 .slices { position: relative; width: min(22rem, 80vw); display: grid; gap: 0.375rem; }

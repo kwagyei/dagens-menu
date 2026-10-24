@@ -2,9 +2,12 @@
  * Tester regression checks for UI PR B (public redesign): no horizontal overflow on any public
  * route at four widths, every image has alt text and loads, tap targets are at least 44 px, the
  * footer shows today's hours and hides the week until opened, and the modern "Se menyn" sticker
- * stops turning under reduced motion.
+ * stops turning under reduced motion. From the 21 Oct review (L4): the modern home's hours
+ * column names the next special day.
  */
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import { d1, daysAhead } from "./helpers";
 
 const base = ["/", "/menu/", "/book/", "/about/", "/gallery/", "/contact/", "/privacy/"];
 const routes = [...base, ...base.map((p) => `/en${p}`), "/no-such-page/"];
@@ -95,11 +98,32 @@ test.describe("the modern look's sticker", () => {
 
   test("the sticker's text is the dark ink on orange (4.7:1)", async ({ page }) => {
     await page.goto("/");
-    // Chez Abena's theme secondary on its accent (makeover after inspiration/modern, 21 Oct).
+    // Chez Abena's theme secondary on its accent (makeover after the reference template, 21 Oct).
     const sticker = await page.evaluate(() => {
       const style = getComputedStyle(document.querySelector("a.star")!);
       return [style.color, style.backgroundColor];
     });
     expect(sticker).toEqual(["rgb(19, 48, 29)", "rgb(240, 106, 59)"]);
   });
+});
+
+test("the modern home's hours column names the next special day", async ({ page }) => {
+  const site = process.env.E2E_SITE ?? "bistro";
+  const theme = JSON.parse(readFileSync(new URL(`../../sites/${site}/theme.json`, import.meta.url), "utf-8"));
+  test.skip(theme.style !== "modern", "only the modern home has the hours column");
+  // Five days ahead: earlier than any other spec's special day (40 and on), so it is the next one.
+  const date = daysAhead(5);
+  const note = `Kalas ${Date.now().toString(36)}`;
+  d1(`INSERT INTO hours_exceptions (site_id, date, opens, closes, note_sv, note_en) VALUES ('${site}', '${date}', NULL, NULL, '${note}', '${note} en')`);
+  try {
+    await page.goto("/");
+    const line = page.locator(".intro-dag__hours .intro-dag__exception");
+    await expect(line).toContainText(`Avvikande öppettider:`);
+    await expect(line).toContainText(`${note} (Stängt)`);
+    await expect(line.locator("time")).toHaveAttribute("datetime", date);
+    await page.goto("/en/");
+    await expect(page.locator(".intro-dag__exception")).toContainText(`${note} en (Closed)`);
+  } finally {
+    d1(`DELETE FROM hours_exceptions WHERE site_id = '${site}' AND date = '${date}' AND note_sv = '${note}'`);
+  }
 });
