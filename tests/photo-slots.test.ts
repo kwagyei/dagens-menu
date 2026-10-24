@@ -14,9 +14,11 @@ describe("photo slot sizes follow the CSS", () => {
   it("portrait: the modern story circle's phone and desktop widths", () => {
     const sizes = sizesOf("portrait");
     const phone = /\[data-style="modern"\] \.home-story__photo \{ width: ([^;]+);/.exec(css)?.[1];
-    const desktop = /\[data-style="modern"\] \.home-story__photo \{ width: (\d+rem); \}/.exec(css)?.[1];
+    // The desktop width and the breakpoint of the @media block it sits in, both read from the CSS.
+    const wide = /@media \(min-width: ([\d.]+rem)\) \{[^@]*?\[data-style="modern"\] \.home-story__photo \{ width: (\d+rem); \}/.exec(css);
     expect(phone, "phone width in site.css").toBeTruthy();
-    expect(desktop, "desktop width in site.css").toBeTruthy();
-    expect(sizes).toBe(`(min-width: 56.25rem) ${desktop}, ${phone}`);
+    expect(wide, "desktop width and breakpoint in site.css").toBeTruthy();
+    const [, breakpoint, desktop] = wide!;
+    expect(sizes).toBe(`(min-width: ${breakpoint}) ${desktop}, ${phone}`);
   });
 });
