@@ -11,6 +11,7 @@ import { siteContentSchema } from "../../src/content/schema";
 import { deleteMenuItem, getMenuItem, type RepoContext, restoreMenuItem } from "../../src/db/repository";
 import { type ImageResolver, seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare } from "../../src/db/sql";
+import type { D1PreparedStatement } from "../../src/db/types";
 
 const db = env.DB;
 const now = new Date("2026-10-24T12:00:00Z");

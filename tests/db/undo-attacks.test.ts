@@ -14,6 +14,7 @@ import { deleteMenuItem, getMenuItem, isoSeconds, type RepoContext, restoreMenuI
 import { type ImageResolver, seedStatements, type StoredContent } from "../../src/db/seed";
 import { prepare } from "../../src/db/sql";
 import { undoableEntry } from "../../src/db/undo";
+import type { D1PreparedStatement } from "../../src/db/types";
 
 const db = env.DB;
 const now = new Date("2026-10-19T12:00:00Z");
