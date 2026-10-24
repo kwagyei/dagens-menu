@@ -73,6 +73,7 @@ npm test                              # unit, content, and database tests in wor
 npm run test:e2e                      # admin end to end, the deploy gate (Playwright)
 npm run test:e2e:edge                 # the edge-case sweeps; non-blocking in CI, also nightly
 npm run check                         # type check (astro check)
+npm run verify                        # CI's first job locally: migrations, lint, format, types, tests
 SITE=bistro npm run build             # the bistro's Worker, in dist/
 ```
 
