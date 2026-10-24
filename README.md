@@ -94,9 +94,11 @@ is the seed data the demos are loaded from.
   `"modern"` (one huge condensed word biting into a rounded photo, an orange oval button, a dish
   in stacked slices with a starburst sticker, squiggles and pill shapes). The same pages render
   either: the looks live in `src/styles/site.css` under `[data-style]`, with markup branches
-  only where the structure differs (the home hero and the menu). Colours and fonts still come from the theme,
-  so a client recolours a look rather than forking it. Each page has one booking button, and
-  the navigation, menu button and footer work without JavaScript.
+  only where the structure differs (the home hero and the menu). Colours and fonts still come
+  from the theme, so a client recolours a look rather than forking it. Each page has one
+  booking button, and the navigation, menu button and footer work without JavaScript. The
+  modern look's layout is modelled on the home page of Squarespace's Tantillo restaurant template;
+  the code, illustrations and photos are this project's own.
 - **Textures and patterns are CSS, fonts are self-hosted and checked.** The linen, the oak
   grain and the squiggles are gradients and inline SVG, so they cost no requests; the linen and
   the squiggles take the theme's colours (the oak's are fixed, see the limitations). Every font
