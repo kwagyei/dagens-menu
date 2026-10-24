@@ -9,7 +9,7 @@
 import { cleanText, visibleLength, TEXT_LIMITS } from "../content/schema";
 import { bytesParam } from "../db/blob-hex";
 import { UPLOAD_BYTES, type Upload, type UploadVariant } from "../db/photos";
-import { t } from "../i18n";
+import { fill, t } from "../i18n";
 import { checkLadder, inspectWebp, LADDER_STEPS, MAX_VARIANT_BYTES } from "../server/upload-validate";
 import { type FieldErrors, inputMaxLength } from "./forms";
 
@@ -46,10 +46,10 @@ const text = (form: FormData, name: string) => {
 function altError(locale: Locale, value: string): string | undefined {
   // Refuse an absurd length before cleaning or counting graphemes, which costs CPU per
   // character: a 1 MB value would outlast the Worker's 10 ms (M6.6 tester F2, F3).
-  if (value.length > inputMaxLength(TEXT_LIMITS.short)) return t(locale, "admin.form.tooLong").replace("{max}", String(TEXT_LIMITS.short));
+  if (value.length > inputMaxLength(TEXT_LIMITS.short)) return fill(t(locale, "admin.form.tooLong"), { max: TEXT_LIMITS.short });
   const clean = cleanText(value).replace(/\s+/g, " ");
   if (!/[^\s\p{Cf}]/u.test(clean)) return t(locale, "admin.form.required");
-  if (visibleLength(clean) > TEXT_LIMITS.short) return t(locale, "admin.form.tooLong").replace("{max}", String(TEXT_LIMITS.short));
+  if (visibleLength(clean) > TEXT_LIMITS.short) return fill(t(locale, "admin.form.tooLong"), { max: TEXT_LIMITS.short });
   return undefined;
 }
 

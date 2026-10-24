@@ -6,7 +6,7 @@
 import AdminLayout from "../../../../../layouts/AdminLayout.astro";
 import { adminPage } from "../../../../../admin/page";
 import { deleteUnusedImages, listLibrary } from "../../../../../db/library";
-import { t } from "../../../../../i18n";
+import { fill, t } from "../../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -37,11 +37,11 @@ const unused = (await listLibrary(repo)).filter((i) => i.kind === "upload" && i.
       </>
     ) : (
       <>
-        <p>{t(locale, "admin.photos.deleteUnusedLead").replace("{n}", String(unused))}</p>
+        <p>{fill(t(locale, "admin.photos.deleteUnusedLead"), { n: unused })}</p>
         <form method="post" class="flex flex-wrap gap-3">
           <input type="hidden" name="csrf" value={page.csrf} />
           <button class="admin-button" type="submit">
-            {t(locale, "admin.photos.deleteUnusedConfirm").replace("{n}", String(unused))}
+            {fill(t(locale, "admin.photos.deleteUnusedConfirm"), { n: unused })}
           </button>
           <a class="admin-button admin-button-quiet" href={`${library}?filter=unused`}>
             {t(locale, "admin.item.cancel")}

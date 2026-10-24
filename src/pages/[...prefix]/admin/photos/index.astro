@@ -28,7 +28,7 @@ const done = Astro.url.searchParams.get("done");
 const n = Astro.url.searchParams.get("n") ?? "";
 const message: Record<string, string> = {
   deleted: t(locale, "admin.photos.deleted"),
-  ...(/^\d{1,3}$/.test(n) ? { "deleted-unused": t(locale, "admin.photos.deletedUnused").replace("{n}", String(Number(n))) } : {}),
+  ...(/^\d{1,3}$/.test(n) ? { "deleted-unused": fill(t(locale, "admin.photos.deletedUnused"), { n: Number(n) }) } : {}),
   "not-found": t(locale, "admin.photos.notFound"),
   expired: t(locale, "admin.error.form"),
 };
@@ -47,11 +47,7 @@ const here = page.path("/photos/");
       )}
       <p class="admin-muted">{t(locale, "admin.photos.yoursLead")}</p>
       <p class="text-sm admin-muted" id="photo-usage">
-        {t(locale, "admin.photos.usage")
-          .replace("{count}", String(usage.count))
-          .replace("{limit}", String(SITE_PHOTO_LIMIT))
-          .replace("{mb}", mb(usage.bytes))
-          .replace("{limitMb}", mb(SITE_PHOTO_BYTES))}
+        {fill(t(locale, "admin.photos.usage"), { count: usage.count, limit: SITE_PHOTO_LIMIT, mb: mb(usage.bytes), limitMb: mb(SITE_PHOTO_BYTES) })}
       </p>
       <div class="flex flex-wrap gap-3">
         <a class="admin-button inline-flex" href={page.path("/photos/new/")}>
@@ -62,7 +58,7 @@ const here = page.path("/photos/");
         </a>
         {unusedUploads.length > 0 && (
           <a class="admin-button admin-button-quiet inline-flex" href={page.path("/photos/unused/delete/")}>
-            {t(locale, "admin.photos.deleteUnusedLink").replace("{n}", String(unusedUploads.length))}
+            {fill(t(locale, "admin.photos.deleteUnusedLink"), { n: unusedUploads.length })}
           </a>
         )}
       </div>
@@ -70,10 +66,10 @@ const here = page.path("/photos/");
 
     <nav aria-label={t(locale, "admin.photos.filterLabel")} class="flex flex-wrap gap-x-5 gap-y-2">
       <a class="admin-target underline" href={here} aria-current={onlyUnused ? undefined : "page"}>
-        {t(locale, "admin.photos.filterAll").replace("{n}", String(library.length))}
+        {fill(t(locale, "admin.photos.filterAll"), { n: library.length })}
       </a>
       <a class="admin-target underline" href={`${here}?filter=unused`} aria-current={onlyUnused ? "page" : undefined}>
-        {t(locale, "admin.photos.filterUnused").replace("{n}", String(unusedAll.length))}
+        {fill(t(locale, "admin.photos.filterUnused"), { n: unusedAll.length })}
       </a>
     </nav>
 
