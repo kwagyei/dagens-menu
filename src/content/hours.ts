@@ -1,9 +1,8 @@
 /**
- * Which opening hours apply on a given day. Runs in the browser: the site is static, so
- * anything computed at build time would show the hours for the day of the last deploy.
- *
- * Keep this module free of Node imports — it is bundled into a client script.
+ * Which opening hours apply on a given day, worked out on each request in the restaurant's
+ * time zone, and the week's hours as runs of days for display.
  */
+import { t } from "../i18n";
 import type { DayHours, OpeningHours } from "./load";
 import { WEEKDAYS, type Weekday } from "./vocabulary";
 
@@ -68,4 +67,15 @@ export function weekRuns(weekly: OpeningHours["weekly"]): WeekRun[] {
     else runs.push({ first: day, last: day, hours });
   }
   return runs;
+}
+
+/**
+ * A run's day label: "Måndag" for one day, "Tisdag–torsdag" / "Tuesday–Thursday" for several.
+ * Swedish writes the second day of a range in lower case; English doesn't.
+ */
+export function runLabel(run: WeekRun, locale: "sv" | "en"): string {
+  const name = (day: Weekday) => t(locale, `weekday.${day}`);
+  if (run.first === run.last) return name(run.first);
+  const last = name(run.last);
+  return `${name(run.first)}–${locale === "sv" ? last.toLowerCase() : last}`;
 }

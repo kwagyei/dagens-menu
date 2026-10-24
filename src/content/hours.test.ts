@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayAndMonth, hoursOn, restaurantDay, upcomingExceptions, weekRuns } from "./hours";
+import { dayAndMonth, hoursOn, restaurantDay, runLabel, upcomingExceptions, weekRuns } from "./hours";
 import type { OpeningHours } from "./load";
 
 const hours: OpeningHours = {
@@ -121,5 +121,35 @@ describe("weekRuns", () => {
       ["wednesday", "wednesday"],
       ["thursday", "sunday"],
     ]);
+  });
+});
+
+describe("runLabel", () => {
+  const open = { open: "12:00", close: "22:00" };
+  it("names a single day, capitalised, in both languages", () => {
+    expect(runLabel({ first: "monday", last: "monday", hours: open }, "sv")).toBe("Måndag");
+    expect(runLabel({ first: "monday", last: "monday", hours: open }, "en")).toBe("Monday");
+  });
+  it("writes a range's second day in lower case in Swedish only", () => {
+    const run = { first: "tuesday", last: "thursday", hours: open } as const;
+    expect(runLabel(run, "sv")).toBe("Tisdag–torsdag");
+    expect(runLabel(run, "en")).toBe("Tuesday–Thursday");
+  });
+  it("labels a closed run the same way: the hours are not its business", () => {
+    const run = { first: "saturday", last: "sunday", hours: null } as const;
+    expect(runLabel(run, "sv")).toBe("Lördag–söndag");
+    expect(runLabel(run, "en")).toBe("Saturday–Sunday");
+  });
+  it("labels every run weekRuns makes from a real week", () => {
+    const week = {
+      monday: null,
+      tuesday: open,
+      wednesday: open,
+      thursday: open,
+      friday: { open: "12:00", close: "23:00" },
+      saturday: { open: "12:00", close: "23:00" },
+      sunday: null,
+    };
+    expect(weekRuns(week).map((run) => runLabel(run, "en"))).toEqual(["Monday", "Tuesday–Thursday", "Friday–Saturday", "Sunday"]);
   });
 });
