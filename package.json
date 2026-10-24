@@ -24,6 +24,7 @@
     "test:e2e": "playwright test --project=gate",
     "test:e2e:edge": "playwright test --project=edge --project=webkit",
     "test:watch": "vitest",
+    "verify": "node scripts/check-migrations.mjs origin/main && npm run lint && npm run format:check && npm run check && npm test",
     "check:consent": "node scripts/check-no-third-party.mjs",
     "db:migrate:local": "wrangler d1 migrations apply dagens-menu --local --config d1.local.jsonc",
     "seed": "tsx scripts/seed.ts",
