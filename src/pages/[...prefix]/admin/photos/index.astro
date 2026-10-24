@@ -9,7 +9,7 @@ import { photoUsage, SITE_PHOTO_BYTES, SITE_PHOTO_LIMIT } from "../../../../db/p
 import { listLibrary } from "../../../../db/library";
 import { describeUses, thumbnail } from "../../../../admin/library";
 import { localized } from "../../../../content/load";
-import { t } from "../../../../i18n";
+import { fill, t } from "../../../../i18n";
 
 // Serves /admin/... and /en/admin/...; any other prefix is not a page.
 if (Astro.params.prefix !== undefined && Astro.params.prefix !== "en") return new Response(null, { status: 404 });
@@ -102,7 +102,7 @@ const here = page.path("/photos/");
                 <p class="font-medium">{alt}</p>
                 <p class="text-sm admin-muted">
                   {image.kind === "static" && <span>{t(locale, "admin.photos.builtIn")} · </span>}
-                  {uses.length > 0 ? t(locale, "admin.photos.inUse").replace("{places}", uses.map((u) => u.label).join(", ")) : t(locale, "admin.photos.notUsed")}
+                  {uses.length > 0 ? fill(t(locale, "admin.photos.inUse"), { places: uses.map((u) => u.label).join(", ") }) : t(locale, "admin.photos.notUsed")}
                 </p>
                 <div class="flex flex-wrap gap-x-5 gap-y-1">
                   <a class="admin-target underline" href={page.path(`/photos/${image.id}/`)}>

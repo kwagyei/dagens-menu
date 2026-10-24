@@ -9,6 +9,10 @@ describe("fill", () => {
     for (const name of ["Pasta $' special", "$& co", "A $` B", "$$", "100 $1"]) expect(fill("{name} försvinner", { name })).toBe(`${name} försvinner`);
   });
 
+  it("fills camel-case placeholders such as {limitMb}", () => {
+    expect(fill("Högst {limitMb} MB", { limitMb: 5 })).toBe("Högst 5 MB");
+  });
+
   it("fills several placeholders, numbers too, and leaves an unknown one alone", () => {
     expect(fill("{n} av {total}: {x}", { n: 2, total: 5 })).toBe("2 av 5: {x}");
   });
