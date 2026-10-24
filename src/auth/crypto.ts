@@ -40,7 +40,12 @@ export async function hmac(secret: string, message: string): Promise<string> {
   return base64url(new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(secret), encoder.encode(message))));
 }
 
-/** Constant-time check of an HMAC (crypto.subtle.verify compares in constant time). */
+/**
+ * Constant-time check of an HMAC (crypto.subtle.verify compares in constant time). Only the
+ * canonical spelling is accepted: a 32-byte value's last base64url character carries two
+ * unused bits, so several spellings decode to the same bytes, and a "tampered" token could
+ * still pass (it was the real token in disguise; the 24 Oct nightly caught it in a test).
+ */
 export async function hmacVerify(secret: string, message: string, signature: string): Promise<boolean> {
   let bytes: Uint8Array<ArrayBuffer>;
   try {
@@ -48,6 +53,7 @@ export async function hmacVerify(secret: string, message: string, signature: str
   } catch {
     return false;
   }
+  if (base64url(bytes) !== signature) return false;
   return crypto.subtle.verify("HMAC", await hmacKey(secret), bytes, encoder.encode(message));
 }
 

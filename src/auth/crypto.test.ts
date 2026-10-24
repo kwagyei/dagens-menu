@@ -34,6 +34,18 @@ describe("hmac", () => {
     expect(await hmacVerify(SECRET, "message", "not base64!")).toBe(false);
   });
 
+  it("accepts only the canonical spelling: other spellings of the same bytes are refused", async () => {
+    const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    for (let n = 0; n < 40; n++) {
+      const sig = await hmac(SECRET, `message ${n}`);
+      expect(await hmacVerify(SECRET, `message ${n}`, sig)).toBe(true);
+      // Every other last character that decodes to the same 32 bytes.
+      const same = [...ALPHABET].map((c) => sig.slice(0, -1) + c).filter((s) => s !== sig && base64url(fromBase64url(s)) === sig);
+      expect(same.length, sig).toBeGreaterThan(0);
+      for (const alias of same) expect(await hmacVerify(SECRET, `message ${n}`, alias), alias).toBe(false);
+    }
+  });
+
   it("refuses a short secret", async () => {
     await expect(hmac("short", "m")).rejects.toThrow(/at least 32/);
   });
