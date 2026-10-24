@@ -17,7 +17,7 @@ export function t(locale: Locale, key: TranslationKey): string {
  * (wrap-up review L4, 19 Oct). A placeholder with no value is left as it is.
  */
 export function fill(template: string, values: Record<string, string | number>): string {
-  return template.replace(/\{([A-Za-z]+)\}/g, (whole, name: string) => (name in values ? String(values[name]) : whole));
+  return template.replace(/\{([A-Za-z]+)\}/g, (whole, name: string) => (Object.hasOwn(values, name) ? String(values[name]) : whole));
 }
 
 export function getLocale(url: URL): Locale {

@@ -91,8 +91,8 @@ is the seed data the demos are loaded from.
 - **Textures and patterns are CSS, fonts are self-hosted and checked.** The linen, the oak
   grain and the squiggles are gradients and inline SVG, so they cost no requests; the linen and
   the squiggles take the theme's colours (the oak's are fixed, see the limitations). Every font
-  is a subset woff2 under `public/fonts/`, within a 40 kB budget and named in its licence file, and
-  a test checks every theme's text colours against WCAG AA (`tests/fonts.test.ts`,
+  is a subset woff2 under `public/fonts/`, within a 40 kB budget and named in its licence file,
+  and a test checks every theme's text colours against WCAG AA (`tests/fonts.test.ts`,
   `tests/theme-contrast.test.ts`).
 - **Prices are integers in öre.** They are never floats, so `145.5 kr` can't appear. They
   are formatted in one place (`formatPrice`), which rejects anything that isn't a

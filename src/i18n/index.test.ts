@@ -9,6 +9,10 @@ describe("fill", () => {
     for (const name of ["Pasta $' special", "$& co", "A $` B", "$$", "100 $1"]) expect(fill("{name} försvinner", { name })).toBe(`${name} försvinner`);
   });
 
+  it("fills only its own values, never an inherited property such as {constructor}", () => {
+    expect(fill("{constructor}", {})).toBe("{constructor}");
+  });
+
   it("fills camel-case placeholders such as {limitMb}", () => {
     expect(fill("Högst {limitMb} MB", { limitMb: 5 })).toBe("Högst 5 MB");
   });
