@@ -12,6 +12,14 @@ next page load.
 - **Bistro Norden**, a Scandinavian bistro in Stockholm: https://dagens-menu-bistro.kwabenasasuboakye.workers.dev
 - **Chez Abena**, a West African kitchen in Göteborg: https://dagens-menu-westafrican.kwabenasasuboakye.workers.dev
 
+| Bistro Norden: the classic look | Chez Abena: the modern look |
+|---|---|
+| ![Bistro Norden's home page on a desktop: a full-bleed photo of a grilled fish, the name in a serif under a thin arc, and a Boka bord button](docs/screenshots/bistro-desktop.jpg) | ![Chez Abena's home page on a desktop: a huge green CHEZ ABENA biting into a rounded photo of grilled meat on a lime ground, with an orange Boka bord oval](docs/screenshots/abena-desktop.jpg) |
+| <img src="docs/screenshots/bistro-phone.jpg" width="260" alt="Bistro Norden on a phone: the name over the photo, the booking button and today's hours"> | <img src="docs/screenshots/abena-phone.jpg" width="260" alt="Chez Abena on a phone: the name in two lines under the photo, the orange booking oval and the tagline"> |
+
+Both are the same code: `theme.json` picks the look, and the content comes from each site's
+database. Screenshots taken from the live sites on 24 Oct 2026.
+
 The earlier static versions on Cloudflare Pages (`dagens-menu-bistro.pages.dev`, `-westafrican`)
 now answer every path with a 301 to the same path on the Worker, so old links keep working.
 Each Pages project holds only a `_redirects` file from `pages-redirect/<site>/`, deployed by
